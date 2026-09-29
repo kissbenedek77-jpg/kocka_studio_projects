@@ -1,1 +1,8 @@
 node_modules/
+.npm-cache/
+.env
+.env.*
+!.env.example
+.clasprc.json
+*.log
+coverage/

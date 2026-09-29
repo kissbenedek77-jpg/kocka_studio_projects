@@ -1,21 +1,16 @@
 {
-  "name": "kocka_studio_projects",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/kissbenedek77-jpg/kocka_studio_projects.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "name": "kocka-projekt-manager",
+  "version": "0.1.0",
+  "private": true,
   "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/kissbenedek77-jpg/kocka_studio_projects/issues"
+  "engines": {"node": ">=20"},
+  "scripts": {
+    "start": "node server/index.cjs",
+    "test": "node --test tests/*.cjs"
   },
-  "homepage": "https://github.com/kissbenedek77-jpg/kocka_studio_projects#readme"
+  "dependencies": {
+    "googleapis": "^171.0.0",
+    "imapflow": "^1.0.195",
+    "mailparser": "^3.7.4"
+  }
 }
