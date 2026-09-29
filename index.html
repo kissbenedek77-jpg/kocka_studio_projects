@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <title>Adatbekérő</title>
+  <!-- MARK: Stílusok -->
+  <style>
+    /* MARK: Alapstílusok és mezők */
+    *{box-sizing:border-box}
+    [hidden]{display:none!important}
+    body{margin:0;padding:24px 12px;color:var(--ks-text);background:url("https://www.kockastudio.hu/images/slide_bg.jpg") repeat left top;font-family:Arial,sans-serif;-webkit-text-size-adjust:100%}
+    .container{width:min(100% - 24px,1100px);margin:0 auto;background:#fff;padding:clamp(16px,3vw,32px);border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+    h1{margin:0 0 20px;font-size:28px} h2{margin:34px 0 16px;padding-bottom:8px;border-bottom:1px solid #ddd;font-size:21px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}.full{grid-column:1/-1}.field{margin-bottom:14px;min-width:0}
+    label{display:block;margin-bottom:5px;font-size:14px;font-weight:600}.check-label{display:flex;align-items:flex-start;gap:8px;font-weight:400;cursor:pointer}.check-label input{width:auto;min-height:0;margin:2px 0 0;flex:0 0 auto}
+    input,select{width:100%;min-height:44px;padding:10px 11px;border:1px solid #ccc;border-radius:6px;font:inherit;font-size:16px;background:#fff;color:#222}
+    input:focus,select:focus{outline:none;border-color:#666;box-shadow:0 0 0 2px rgba(0,0,0,.05)}
+    input[readonly]{background:#f0f0f0;color:#555}.input-error{border-color:#c62828!important;background:#fffafa!important}.input-valid{border-color:#579b62!important}
+    .field-error{display:none;margin-top:4px;font-size:12px;line-height:1.35;color:#a62626}.field-error.visible{display:block}
+    .address-section{margin-top:20px;padding:18px;border:1px solid #ddd;border-radius:7px;background:#fafafa}.address-title{font-weight:700;margin-bottom:15px}
+    .address-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.address-header .address-title{margin:0}.same-toggle{font-size:14px;white-space:nowrap}
+    .address-body{display:block}.address-body.closed{display:none}.foreign-address{display:none}.hidden{display:none!important}
+    .address-preview{margin-top:12px}.address-preview input{font-size:14px}
+    .project-type-other{display:none}.project-type-other.visible{display:block}
+    .gdpr{margin:24px 0 18px;padding:14px 15px;border:1px solid #ddd;border-radius:7px;background:#fafafa}.gdpr-text{font-size:13px;line-height:1.5;margin:0 0 8px}
+    button{border:0;border-radius:6px;padding:13px 22px;min-height:48px;font-size:16px;font-weight:600;cursor:pointer;background:#222;color:#fff}.new-client-button{width:100%;margin-bottom:18px;background:#1a73e8}.new-client-button:active{transform:scale(.99)}button:disabled{opacity:.6;cursor:default}
+    .privacy-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;padding:16px;overflow:auto;align-items:center;justify-content:center}.privacy-modal.open{display:flex}.privacy-modal-content{width:100%;max-width:760px;max-height:90vh;overflow:auto;background:#fff;border-radius:10px;box-shadow:0 8px 35px rgba(0,0,0,.25);padding:24px;position:relative}.privacy-modal-content h2{margin:0 40px 20px 0;padding:0;border:0}.privacy-modal-content h3{margin:20px 0 8px;font-size:16px}.privacy-modal-content p{font-size:14px;line-height:1.55;margin:0 0 12px}.privacy-modal-content ul li{font-size:14px;line-height:1.55;margin:0 0 12px}.privacy-close{position:absolute;right:10px;top:8px;background:transparent;color:#333;font-size:28px;line-height:1;padding:4px 9px;min-height:0}.privacy-placeholder{font-weight:600;background:#fff3cd}
+    #message{margin-top:18px;padding:11px 12px;border-radius:6px;display:none;font-size:14px;line-height:1.4}#message.error{display:block;background:#fbe8e8;color:#8a2222}
+    #editLink{margin-top:15px;display:none;padding:12px;background:#f5f5f5;border-radius:6px;font-size:14px}#editLink a{word-break:break-all}
+    .hint{font-size:12px;color:#666;margin-top:4px;line-height:1.35}.gdpr-link{color:#1a73e8;text-decoration:underline;cursor:pointer}.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;padding:16px;overflow:auto}.modal-backdrop.open{display:flex;align-items:center;justify-content:center}.modal{width:100%;max-width:700px;max-height:90vh;overflow:auto;background:#fff;border-radius:10px;box-shadow:0 8px 35px rgba(0,0,0,.25);padding:24px;position:relative}.modal h3{margin:0 40px 16px 0;font-size:21px}.modal p{font-size:14px;line-height:1.55;margin:0 0 12px}.modal-close{position:absolute;right:12px;top:10px;background:transparent;color:#333;font-size:28px;line-height:1;padding:4px 9px;min-height:0}.mail-link{display:inline-block;margin-top:8px;font-weight:600;color:#1a73e8;text-decoration:underline;cursor:pointer}.client-url{display:block;margin-top:7px;font-size:12px;color:#666;word-break:break-all}
+    /* MARK: Arculat és lépésenkénti űrlap */
+    /* Kocka Stúdió arculat + többoldalas adatbekérő */
+    :root{--ks-dark:#222;--ks-text:#333;--ks-muted:#777;--ks-line:#dedede;--ks-soft:#f6f6f4;--ks-accent:#b39a68;--ks-accent-dark:#8f7748}
+    body{background:#ececea;color:var(--ks-text)}
+    .container{max-width:980px;border-radius:0;border-top:5px solid var(--ks-dark);box-shadow:0 8px 32px rgba(0,0,0,.08)}
+    .brand-header{display:flex;align-items:center;justify-content:space-between;gap:24px;border-bottom:1px solid var(--ks-line);background:#3e3e3e;margin:-16px -10px 18px -10px;padding:10px}
+    .brand-logo{display:block;width:min(240px,48vw);height:auto;max-height:76px;object-fit:contain;object-position:left center}
+    .brand-kicker{text-align:right;font-size:12px;line-height:1.5;letter-spacing:.12em;text-transform:uppercase;color:var(--ks-muted)}
+    #pageTitle{font-weight:400;letter-spacing:.02em;margin-bottom:6px}.form-intro{margin:0 0 24px;color:var(--ks-muted);font-size:14px;line-height:1.55}
+    .thank-you{padding:clamp(40px,8vw,88px) 16px;text-align:center}.thank-you h1{font-size:clamp(28px,5vw,40px);font-weight:400;margin:0 0 18px}.thank-you p{font-size:17px;line-height:1.6;max-width:560px;margin:0 auto;color:var(--ks-muted)}
+    .wizard-progress{display:grid;grid-template-columns:repeat(4,1fr);position:relative;margin:26px 0 34px;gap:0}
+    .wizard-progress:before{content:'';position:absolute;left:12.5%;right:12.5%;top:17px;height:1px;background:#d4d4d4;z-index:0}
+    .progress-step{position:relative;z-index:1;text-align:center;color:#999;font-size:12px;line-height:1.25}
+    .progress-dot{display:flex;align-items:center;justify-content:center;width:35px;height:35px;margin:0 auto 8px;border:1px solid #c9c9c9;border-radius:50%;background:#fff;font-weight:700;color:#888;transition:.2s}
+    .progress-step.active,.progress-step.done{color:var(--ks-dark)}.progress-step.active .progress-dot{background:var(--ks-dark);border-color:var(--ks-dark);color:#fff}.progress-step.done .progress-dot{background:var(--ks-accent);border-color:var(--ks-accent);color:#fff}
+    .wizard-page{display:none;animation:wizardIn .18s ease-out}.wizard-page.active{display:block}@keyframes wizardIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+    .wizard-page>h2{margin-top:0;font-weight:400;font-size:24px;border-bottom:2px solid var(--ks-dark);padding-bottom:12px}
+    .wizard-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--ks-line);background:url("https://www.kockastudio.hu/images/slide4_bg.jpg") repeat left top;margin:10px -32px -32px -32px;padding:20px 32px 20px 32px}
+    .wizard-nav .spacer{flex:1}.wizard-next,.save-button{background:var(--ks-dark)}.wizard-back{background:#fff;color:var(--ks-dark);border:1px solid #bbb}.wizard-next:hover,.save-button:hover{background:#000}.wizard-back:hover{background:#f2f2f2}
+    .step-note{font-size:13px;color:var(--ks-muted);margin:-6px 0 22px;line-height:1.5}
+    .address-section,.gdpr{background:var(--ks-soft);border-color:#e1e1de;border-radius:0}
+    input,select{border-radius:0;border-color:#cfcfcb}input:focus,select:focus{border-color:var(--ks-accent-dark);box-shadow:0 0 0 2px rgba(179,154,104,.15)}
+    .new-client-button{background:transparent;color:var(--ks-dark);border:1px solid #bbb;width:auto;margin:0 0 18px auto;display:block}
+    .new-client-button:hover{border-color:var(--ks-dark);background:#f5f5f5}
+
+    /* MARK: Reszponzív elrendezés */
+    /* Valóban reszponzív töréspontok */
+    @media (max-width:900px){
+      body{padding:12px 6px}
+      .container{width:calc(100% - 12px);padding:20px}
+    }
+    @media (max-width:720px){
+      html,body{width:100%;max-width:100%;overflow-x:hidden}
+      body{padding:0;background:#fff}
+      .container{width:100%;max-width:100%;margin:0;padding:16px 12px 28px;border-radius:0;box-shadow:none}
+      .grid{display:grid;grid-template-columns:1fr!important;gap:0!important}
+      .grid>.field,.full{grid-column:1/-1!important;width:100%!important;min-width:0!important}
+      h1{font-size:24px;line-height:1.2;margin-bottom:18px}
+      h2{font-size:19px;line-height:1.25;margin-top:26px}
+      .address-section{width:100%;margin:16px 0 0;padding:12px 10px}
+      .address-header{display:block}
+      .address-header .address-title{margin-bottom:8px}
+      .same-toggle{white-space:normal;width:100%}
+      input:not([type="checkbox"]):not([type="radio"]),select,textarea{display:block;width:100%!important;max-width:100%!important;min-width:0!important;font-size:16px}
+      input[type="checkbox"],input[type="radio"]{display:inline-block;width:auto!important;max-width:none!important;min-width:0!important;min-height:0!important;flex:0 0 auto}
+      button,.save-button,.new-client-button{display:block;width:100%!important;max-width:100%!important}
+      .gdpr{width:100%;padding:12px 10px}
+      #editLink{width:100%;max-width:100%;overflow-wrap:anywhere}
+      .client-url,#editLink a{word-break:break-word;overflow-wrap:anywhere}
+      .privacy-modal{padding:0;align-items:stretch}
+      .privacy-modal-content{width:100%;max-width:none;max-height:100dvh;min-height:100dvh;border-radius:0;padding:20px 14px 28px}
+    }
+    @media (max-width:420px){
+      .container{padding-left:10px;padding-right:10px}
+      .address-section{padding-left:9px;padding-right:9px}
+      h1{font-size:22px}
+      label{font-size:13px}
+    }
+    @media (max-width:720px){
+      .brand-header{align-items:flex-start;gap:12px}.brand-logo{width:min(210px,58vw)}.brand-kicker{font-size:10px;max-width:120px}
+      .wizard-progress{margin:20px -4px 28px}.progress-label{display:none}.progress-dot{width:32px;height:32px;margin-bottom:0}.wizard-progress:before{top:15px}
+      .wizard-nav{position:sticky;bottom:0;background:rgba(255,255,255,.96);padding:12px 0 max(12px,env(safe-area-inset-bottom));z-index:20}.wizard-nav button{width:auto!important;flex:1}
+    }
+
+    /* MARK: Ellenőrző oldal */
+    /* 4. lépés: mentés előtti adatellenőrzés */
+    .review-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:0 0 22px}
+    .review-card{border:1px solid var(--ks-line);background:#fff;padding:18px;min-width:0}
+    .review-card.full{grid-column:1/-1}
+    .review-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;padding-bottom:9px;border-bottom:1px solid var(--ks-line)}
+    .review-head h3{margin:0;font-size:16px;font-weight:600}
+    .review-edit{min-height:0;padding:5px 8px;background:transparent;color:var(--ks-accent-dark);font-size:12px;border:0;text-decoration:underline}
+    .review-edit:hover{background:var(--ks-soft)}
+    .review-row{display:grid;grid-template-columns:minmax(110px,.8fr) minmax(0,1.5fr);gap:12px;padding:5px 0;font-size:13px;line-height:1.45}
+    .review-label{color:var(--ks-muted)}.review-value{font-weight:600;overflow-wrap:anywhere}.review-empty{font-weight:400;color:#aaa;font-style:italic}
+    @media(max-width:720px){.review-grid{grid-template-columns:1fr}.review-card.full{grid-column:auto}.review-row{grid-template-columns:1fr;gap:1px;padding:7px 0}.review-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em}}
+
+    @media (max-width:720px){
+      .wizard-nav{
+        position:sticky;
+        bottom:0;
+        padding:12px 32px max(12px, env(safe-area-inset-bottom));
+        z-index:20;
+        background:url("https://www.kockastudio.hu/images/slide4_bg.jpg") repeat left top;
+        margin:20px -32px -28px -32px;
+      }
+    }
+
+    /* MARK: Mobilos alsó navigáció */
+    /* Mobil: a wizard navigáció mindig a viewport alján marad. */
+    @media (max-width:720px){
+      .wizard-nav{
+        position:fixed !important;
+        left:0 !important;
+        right:0 !important;
+        bottom:0 !important;
+        top:auto !important;
+        width:auto !important;
+        margin:0 !important;
+        padding:12px 32px max(12px, env(safe-area-inset-bottom)) !important;
+        z-index:1000 !important;
+        box-sizing:border-box;
+        background:url("https://www.kockastudio.hu/images/slide4_bg.jpg") repeat left top;
+      }
+
+      /* A fix alsó sáv ne takarja el az utolsó mezőket. */
+      .container{
+        padding-bottom:calc(100px + env(safe-area-inset-bottom, 0px)) !important;
+      }
+    }
+
+  </style>
+</head>
+<body>
+<!-- MARK: Fejléc és űrlap -->
+<div class="container">
+  <div class="brand-header">
+    <img class="brand-logo" src="https://www.kockastudio.hu/images/logo2.png" alt="Kocka Stúdió">
+    <div class="brand-kicker">Építészeti tervezés<br>teljes spektruma</div>
+  </div>
+
+  <div id="formContent">
+
+  <div id="newClientContainer" class="new-client-container">
+    <button type="button" id="newClientButton" class="new-client-button" onclick="createNewClient()">+ Új ügyfél</button>
+  </div>
+
+  <h1 id="pageTitle">Adatbekérő</h1>
+
+  <div class="field">
+    <label for="language">Nyelv</label>
+    <select id="language"><option value="hu">Magyar</option><option value="en">English</option></select>
+  </div>
+
+  <p class="form-intro">Kérjük, adja meg a tervezési megbízás előkészítéséhez szükséges adatokat. Az űrlap négy rövid lépésből áll.</p>
+  <div id="message" role="status" aria-live="polite"></div>
+  <div class="wizard-progress" aria-label="Űrlap kitöltési folyamat">
+    <div class="progress-step active" data-progress="1"><span class="progress-dot">1</span><span class="progress-label">Személyes adatok</span></div>
+    <div class="progress-step" data-progress="2"><span class="progress-dot">2</span><span class="progress-label">Elérhetőség</span></div>
+    <div class="progress-step" data-progress="3"><span class="progress-dot">3</span><span class="progress-label">Projekt</span></div>
+    <div class="progress-step" data-progress="4"><span class="progress-dot">4</span><span class="progress-label">Ellenőrzés</span></div>
+  </div>
+
+  <!-- MARK: 1. lépés – személyes adatok -->
+  <section class="wizard-page active" data-step="1">
+  <h2 id="personalTitle">Személyes adatok</h2>
+  <div class="grid">
+    <div class="field"><label for="vezeteknev">Vezetéknév</label><input id="vezeteknev" type="text" autocomplete="family-name"><div class="field-error" id="error-vezeteknev"></div></div>
+    <div class="field"><label for="keresztnev">Keresztnév</label><input id="keresztnev" type="text" autocomplete="given-name"><div class="field-error" id="error-keresztnev"></div></div>
+    <div class="field full"><label for="szuletesiNev">Születési név</label><input id="szuletesiNev" type="text"><div class="field-error" id="error-szuletesiNev"></div></div>
+    <div class="field"><label for="allampolgarsag">Állampolgárság</label><select id="allampolgarsag"><option value="">Válasszon...</option><option value="Magyar">Magyar</option><option value="Egyéb">Egyéb</option></select><div class="field-error" id="error-allampolgarsag"></div></div>
+    <div class="field"><label id="taxLabel" for="adoazonosito">Adóazonosító jel</label><input id="adoazonosito" type="text" inputmode="numeric" autocomplete="off"><div class="field-error" id="error-adoazonosito"></div><div class="hint" id="taxHint">10 számjegy, automatikus formázással.</div></div>
+    <div class="field"><label for="anyjaNeve">Anyja neve</label><input id="anyjaNeve" type="text"><div class="field-error" id="error-anyjaNeve"></div></div>
+    <div class="field"><label for="szuletesiHely">Születési hely</label><input id="szuletesiHely" type="text"><div class="field-error" id="error-szuletesiHely"></div></div>
+    <div class="field"><label for="szuletesiIdo">Születési idő</label><input id="szuletesiIdo" type="date" min="1900-01-01" max="2099-12-31"><div class="field-error" id="error-szuletesiIdo"></div></div>
+  </div>
+
+  <div class="wizard-nav"><span class="spacer"></span><button type="button" class="wizard-next" onclick="wizardNext()">Tovább</button></div>
+  </section>
+
+  <!-- MARK: 2. lépés – elérhetőség és címek -->
+  <section class="wizard-page" data-step="2">
+  <h2 id="contactTitle">Elérhetőség és lakcím</h2>
+  <div class="grid">
+    <div class="field"><label for="telefon">Telefon</label><input id="telefon" type="tel" inputmode="tel" placeholder="+36-30/123-4567"><div class="field-error" id="error-telefon"></div></div>
+    <div class="field"><label for="email">Email cím</label><input id="email" type="email" autocomplete="email"><div class="field-error" id="error-email"></div></div>
+  </div>
+
+  <div class="address-section">
+    <div class="address-header"><div class="address-title">Lakcím</div></div>
+    <div id="lakcim_hu" class="hu-address-fields">
+      <div class="grid">
+        <div class="field"><label for="lakcim_irsz">Irányítószám</label><input id="lakcim_irsz" type="text" inputmode="numeric"><div class="field-error" id="error-lakcim_irsz"></div></div>
+        <div class="field"><label for="lakcim_varos">Város</label><input id="lakcim_varos" type="text"><div class="field-error" id="error-lakcim_varos"></div></div>
+        <div class="field"><label for="lakcim_kozterulet">Közterület neve</label><input id="lakcim_kozterulet" type="text"><div class="field-error" id="error-lakcim_kozterulet"></div></div>
+        <div class="field"><label for="lakcim_tipus">Közterület típusa</label><select id="lakcim_tipus"><option value="">Válasszon...</option><option>utca</option><option>út</option><option>tér</option><option>köz</option><option>sétány</option><option>körút</option><option>sugárút</option><option>sor</option><option>dűlő</option><option>park</option><option>lakópark</option><option>egyéb</option></select><div class="field-error" id="error-lakcim_tipus"></div></div>
+        <div class="field"><label for="lakcim_hazszam">Házszám</label><input id="lakcim_hazszam" type="text"><div class="field-error" id="error-lakcim_hazszam"></div></div>
+        <div class="field"><label for="lakcim_egyeb">Egyéb</label><input id="lakcim_egyeb" type="text"></div>
+        <div class="field full address-preview"><label for="lakcim_preview">Összefűzött cím</label><input id="lakcim_preview" type="text" readonly></div>
+      </div>
+    </div>
+    <div id="lakcim_foreign" class="foreign-address"><div class="field"><label for="lakcim_kulfold">Address</label><input id="lakcim_kulfold" type="text"></div></div>
+  </div>
+
+  <div class="address-section">
+    <div class="address-header">
+      <div class="address-title">Értesítési cím</div>
+      <label class="check-label same-toggle"><input type="checkbox" id="ertesitesi_same" checked> <span>Azonos a lakcímmel</span></label>
+    </div>
+    <div id="ertesitesi_body" class="address-body closed">
+      <div id="ertesitesi_hu" class="hu-address-fields">
+        <div class="grid">
+          <div class="field"><label for="ertesitesi_irsz">Irányítószám</label><input id="ertesitesi_irsz" type="text" inputmode="numeric"><div class="field-error" id="error-ertesitesi_irsz"></div></div>
+          <div class="field"><label for="ertesitesi_varos">Város</label><input id="ertesitesi_varos" type="text"><div class="field-error" id="error-ertesitesi_varos"></div></div>
+          <div class="field"><label for="ertesitesi_kozterulet">Közterület neve</label><input id="ertesitesi_kozterulet" type="text"><div class="field-error" id="error-ertesitesi_kozterulet"></div></div>
+          <div class="field"><label for="ertesitesi_tipus">Közterület típusa</label><select id="ertesitesi_tipus"><option value="">Válasszon...</option><option>utca</option><option>út</option><option>tér</option><option>köz</option><option>sétány</option><option>körút</option><option>sugárút</option><option>sor</option><option>dűlő</option><option>park</option><option>lakópark</option><option>egyéb</option></select><div class="field-error" id="error-ertesitesi_tipus"></div></div>
+          <div class="field"><label for="ertesitesi_hazszam">Házszám</label><input id="ertesitesi_hazszam" type="text"><div class="field-error" id="error-ertesitesi_hazszam"></div></div>
+          <div class="field"><label for="ertesitesi_egyeb">Egyéb</label><input id="ertesitesi_egyeb" type="text"></div>
+          <div class="field full address-preview"><label for="ertesitesi_preview">Összefűzött cím</label><input id="ertesitesi_preview" type="text" readonly></div>
+        </div>
+      </div>
+      <div id="ertesitesi_foreign" class="foreign-address"><div class="field"><label for="ertesitesi_kulfold">Address</label><input id="ertesitesi_kulfold" type="text"></div></div>
+    </div>
+  </div>
+
+  <div class="wizard-nav"><button type="button" class="wizard-back" onclick="wizardBack()">Vissza</button><button type="button" class="wizard-next" onclick="wizardNext()">Tovább</button></div>
+  </section>
+
+  <!-- MARK: 3. lépés – projekt -->
+  <section class="wizard-page" data-step="3">
+  <h2 id="propertyTitle">Ingatlan / projekt</h2>
+
+  <div class="grid">
+    <div class="field"><label for="projektTipus">Projekt típusa</label><select id="projektTipus"><option value="">Válasszon...</option><option value="Új építés">Új építés</option><option value="Bővítés">Bővítés</option><option value="Átépítés">Átépítés</option><option value="Egyéb">Egyéb</option></select><div class="field-error" id="error-projektTipus"></div></div>
+    <div class="field project-type-other" id="projektTipusEgyebWrap"><label for="projektTipusEgyeb">Egyéb projekt típus</label><input id="projektTipusEgyeb" type="text"><div class="field-error" id="error-projektTipusEgyeb"></div></div>
+    <div class="field"><label for="hrsz">Hrsz.</label><input id="hrsz" type="text"></div>
+  </div>
+
+  <div class="address-section">
+    <div class="address-header"><div class="address-title">Projekt címe</div></div>
+    <div id="projekt_hu" class="hu-address-fields">
+      <div class="grid">
+        <div class="field"><label for="projekt_irsz">Irányítószám</label><input id="projekt_irsz" type="text" inputmode="numeric"><div class="field-error" id="error-projekt_irsz"></div></div>
+        <div class="field"><label for="projekt_varos">Város</label><input id="projekt_varos" type="text"><div class="field-error" id="error-projekt_varos"></div></div>
+        <div class="field"><label for="projekt_kozterulet">Közterület neve</label><input id="projekt_kozterulet" type="text"><div class="field-error" id="error-projekt_kozterulet"></div></div>
+        <div class="field"><label for="projekt_tipus">Közterület típusa</label><select id="projekt_tipus"><option value="">Válasszon...</option><option>utca</option><option>út</option><option>tér</option><option>köz</option><option>sétány</option><option>körút</option><option>sugárút</option><option>sor</option><option>dűlő</option><option>park</option><option>lakópark</option><option>egyéb</option></select><div class="field-error" id="error-projekt_tipus"></div></div>
+        <div class="field"><label for="projekt_hazszam">Házszám</label><input id="projekt_hazszam" type="text"><div class="field-error" id="error-projekt_hazszam"></div></div>
+        <div class="field"><label for="projekt_egyeb">Egyéb</label><input id="projekt_egyeb" type="text"></div>
+        <div class="field full address-preview"><label for="projekt_preview">Összefűzött cím</label><input id="projekt_preview" type="text" readonly></div>
+      </div>
+    </div>
+    <div id="projekt_foreign" class="foreign-address"><div class="field"><label for="projekt_kulfold">Address</label><input id="projekt_kulfold" type="text"></div></div>
+  </div>
+
+  <div class="wizard-nav"><button type="button" class="wizard-back" onclick="wizardBack()">Vissza</button><button type="button" class="wizard-next" onclick="wizardNext()">Tovább</button></div>
+  </section>
+
+  <!-- MARK: 4. lépés – ellenőrzés és elküldés -->
+  <section class="wizard-page" data-step="4">
+    <h2>Ellenőrzés és elküldés</h2>
+    <p class="step-note">Ellenőrizze az alábbi adatokat. A „Módosítás” gombbal közvetlenül visszaléphet az adott szakaszhoz.</p>
+    <div id="reviewSummary" class="review-grid" aria-live="polite"></div>
+  <div class="gdpr">
+    <p class="gdpr-text">Az adatokat a megadott célból és a vonatkozó adatvédelmi szabályoknak megfelelően kezeljük. <a href="#" class="gdpr-link" id="gdprOpenLink">Az adatvédelmi tájékoztató elolvasása</a></p>
+    <label class="check-label"><input id="gdprAccepted" type="checkbox"> <span>Elolvastam és elfogadom az adatvédelmi nyilatkozatot.</span></label>
+    <div class="field-error" id="error-gdprAccepted"></div>
+  </div>
+
+  <button id="saveButton" class="save-button" type="button">Adatok elküldése</button>
+  <div class="wizard-nav"><button type="button" class="wizard-back" onclick="wizardBack()">Vissza</button><span class="spacer"></span></div>
+  </section>
+  </div>
+  <!-- MARK: Köszönő képernyő -->
+  <section id="thankYou" class="thank-you" tabindex="-1" hidden>
+    <h1 id="thankYouTitle">Köszönjük!</h1>
+    <p id="thankYouText">Az adatokat sikeresen megkaptuk.</p>
+  </section>
+</div>
+
+  <!-- MARK: Adatvédelmi tájékoztató -->
+  <div id="privacyModal" class="privacy-modal" role="dialog" aria-modal="true" aria-labelledby="privacyTitle">
+    <div class="privacy-modal-content">
+      <button type="button" class="privacy-close" id="privacyClose" aria-label="Bezárás">×</button>
+
+      <h2 id="privacyTitle">Adatkezelési tájékoztató</h2>
+
+      <p><strong>Hatályos:</strong> 2026. szeptember 24.</p>
+
+      <h3>1. Az adatkezelő</h3>
+      <p>
+        <strong>Név:</strong> Kocka Stúdió Tervező és Szolgáltató Betéti Társaság (Kocka Stúdió Bt.)<br>
+        <strong>Székhely:</strong> 7451 Kaposvár, Bánkutai u. 41.<br>
+        <strong>Cégjegyzékszám:</strong> 14-06-308797<br>
+        <strong>Adószám:</strong> 21984712-2-14<br>
+        <strong>E-mail:</strong> info@kockastudio.hu<br>
+        <strong>Telefon:</strong> +36-70/318-1632
+      </p>
+
+      <h3>2. Az adatkezelés célja</h3>
+      <p>
+        Az ügyféli kapcsolatfelvétel, üzenetek megválaszolása, építészeti tervezési, tanácsadási,
+        hatósági ügyintézési és kapcsolódó mérnöki szolgáltatások előkészítése, szerződések megkötése
+        és teljesítése, valamint a kapcsolódó dokumentumok elkészítése.
+      </p>
+
+      <h3>3. Kezelt adatok köre</h3>
+      <p>
+        Az online kapcsolatfelvételi űrlapon megadott adatok: név, e-mail-cím, telefonszám,
+        valamint az üzenet mezőben önkéntesen megadott egyéb személyes, ingatlanra vagy projektre vonatkozó adatok.
+        Szerződéskötés esetén az adatok köre kiegészülhet a számlázási címmel, adószámmal/adóazonosító jellel és hivatalos iratokhoz szükséges születési adatokkal.
+      </p>
+
+      <h3>4. Az adatkezelés jogalapja</h3>
+      <p>
+        Az adatkezelés jogalapja elsődlegesen a GDPR 6. cikk (1) bekezdés b) pontja: <strong>szerződés teljesítése</strong>
+        illetve a szerződés megkötését megelőző lépések megtétele az érintett kérésére (ajánlatkérés, kapcsolatfelvétel).
+        Számlázás és iratmegőrzés esetén a jogalap jogi kötelezettség teljesítése (GDPR 6. cikk (1) c) pont).
+      </p>
+
+      <h3>5. Adatfeldolgozók és adattovábbítás</h3>
+      <p>
+        Az adatok tárolására és feldolgozására az alábbi adatfeldolgozók informatikai rendszereit használjuk:
+      </p>
+      <ul>
+        <li><strong>Google Cloud / IT rendszerek:</strong> Google Ireland Limited (Gordon House, Barrow Street, Dublin 4, Ireland) – az űrlapadatok feldolgozása Google Apps Script és Google Sheets segítségével történik.</li>
+        <li><strong>Webtárhely-szolgáltató:</strong> Mobila Magyarország Kft (2310 Szigetszentmiklós, Csepeli u. 15-17.)</li>
+      </ul>
+
+      <h3>6. Adatmegőrzési idő</h3>
+      <ul>
+        <li><strong>Sima kapcsolatfelvétel / ajánlatkérés esetén (ha nem jön létre szerződés):</strong> Az üzenet megválaszolásától, illetve az üzleti kommunikáció lezárultától számított <strong>1 év</strong> elteltével az adatok törlésre kerülnek.</li>
+        <li><strong>Létrejött szerződés esetén:</strong> A számviteli kötelezettségek teljesítése érdekében a Számviteli törvény alapján a számlákat és a szerződéses adatokat <strong>8 évig</strong> köteles megőrizni az adatkezelő.</li>
+      </ul>
+
+      <h3>7. Az érintett jogai</h3>
+      <p>
+        Önnek joga van kérelmezni az adatkezelőtől az Önre vonatkozó személyes adatokhoz való hozzáférést,
+        azok helyesbítését, törlését (a jogszabályi kötelezettségek keretein belül) vagy kezelésének korlátozását.
+        Tiltakozhat a személyes adatok kezelése ellen, valamint megilleti az adathordozhatósághoz való jog is.
+      </p>
+
+      <h3>8. Jogorvoslat és panasz</h3>
+      <p>
+        Amennyiben úgy érzi, hogy személyes adatainak kezelése során megsértették a GDPR előírásait,
+        panaszt tehet a felügyeleti hatóságnál:<br><br>
+        <strong>Nemzeti Adatvédelmi és Információszabadság Hatóság (NAIH)</strong><br>
+        Postacím: 1055 Budapest, Falk Miksa utca 9-11.<br>
+        E-mail: ugyfelszolgalat@naih.hu<br>
+        Web: www.naih.hu
+      </p>
+
+    </div>
+  </div>
+
+<script>
+// MARK: Kezdőállapot és fordítások
+const INITIAL_UID='<?= uid ?>';
+let currentUID=INITIAL_UID||'';
+const $=id=>document.getElementById(id);
+
+const translations={
+  hu:{title:'Adatbekérő',personal:'Személyes adatok',contact:'Elérhetőség és lakcím',property:'Ingatlan / projekt',taxHU:'Adóazonosító jel',taxForeign:'Adóazonosító / TIN',send:'Adatok elküldése',sending:'Küldés...',thankTitle:'Köszönjük!',thankText:'Az adatait sikeresen elküldtük.',error:'Hiba történt az adatok elküldése során.',select:'Válasszon...'},
+  en:{title:'Data collection',personal:'Personal information',contact:'Contact information and address',property:'Property / project',taxHU:'Hungarian tax identification number',taxForeign:'Tax identification number / TIN',send:'Submit data',sending:'Sending...',thankTitle:'Thank you!',thankText:'Your information has been submitted successfully.',error:'An error occurred while submitting the data.',select:'Please select...'}
+};
+
+// MARK: Mezőkezelő segédfüggvények
+function getValue(id){const e=$(id);return e?e.value.trim():''}
+function setValue(id,value){const e=$(id);if(e)e.value=value==null?'':value}
+function setChecked(id,value){const e=$(id);if(e)e.checked=!!value}
+
+function setFieldError(id,text){
+  const input=$(id), error=$('error-'+id);
+  if(!input||!error)return;
+  error.textContent=text||'';
+  error.classList.toggle('visible',!!text);
+  input.classList.toggle('input-error',!!text);
+  input.classList.toggle('input-valid',!text&&!!input.value.trim());
+}
+function clearFieldError(id){setFieldError(id,'')}
+
+// MARK: Címek és függő mezők
+function buildAddress(irsz,varos,kozterulet,tipus,hazszam,egyeb){
+  const prefix=[irsz,varos].filter(Boolean).join(' ');
+  const street=[kozterulet,tipus,hazszam].filter(Boolean).join(' ');
+  let address=prefix;
+  if(street)address+=(address?', ':'')+street;
+  if(egyeb)address+=(address?' ':'')+egyeb;
+  return address.trim();
+}
+function updateAddressPreview(prefix){
+  setValue(prefix+'_preview',buildAddress(getValue(prefix+'_irsz'),getValue(prefix+'_varos'),getValue(prefix+'_kozterulet'),getValue(prefix+'_tipus'),getValue(prefix+'_hazszam'),getValue(prefix+'_egyeb')));
+}
+function copyResidentialAddressToNotification(){
+  ['irsz','varos','kozterulet','tipus','hazszam','egyeb'].forEach(part=>setValue('ertesitesi_'+part,getValue('lakcim_'+part)));
+  setValue('ertesitesi_kulfold',getValue('lakcim_kulfold'));
+  updateAddressPreview('ertesitesi');
+}
+function clearNotificationAddress(){
+  ['irsz','varos','kozterulet','tipus','hazszam','egyeb'].forEach(part=>setValue('ertesitesi_'+part,''));
+  setValue('ertesitesi_preview','');
+  setValue('ertesitesi_kulfold','');
+}
+function updateNotificationState(clearWhenDifferent=true){
+  const same=$('ertesitesi_same').checked;
+  $('ertesitesi_body').classList.toggle('closed',same);
+  if(same)copyResidentialAddressToNotification();
+  else if(clearWhenDifferent)clearNotificationAddress();
+}
+
+function updateAddressMode(preserveNotification=false){
+  const isHungarian=getValue('allampolgarsag')==='Magyar';
+  document.querySelectorAll('.hu-address-fields').forEach(e=>e.style.display=isHungarian?'':'none');
+  document.querySelectorAll('.foreign-address').forEach(e=>e.style.display=isHungarian?'none':'');
+  if(isHungarian){['lakcim','ertesitesi','projekt'].forEach(updateAddressPreview);if($('ertesitesi_same').checked)copyResidentialAddressToNotification()}
+  updateNotificationState(!preserveNotification);
+}
+
+function updateBirthName(){
+  const name=[getValue('vezeteknev'),getValue('keresztnev')].filter(Boolean).join(' ');
+  setValue('szuletesiNev',name);
+}
+
+function formatPhone(value){
+  let d=String(value).replace(/\D/g,'');
+  if(d.startsWith('06'))d='36'+d.substring(2);
+  if(d.startsWith('36'))d=d.substring(2);
+  d=d.substring(0,9);
+  let r='+36';
+  if(d.length)r+='-'+d.substring(0,2);
+  if(d.length>2)r+='/'+d.substring(2,5);
+  if(d.length>5)r+='-'+d.substring(5,9);
+  return r;
+}
+
+function formatTaxId(value){
+  const d=String(value).replace(/\D/g,'').substring(0,10);
+  if(d.length<=3)return d;
+  if(d.length<=6)return d.substring(0,3)+'-'+d.substring(3);
+  return d.substring(0,3)+'-'+d.substring(3,6)+'-'+d.substring(6);
+}
+
+function updateProjectType(){
+  const other=$('projektTipus').value==='Egyéb';
+  $('projektTipusEgyebWrap').classList.toggle('visible',other);
+  if(!other){setValue('projektTipusEgyeb','');clearFieldError('projektTipusEgyeb')}
+}
+
+// MARK: Kliensoldali ellenőrzés
+function validateField(id){
+  const v=getValue(id);
+  let error='';
+  switch(id){
+    case 'vezeteknev':if(!v)error='A vezetéknév megadása kötelező.';break;
+    case 'keresztnev':if(!v)error='A keresztnév megadása kötelező.';break;
+    case 'allampolgarsag':if(!v)error='Válasszon állampolgárságot.';break;
+    case 'adoazonosito':
+      if(!v)error='Az adóazonosító megadása kötelező.';
+      else if($('allampolgarsag').value==='Magyar'&&v.replace(/\D/g,'').length!==10)error='A magyar adóazonosító jel 10 számjegy.';
+      break;
+    case 'email':if(v&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))error='Adjon meg érvényes e-mail címet.';break;
+    case 'telefon':if(v&&v.replace(/\D/g,'').length<9)error='Adjon meg teljes telefonszámot.';break;
+    case 'szuletesiIdo':if(v&&!/^\d{4}-\d{2}-\d{2}$/.test(v))error='Az év pontosan 4 számjegyű legyen.';break;
+    case 'projektTipus':if(!v)error='Válasszon projekt típust.';break;
+    case 'projektTipusEgyeb':if($('projektTipus').value==='Egyéb'&&!v)error='Adja meg a projekt típusát.';break;
+    case 'gdprAccepted':if(!$('gdprAccepted').checked)error='Az adatvédelmi nyilatkozat elfogadása szükséges.';break;
+  }
+  setFieldError(id,error);
+  return !error;
+}
+
+function validateAddress(prefix){
+  if(getValue('allampolgarsag')!=='Magyar')return true;
+  const ids=[prefix+'_irsz',prefix+'_varos',prefix+'_kozterulet',prefix+'_tipus',prefix+'_hazszam'];
+  let ok=true;
+  ids.forEach(id=>{const v=getValue(id);let e='';if(!v)e='Kötelező mező.';setFieldError(id,e);if(e)ok=false});
+  return ok;
+}
+
+function validateAll(){
+  let ok=true;
+  ['vezeteknev','keresztnev','allampolgarsag','adoazonosito','email','telefon','szuletesiIdo','projektTipus','projektTipusEgyeb','gdprAccepted'].forEach(id=>{if($(id)&&!validateField(id))ok=false});
+  if(getValue('allampolgarsag')==='Magyar'){
+    if(!validateAddress('lakcim'))ok=false;
+    if(!$('ertesitesi_same').checked&&!validateAddress('ertesitesi'))ok=false;
+    if(!validateAddress('projekt'))ok=false;
+  }
+  return ok;
+}
+
+function attachBlurValidation(){
+  document.querySelectorAll('input,select').forEach(el=>{
+    if(el.id==='ertesitesi_same'||el.id==='language')return;
+    el.addEventListener('blur',()=>{
+      if(el.id==='adoazonosito'&&$('allampolgarsag').value==='Magyar')el.value=formatTaxId(el.value);
+      if(el.id==='szuletesiIdo'&&el.value){const y=el.value.substring(0,4);if(y.length!==4)setFieldError(el.id,'Az év pontosan 4 számjegyű legyen.');else validateField(el.id);return}
+      validateField(el.id);
+    });
+  });
+}
+
+// MARK: Mezőesemények
+$('telefon').addEventListener('input',function(){this.value=formatPhone(this.value)});
+$('adoazonosito').addEventListener('input',function(){if($('allampolgarsag').value==='Magyar')this.value=formatTaxId(this.value)});
+$('ertesitesi_same').addEventListener('change',updateNotificationState);
+$('projektTipus').addEventListener('change',()=>{updateProjectType();validateField('projektTipus')});
+$('projektTipusEgyeb').addEventListener('blur',()=>validateField('projektTipusEgyeb'));
+$('gdprAccepted').addEventListener('change',()=>validateField('gdprAccepted'));
+
+['vezeteknev','keresztnev'].forEach(id=>$(id).addEventListener('input',updateBirthName));
+$('allampolgarsag').addEventListener('change',function(){
+  const hu=this.value==='Magyar';
+  $('taxLabel').textContent=hu?translations.hu.taxHU:translations.hu.taxForeign;
+  $('taxHint').textContent=hu?'10 számjegy, automatikus formázással.':'Adja meg az adóazonosítót / TIN-t.';
+  $('adoazonosito').inputMode=hu?'numeric':'text';
+  updateAddressMode();
+  validateField('allampolgarsag');
+});
+$('language').addEventListener('change',function(){applyLanguage(this.value)});
+
+function initAddressListeners(prefix){
+  ['_irsz','_varos','_kozterulet','_tipus','_hazszam','_egyeb'].forEach(s=>{
+    const e=$(prefix+s);if(!e)return;
+    e.addEventListener('input',()=>{updateAddressPreview(prefix);if(prefix==='lakcim'&&$('ertesitesi_same').checked)copyResidentialAddressToNotification()});
+    e.addEventListener('change',()=>{updateAddressPreview(prefix);if(prefix==='lakcim'&&$('ertesitesi_same').checked)copyResidentialAddressToNotification()});
+  });
+}
+
+// MARK: Nyelv és lépésnavigáció
+function applyLanguage(language){
+  const t=translations[language]||translations.hu;
+  $('pageTitle').textContent=t.title;$('personalTitle').textContent=t.personal;$('contactTitle').textContent=t.contact;$('propertyTitle').textContent=t.property;
+  $('taxLabel').textContent=getValue('allampolgarsag')==='Magyar'?t.taxHU:t.taxForeign;
+  $('saveButton').textContent=t.send;
+}
+
+
+let currentStep=1;
+const WIZARD_STEP_COUNT=4;
+function showWizardStep(step,scroll=true){
+  currentStep=Math.max(1,Math.min(WIZARD_STEP_COUNT,step));
+  document.querySelectorAll('.wizard-page').forEach(page=>page.classList.toggle('active',Number(page.dataset.step)===currentStep));
+  document.querySelectorAll('.progress-step').forEach(item=>{
+    const n=Number(item.dataset.progress);
+    item.classList.toggle('active',n===currentStep);
+    item.classList.toggle('done',n<currentStep);
+  });
+  if(scroll)window.scrollTo({top:0,behavior:'smooth'});
+}
+function validateWizardStep(step){
+  let ok=true;
+  if(step===1){
+    ['vezeteknev','keresztnev','allampolgarsag','adoazonosito','szuletesiIdo'].forEach(id=>{if($(id)&&!validateField(id))ok=false});
+  }else if(step===2){
+    ['email','telefon'].forEach(id=>{if($(id)&&!validateField(id))ok=false});
+    if(getValue('allampolgarsag')==='Magyar'){
+      if(!validateAddress('lakcim'))ok=false;
+      if(!$('ertesitesi_same').checked&&!validateAddress('ertesitesi'))ok=false;
+    }
+  }else if(step===3){
+    ['projektTipus','projektTipusEgyeb'].forEach(id=>{if($(id)&&!validateField(id))ok=false});
+    if(getValue('allampolgarsag')==='Magyar'&&!validateAddress('projekt'))ok=false;
+  }
+  if(!ok){
+    const first=document.querySelector('.wizard-page.active .input-error');
+    if(first)first.focus({preventScroll:false});
+  }
+  return ok;
+}
+// MARK: Ellenőrző összegzés
+function escapeReviewHtml(value){
+  return String(value==null?'':value).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
+}
+function reviewValue(value){
+  const v=String(value==null?'':value).trim();
+  return v?escapeReviewHtml(v):'<span class="review-empty">nincs megadva</span>';
+}
+function reviewCard(title,step,rows,full=false){
+  return '<section class="review-card'+(full?' full':'')+'"><div class="review-head"><h3>'+escapeReviewHtml(title)+'</h3><button type="button" class="review-edit" onclick="showWizardStep('+step+')">Módosítás</button></div>'+rows.map(r=>'<div class="review-row"><div class="review-label">'+escapeReviewHtml(r[0])+'</div><div class="review-value">'+reviewValue(r[1])+'</div></div>').join('')+'</section>';
+}
+function renderReviewSummary(){
+  const d=collectData();
+  const fullName=[d.vezeteknev,d.keresztnev].filter(Boolean).join(' ');
+  const projectType=d.projektTipus==='Egyéb'?(d.projektTipusEgyeb||'Egyéb'):d.projektTipus;
+  const html=[
+    reviewCard('Személyes adatok',1,[['Név',fullName],['Születési név',d.szuletesiNev],['Állampolgárság',d.allampolgarsag],['Adóazonosító',getValue('adoazonosito')],['Anyja neve',d.anyjaNeve],['Születési hely',d.szuletesiHely],['Születési idő',d.szuletesiIdo]]),
+    reviewCard('Elérhetőség',2,[['Telefon',d.telefon],['Email',d.email],['Lakcím',d.lakcim],['Értesítési cím',d.ertesitesiCim]]),
+    reviewCard('Projekt',3,[['Projekt típusa',projectType],['Projekt címe',d.projektCim],['Helyrajzi szám',d.hrsz]],true)
+  ].join('');
+  $('reviewSummary').innerHTML=html;
+}
+function wizardNext(){
+  if(!validateWizardStep(currentStep))return;
+  const next=currentStep+1;
+  if(next===4)renderReviewSummary();
+  showWizardStep(next);
+}
+function wizardBack(){showWizardStep(currentStep-1)}
+
+// MARK: Űrlapadatok összeállítása
+function collectData(){
+  const isHungarian=getValue('allampolgarsag')==='Magyar';
+  const lakcim=isHungarian?buildAddress(getValue('lakcim_irsz'),getValue('lakcim_varos'),getValue('lakcim_kozterulet'),getValue('lakcim_tipus'),getValue('lakcim_hazszam'),getValue('lakcim_egyeb')):getValue('lakcim_kulfold');
+  const ertesitesiCim=isHungarian?( $('ertesitesi_same').checked?lakcim:buildAddress(getValue('ertesitesi_irsz'),getValue('ertesitesi_varos'),getValue('ertesitesi_kozterulet'),getValue('ertesitesi_tipus'),getValue('ertesitesi_hazszam'),getValue('ertesitesi_egyeb')) ):($('ertesitesi_same').checked?lakcim:getValue('ertesitesi_kulfold'));
+  const projektCim=isHungarian?buildAddress(getValue('projekt_irsz'),getValue('projekt_varos'),getValue('projekt_kozterulet'),getValue('projekt_tipus'),getValue('projekt_hazszam'),getValue('projekt_egyeb')):getValue('projekt_kulfold');
+  return {
+    uid:currentUID,language:getValue('language'),vezeteknev:getValue('vezeteknev'),keresztnev:getValue('keresztnev'),szuletesiNev:getValue('szuletesiNev'),allampolgarsag:getValue('allampolgarsag'),adoazonosito:getValue('adoazonosito').replace(/\D/g,''),telefon:getValue('telefon'),email:getValue('email'),anyjaNeve:getValue('anyjaNeve'),szuletesiHely:getValue('szuletesiHely'),szuletesiIdo:getValue('szuletesiIdo'),
+    lakcim_irsz:isHungarian?getValue('lakcim_irsz'):'',lakcim_varos:isHungarian?getValue('lakcim_varos'):'',lakcim_kozterulet:isHungarian?getValue('lakcim_kozterulet'):'',lakcim_tipus:isHungarian?getValue('lakcim_tipus'):'',lakcim_hazszam:isHungarian?getValue('lakcim_hazszam'):'',lakcim_egyeb:isHungarian?getValue('lakcim_egyeb'):'',lakcim,
+    ertesitesi_same:$('ertesitesi_same').checked,ertesitesi_irsz:isHungarian?getValue('ertesitesi_irsz'):'',ertesitesi_varos:isHungarian?getValue('ertesitesi_varos'):'',ertesitesi_kozterulet:isHungarian?getValue('ertesitesi_kozterulet'):'',ertesitesi_tipus:isHungarian?getValue('ertesitesi_tipus'):'',ertesitesi_hazszam:isHungarian?getValue('ertesitesi_hazszam'):'',ertesitesi_egyeb:isHungarian?getValue('ertesitesi_egyeb'):'',ertesitesiCim,
+    projektTipus:getValue('projektTipus'),projektTipusEgyeb:getValue('projektTipusEgyeb'),projekt_irsz:isHungarian?getValue('projekt_irsz'):'',projekt_varos:isHungarian?getValue('projekt_varos'):'',projekt_kozterulet:isHungarian?getValue('projekt_kozterulet'):'',projekt_tipus:isHungarian?getValue('projekt_tipus'):'',projekt_hazszam:isHungarian?getValue('projekt_hazszam'):'',projekt_egyeb:isHungarian?getValue('projekt_egyeb'):'',projektCim,hrsz:getValue('hrsz'),gdprAccepted:$('gdprAccepted').checked
+  };
+}
+
+// MARK: Adatvédelmi modál
+function openPrivacyModal(e){if(e)e.preventDefault();$('privacyModal').classList.add('open')}
+function closePrivacyModal(){$('privacyModal').classList.remove('open')}
+$('gdprOpenLink').addEventListener('click',openPrivacyModal);
+$('privacyClose').addEventListener('click',closePrivacyModal);
+$('privacyModal').addEventListener('click',function(e){if(e.target===this)closePrivacyModal()});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closePrivacyModal()});
+
+// MARK: Új ügyfél indítása
+function createNewClient(){
+  const button=$('newClientButton');if(!button)return;
+  button.disabled=true;button.textContent='Létrehozás...';
+  google.script.run.withSuccessHandler(result=>{
+    if(!result||!result.success||!result.url)throw new Error('Nem sikerült létrehozni az új ügyfelet.');
+    window.location.href=result.url;
+  }).withFailureHandler(error=>{
+    button.disabled=false;button.textContent='+ Új ügyfél';showError(error&&error.message?error.message:'Hiba történt az új ügyfél létrehozásakor.');
+  }).createNewRecordForWeb();
+}
+
+// MARK: Adatok beküldése és köszönő képernyő
+$('saveButton').addEventListener('click',function(){
+  const button=this;hideMessage();
+  if(!validateAll()){
+    showError('Kérjük, ellenőrizze a pirossal jelölt mezőket.');
+    let badStep=1;
+    for(let step=1;step<=3;step++){if(!validateWizardStep(step)){badStep=step;break}}
+    if(!$('gdprAccepted').checked && badStep===1 && validateWizardStep(1) && validateWizardStep(2) && validateWizardStep(3)) badStep=4;
+    showWizardStep(badStep);
+    const first=document.querySelector('.wizard-page.active .input-error');if(first)first.focus();
+    return
+  }
+  const data=collectData();const language=getValue('language');button.disabled=true;button.textContent=(translations[language]||translations.hu).sending;
+  google.script.run.withSuccessHandler(result=>{
+    if(!result||!result.success||!result.uid){
+      button.disabled=false;applyLanguage(language);showError((translations[language]||translations.hu).error);return;
+    }
+    currentUID=result.uid;
+    try{window.history.replaceState({},'', '?uid='+encodeURIComponent(result.uid))}catch(error){}
+    const t=translations[language]||translations.hu;
+    $('thankYouTitle').textContent=t.thankTitle;
+    $('thankYouText').textContent=t.thankText;
+    $('formContent').hidden=true;
+    $('thankYou').hidden=false;
+    window.scrollTo(0,0);
+    $('thankYou').focus();
+  }).withFailureHandler(error=>{
+    button.disabled=false;applyLanguage(language);showError(error&&error.message?error.message:(translations[language]||translations.hu).error);
+  }).saveData(data);
+});
+
+// MARK: Meglévő rekord betöltése
+function loadExistingData(uid){
+  google.script.run.withSuccessHandler(data=>{
+    if(!data){showError('A megadott UID nem található.');return}
+    currentUID=data.uid;
+    setValue('language',data.language||'hu');setValue('vezeteknev',data.vezeteknev);setValue('keresztnev',data.keresztnev);setValue('szuletesiNev',data.szuletesiNev);setValue('allampolgarsag',data.allampolgarsag);setValue('adoazonosito',data.adoazonosito);if(data.allampolgarsag==='Magyar')setValue('adoazonosito',formatTaxId(data.adoazonosito));setValue('telefon',data.telefon);setValue('email',data.email);setValue('anyjaNeve',data.anyjaNeve);setValue('szuletesiHely',data.szuletesiHely);setValue('szuletesiIdo',data.szuletesiIdo);
+    ['lakcim_irsz','lakcim_varos','lakcim_kozterulet','lakcim_tipus','lakcim_hazszam','lakcim_egyeb'].forEach(id=>setValue(id,data[id]));setValue('lakcim_preview',data.lakcim);setValue('lakcim_kulfold',data.lakcim);
+    ['ertesitesi_irsz','ertesitesi_varos','ertesitesi_kozterulet','ertesitesi_tipus','ertesitesi_hazszam','ertesitesi_egyeb'].forEach(id=>setValue(id,data[id]));setValue('ertesitesi_preview',data.ertesitesiCim);setValue('ertesitesi_kulfold',data.ertesitesiCim);
+    setValue('projektTipus',data.projektTipus);setValue('projektTipusEgyeb',data.projektTipusEgyeb);setValue('projekt_irsz',data.projekt_irsz);setValue('projekt_varos',data.projekt_varos);setValue('projekt_kozterulet',data.projekt_kozterulet);setValue('projekt_tipus',data.projekt_tipus);setValue('projekt_hazszam',data.projekt_hazszam);setValue('projekt_egyeb',data.projekt_egyeb);setValue('projekt_preview',data.projektCim);setValue('projekt_kulfold',data.projektCim);setValue('hrsz',data.hrsz);
+    setChecked('gdprAccepted',data.gdprAccepted);setChecked('ertesitesi_same',data.ertesitesi_same!==false);
+    $('newClientContainer').style.display='none';updateProjectType();updateAddressMode(true);applyLanguage(data.language||'hu');
+    if(!data.szuletesiNev)updateBirthName();
+  }).withFailureHandler(error=>showError(error&&error.message?error.message:'Nem sikerült betölteni az adatokat.')).getData(uid);
+}
+
+function showError(text){const m=$('message');m.className='error';m.textContent=text;m.style.display='block'}
+function hideMessage(){const m=$('message');m.className='';m.textContent='';m.style.display='none'}
+
+// MARK: Inicializálás
+function init(){
+  showWizardStep(1,false);
+  initAddressListeners('lakcim');initAddressListeners('ertesitesi');initAddressListeners('projekt');attachBlurValidation();updateBirthName();updateProjectType();updateAddressMode();applyLanguage(getValue('language'));
+  if(INITIAL_UID){$('newClientContainer').style.display='none';loadExistingData(INITIAL_UID)}
+}
+init();
+</script>
+</body>
+</html>
