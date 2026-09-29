@@ -26,6 +26,8 @@ function sentMail(config) {
       const messages = [];
       if (!selected.length) return {configured: true, messages};
       for await (const item of client.fetch(selected, {uid: true, envelope: true, internalDate: true})) {
+        const recipients = [...item.envelope?.to || [], ...item.envelope?.cc || [], ...item.envelope?.bcc || []];
+        if (!recipients.some(address => String(address.address || '').toLowerCase() === recipient.toLowerCase())) continue;
         messages.push({id: `${client.mailbox.uidValidity}:${item.uid}`, date: (item.internalDate || item.envelope?.date || '').toString(), subject: item.envelope?.subject || '(tárgy nélkül)'});
       }
       messages.sort((a, b) => new Date(b.date) - new Date(a.date));
