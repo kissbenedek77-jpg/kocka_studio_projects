@@ -63,6 +63,26 @@ test('A saját generált helyiséglista (szintfejekkel) is visszaolvasható', ()
   assert.equal(data.tableRows.filter(row=>/összesen/.test(row[0])).length,2);
 });
 
+test('A valós PLN formátum (címsor, „Honszint neve”, szintfejes sorok) feldolgozható', () => {
+  const data=parseRoomText([
+    'Helyiséglista\t\t',
+    'Honszint neve\tHelyiség neve\tMért terület\t',
+    'Földszint\t\t\t',
+    '\tnappali\t26,07\t',
+    '\tszoba\t16,79\t',
+    'Emelet\t\t\t',
+    '\tfürdő\t6,20\t',
+    '\t\t72,06\t'
+  ].join('\r\n'),'PLN/helyiségek.txt');
+  assert.equal(data.totalCents,4906);
+  assert.match(data.listing,/^Földszint\nnappali\t26,07 m²\nszoba\t16,79 m²\nFöldszint összesen\t42,86 m²/);
+  assert.match(data.listing,/Emelet összesen\t6,20 m²/);
+  assert.match(data.listing,/Teljes összesen\t49,06 m²/);
+  assert.match(data.listing,/ELLENŐRIZENDŐ.*72,06 m²/);
+  assert.deepEqual(data.tableRows[1],['Földszint','']);
+  assert.deepEqual(data.tableRows[2],['nappali','26,07']);
+});
+
 test('A feldolgozhatatlan helyiséglista hibája megmondja a teendőt és a hibás sort', () => {
   assert.throws(()=>parseRoomText([
     'Valami;más;dolog',
