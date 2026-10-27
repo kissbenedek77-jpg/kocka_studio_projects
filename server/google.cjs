@@ -361,7 +361,7 @@ function googleClient(config, refreshToken = '') {
   return {
     oauth, sheets, drive, docs, values, valuesIn, updateIn, appendIn, clearIn, batchUpdateIn,
     batchGet, update, append, clear,
-    spreadsheet, getSheetId, ensureSheet, sheetRows, appendSheet, updateSheetRow, setCellLink,
+    spreadsheet, getSheetId, ensureSheet, sheetRows, appendSheet, updateSheetRow, cellLink, setCellLink,
     allRows, project, file, listChildren, findChild, createFolder, ensureFolder,
     copyFile, moveFile, trashFile, renameFile, downloadFile, exportPdf, createFile, uploadFile,
     withPublicRead, getDoc, batchUpdateDoc, folderFor, listProjects,
