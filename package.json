@@ -8,15 +8,17 @@
   },
   "scripts": {
     "start": "node server/index.cjs",
-    "token": "node scripts/google-token.cjs",
-    "check": "node scripts/check-env.cjs",
-    "test": "node --test tests/*.cjs"
+    "test": "node --test --test-concurrency=1 tests/*.cjs"
   },
   "dependencies": {
-    "archiver": "^8.0.0",
+    "@fontsource/source-sans-pro": "^5.3.0",
+    "@fortawesome/fontawesome-free": "7.3.1",
+    "bootstrap": "^5.3.8",
     "googleapis": "^171.0.0",
     "imapflow": "^1.0.195",
     "mailparser": "^3.7.4",
-    "nodemailer": "^7.0.13"
+    "nodemailer": "^10.0.12",
+    "sanitize-html": "^2.18.0",
+    "sharp": "0.34.5"
   }
 }

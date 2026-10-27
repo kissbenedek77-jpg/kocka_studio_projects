@@ -1,55 +1,84 @@
-# AGENTS.md
+# Projektkontextus – Kocka Studió projektmenedzser (Node.js)
 
-## Repo shape
-- Node.js app only; the former Google Apps Script project (`Kód.js`, `appsscript.json`) is deleted. Migration notes: `NODE_MIGRATION.md`.
-- Server: plain `node:http` (no framework), CommonJS (`*.cjs`) in `server/`. UI is the two untouched Hungarian HTML files in root: `index.html` (public client form) and `dashboard_v2.html` (owner dashboard).
-- Data lives outside the repo: the `Adatok` Google Sheet (A–AN, 40 cols) and the Drive project folders (Google Sheets/Drive/Docs APIs + IMAP/SMTP).
+## Cél
+Építészeti ügyfelek és projektek nyilvántartása, dokumentumkészítés és ügyfélkommunikáció egy Node.js webalkalmazásban. Az adatok Google Sheetben, a dokumentumok Google Drive-on (Docs-sablonokból) vannak; a szerver a hivatalos Google Workspace API-kat használja. Az ügyféladat-felvételtől a műszaki leírásig, az ajánlattól a szerződésig és a levélküldésig a teljes folyamat ebben az alkalmazásban fut.
 
-## Module map
-- `server/index.cjs` — HTTP server: `/health`, OAuth login/callback/logout, `/dashboard`, `/api/rpc`, `/form`, `/api/form`. Exports `{server, authenticated, pack, unpack}`; only listens when run directly.
-- `server/config.cjs` — env loading/validation (`loadConfig`, `REQUIRED`).
-- `server/domain.cjs` — pure business logic: `FIELDS`/`buildRow`/`rowToData`, validation, folder names, restart postfix, plan scales, room list, building value, cover selection, merge fields, conditional markers, dates.
-- `server/google.cjs` — low-level Sheets/Drive/Docs clients (`values`, `update`, `listChildren`, `createFile`, `exportPdf`, `getDoc`, `batchUpdateDoc`, `extractFolderLinks`, ...).
-- `server/store.cjs` — project CRUD, UID generation, `saveData`, hidden sheets, document index, config values, locks.
-- `server/project-sheet.cjs` — project data sheet, room list source, plan entries, render cover.
-- `server/docs.cjs` — Docs API manipulation (markers, merge fields, tables, technical description, plan list, rooms, gross coverage, cover).
-- `server/documents.cjs` — document generation, sync, PDF finalization, `_DokumentumIndex`.
-- `server/projects.cjs` — folder resolution/lifecycle (`dashboardPerform`), checks, offers, restart, audio.
-- `server/emails.cjs` / `server/mailer.cjs` — SMTP sending via nodemailer, ZIP package, attachments.
-- `server/mail.cjs` — read sent mail via IMAP (`imapflow` + `mailparser`).
-- `server/ai.cjs` — Gemini audio summary and key config.
-- `server/dashboard.cjs` — RPC method table/dispatcher.
-- `server/form.cjs` — form HTML rendering with `google.script.run` fetch shim + `/api/form` handler.
-- `scripts/google-token.cjs` — one-off OAuth helper to mint `OWNER_REFRESH_TOKEN`.
-- `scripts/check-env.cjs` — `npm run check`: verifies env vars and each live integration (Sheets, Drive, Docs, IMAP, SMTP, Gemini) with Hungarian diagnostics; exit code 1 on failure.
+## Technológiák és futtatás
+- Node.js >= 20, CommonJS. Indítás: `npm start` → `server/index.cjs`; a port a Railway `PORT` változójából jön.
+- Frontend: a Node szerver szolgálja ki a statikus fájlokat (`dashboard_v2.html`, `technical.html`, `index.html`, `public/`), nincs külön build-lépés.
+- Railway: a gyökérben lévő `Dockerfile` készíti a képet (Node 22 + Ghostscript + veraPDF + Poppler + JDK). A `railway.json` az `npm start` parancsot és a `/health` healthchecket írja elő. Egy replika javasolt; Railway Volume nem kell.
+- Tesztek: `npm test` (`node --test --test-concurrency=1 tests/*.cjs`). A tesztek nem hívhatnak élő Google-, postafiók- vagy AI-végpontot; mindent mockolni kell.
+- A részletes üzemeltetési és beállítási leírás a `NODE_MIGRATION.md`-ben van; ez a fájl a munkamódot és a követelményeket rögzíti.
 
-## Run / test
-- `npm ci` then `npm start` (`node server/index.cjs`). Env vars are required at load time; see `.env.example`.
-- Tests: `npm test` (`node --test tests/*.cjs`). They use plain fakes/mocks for Google, Drive, Docs, IMAP and SMTP — no real credentials, no vm/Apps Script globals. `tests/node_server.cjs` spawns the real server with dummy env.
-- `npm run token` starts a local OAuth redirect listener on `127.0.0.1:53682/oauth2callback` to print `OWNER_REFRESH_TOKEN`.
-- `npm run check` (`scripts/check-env.cjs`) hits the live Google/IMAP/SMTP/Gemini endpoints with the configured tokens and prints a per-integration report; safe to run in a Railway shell, reads `.env` locally if present.
-- Health: `GET /health` → `{ok:true}`.
+## Fontos: nincs Apps Script
+- A repó szándékosan **nem tartalmaz** Apps Script részt: nincs `Kód.js`, `appsscript.json`, `.clasp.json`, `imap_bridge`, és nincs `clasp`-munkafolyamat.
+- Ne telepíts vissza Apps Script hidat, `google.script.run` hívást vagy a régi web appra mutató hivatkozást. A régi `?view=dashboard&project=UID` típusú linkeket a Node szerver irányítja át.
+- A korábbi Apps Script telepek és ügyfél UID-k adatként megmaradnak a Sheetben; a kód nem.
 
-## Required env
-- Required: `BASE_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `OWNER_EMAIL`, `SESSION_SECRET` (>=32).
-- Defaulted: `PORT` (3000), `SHEET_ID`, `SHEET_NAME` (`Adatok`), `IMAP_HOST`/`IMAP_PORT` (993).
-- Needed for features: `OWNER_REFRESH_TOKEN` (public form server-side Google access; `/api/form` returns 503 without it), `IMAP_USER`/`IMAP_PASSWORD` (sent mail), `SMTP_HOST`/`SMTP_PORT`/`SMTP_SECURE`/`SMTP_USER`/`SMTP_PASSWORD`/`MAIL_FROM` (sending; falls back to IMAP values), `GEMINI_API_KEY`/`GEMINI_MODEL` (AI summary; dashboard-saved key in `_ProjektBeállítások` wins).
-- OAuth scopes: `openid`, `email`, `spreadsheets`, `drive`, `documents`; redirect `https://<BASE_URL>/auth/callback`. `npm run token` additionally redirects to `http://127.0.0.1:53682/oauth2callback`.
+## Adat- és dokumentumforrások
+- Fő Sheet `Adatok` munkalapja, A–AN oszlop. Az UID, a státusz és a projektmappa-hivatkozás a meglévő helyén marad.
+- Rejtett kiegészítő lapok: `_UgyfelBekuldesek`, `_EmailKuldesek`, `_EmailLetoltesek`, `_EmailMegnyitasok`, valamint a projektenkénti **Műszaki leírás** lap.
+- Drive: projektmappák, `_System` (dokumentumsablonok, levélsablonok), `_Marketing` (kampányadatok), `_Belső` (összefoglalók).
+- A helyi `_System/` mappa a Drive-sablonok verziózott kiinduló példányait tartalmazza; módosításkor a Drive-példányt is frissíteni kell.
 
-## Key workflows / gotchas
-- **UIDs are canonical**: 32 uppercase hex chars in column A. `saveData` with a UID only updates an existing row (unknown UID throws); creating a record requires no UID. `saveData` preserves status, client link, folder URL and `gdprAccepted`, and copies `lakcim*` into the notification address when `ertesitesi_same` is true/undefined.
-- **Sheet shape stays A–AN (40 cols)**. Change `server/domain.cjs` (`FIELDS`, `buildRow`, `rowToData`) and nothing else — do not reintroduce a second mapping.
-- **Hidden sheet names are fixed for compatibility**: `_ProjektMemo`, `_ProjektJegyzetek`, `_ProjektÚjraindítás`, `_ProjektEllenőrzés`, `_ProjektElvártFájlok`, `_ProjektIdővonal`, `_DokumentumIndex`, `_ProjektBeállítások`.
-- **Folder lifecycle** (`dashboardPerform`): `start` requires confirmation `start:<uid>`, checks folder name conflicts before finalizing, moves `_Ajánlatok` → work folder, sets `AKTÍV`. `close` requires `close:<uid>`, finalizes `írásos` documents, moves into `_Elkészült` under the active folder, sets `KÉSZ`. `tests/project_lifecycle.cjs` asserts the ordering.
-- **Document generation** uses templates by ID, writes `_DokumentumIndex`, syncs the technical description from `Tervezési adatok` (gross coverage from H2/J2) and the room list from `PLN/helyiségek.txt` (fallback `helyiséglista.txt`), cover image from the latest `Render` package. Conditional Docs blocks use hidden white 1pt `{{#IF ...}}` / `{{/IF}}` markers.
-- **No Apps Script triggers**: `onEdit` behaviors do not exist; sync/generation runs from dashboard/form actions instead (`dashboardPerform` actions like `sync`, `document:<type>`).
-- **RPC/security**: `/api/rpc` and `/api/form` require same-origin and the `X-Kocka-RPC: 1` / `X-Kocka-Form: 1` header; RPC also requires the owner OAuth session cookie.
-- **Errors**: `server/index.cjs` maps errors to HTTP 400 unless `error.status >= 500`; only 5xx hides the message.
-- **Test seam**: `projects.dashboardPerform(google, store, uid, action, confirmation, hooks)` accepts optional `{getDashboardProject, documents, projectSheet}` overrides; keep it when refactoring.
-- **`appendProjectPostfix`** intentionally mirrors the old behavior (an already-postfixed `*.pdf` can pick up a second postfix).
-- **archiver v8 is ESM**: `require('archiver')` returns `{Archiver, ZipArchive, TarArchive, JsonArchive}`; use `new archiver.ZipArchive(...)`.
+## Fő modulok (`server/`)
+- `index.cjs` – HTTP szerver, útvonalak, munkamenet, `/api/rpc` belépési pont, env-ellenőrzés.
+- `google.cjs` – Google Sheets/Drive/Docs műveletek, projektfa, PDF-audit, dokumentum-előállítás.
+- `quota.cjs` – helyi API-híváskeret (Sheets/Docs/Drive perckorlát); minden új Google-hívás ezen menjen át, és a hívásokat össze kell vonni. Fizetős kvótaemelés nem cél.
+- `client_data.cjs`, `client_submission.cjs`, `room_data.cjs`, `technical_*.cjs` – ügyféladatok, helyiségek, műszaki leírás.
+- `doc_merge.cjs`, `conditional_docs.cjs`, `plans.cjs`, `phases.cjs`, `cover_image.cjs` – dokumentum- és folyamatlogika.
+- `mail.cjs`, `email_*.cjs` – IMAP olvasás, levélküldés (Resend/SMTP), követőkép, letöltési linkek.
+- `marketing_*.cjs` – marketingoldal, Gemini/Cloudflare kreatívok, Facebook/Instagram közzététel.
+- `pdf_quality.cjs` – PDF/A-2b konverzió és validálás; csak sikeres validálás után kerül a fájl a Drive-ra.
+- `local_auth.cjs`, `tracking_credential.cjs` – helyi belépés és titkosított Google-hitelesítő.
 
-## Pointers
-- Drive IDs are extracted defensively from URLs or raw IDs; tests mock Drive (`listChildren`/`createFolder`/`moveFile`).
-- New Google API calls belong in `server/google.cjs`; keep feature logic out of it.
-- Live Google/Docs/Drive/IMAP/SMTP behavior cannot be verified locally — say so instead of claiming it works.
+## Környezeti változók
+- Kötelező indításhoz: `BASE_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `OWNER_EMAIL`, `SESSION_SECRET` (legalább 32 karakter).
+- Nyilvános űrlaphoz és levelezéshez: `GOOGLE_TRACKING_CREDENTIAL` vagy `GOOGLE_SERVICE_ACCOUNT_JSON`.
+- Levélküldés: `EMAIL_PROVIDER=resend` + `RESEND_API_KEY`, `RESEND_FROM_EMAIL` (ajánlott, Railway Free/Hobby alatt SMTP tiltott), vagy `EMAIL_PROVIDER=smtp` + `SMTP_*`.
+- Levelezési panel: `IMAP_HOST`, `IMAP_PORT=993`, `IMAP_USER`, `IMAP_PASSWORD`, szükség esetén `IMAP_SENT_FOLDER`.
+- Helyi belépés: `LOCAL_LOGIN_USERNAME`, `LOCAL_LOGIN_PASSWORD_HASH` (hash: `node scripts/create_local_password_hash.cjs`).
+- AI és marketing: `GEMINI_API_KEY` (+ `GEMINI_TECHNICAL_MODEL`, `GEMINI_MARKETING_MODEL`), `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_AI_TOKEN`, `MARKETING_FOLDER_ID`, `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_ACCESS_TOKEN`, `INSTAGRAM_BUSINESS_ACCOUNT_ID`.
+- Egyéb: `SHEET_ID`, `TEMPLATE_ROOT_FOLDER_ID`, `SYSTEM_FOLDER_ID`, `PROJECT_DATA_TEMPLATE_ID` (van alapértékük), `CLIENT_SUBMISSION_EMAIL=1`, `LEGACY_PUBLIC_ORIGIN`.
+- A teljes lista a `.env.example`-ben van. A `SESSION_SECRET` cseréje érvényteleníti a korábban küldött letöltési linkeket.
+
+## Belépés
+- Tulajdonosi Google OAuth: `/auth/google` → `/auth/callback`, 12 órás munkamenet.
+- Helyi belépés: `/auth/login` → `/auth/local`, 30 napos titkosított, `HttpOnly`, `Secure`, `SameSite=Lax` süti; próbálkozás-korlát címenként.
+- Az OAuth átirányítás pontosan `BASE_URL/auth/callback`. Ha a Google consent screen „Testing” állapotban van, a frissítési token 7 nap után lejárhat, és új `GOOGLE_TRACKING_CREDENTIAL` kell.
+
+## Már egyeztetett ügyféladat-kezelési követelmények
+- Minden ügyfél egyedi azonosítót (UID) kap. Az első beküldés után a bejegyzés módosítható.
+- A lakóhely, a tervezési helyszín és az értesítési cím külön adatcsoport. Az összeállított cím megjelenhet csak olvasható formában.
+- Telefonszám-formátum: `+36-xx/xxx-xxxx`. A születési év négy számjegy. Az állampolgársághoz kapcsolódó adóazonosító mező feltételes.
+- A projekt típusa választható. A GDPR-tájékoztató modálban jelenik meg, elfogadó jelölőnégyzettel.
+- Az űrlap mezőinek ellenőrzése elhagyáskor történik; a felület mobilon is használható.
+- Az ügyfélállapot és az űrlapra mutató hivatkozás a táblázat C–D oszlopában szerepel. Az „Új ügyfél” indítás a dashboardról és közvetlen linkkel is működik.
+- Az ügyfélbeküldés ténye, a hiányos mezők és a megtekintés ideje a `_UgyfelBekuldesek` lapon van; a dashboard jelzi az új vagy hiányos beküldést. A tulajdonosi értesítő e-mail külön kapcsolható (`CLIENT_SUBMISSION_EMAIL=1`).
+
+## Műszaki leírás követelményei
+1. A `/technical?uid=UID` űrlap a projekt **Műszaki leírás** lapjára ment, és mobilon is használható. A mezőket a tényleges sablon és a projektadatok határozzák meg.
+2. Hiányzó adatot nem szabad kitalálni. A számok, mértékegységek és a terv szerinti állapot pontosan, a forrásra visszavezethetően kerüljön a szövegbe.
+3. Az AI-szövegtervezet csak a kitöltött, tényszerű prózamezőkből dolgozik, és csak ellenőrző előnézetbe kerül; mentés és Docs-frissítés külön művelet. A szakmai jóváhagyás a tervező feladata.
+4. A jóváhagyott szöveg a műszaki leírás megfelelő szakaszába kerül; a dokumentum többi részét meg kell őrizni. A DRAFT „ELLENŐRIZENDŐ” jelöléseit a véglegesítés elutasítja.
+5. Övezeti adat (beépítettség, építménymagasság, zöldfelületi és szintterületi mutató) csak az adott ingatlanra hatályos, ellenőrizhető HÉSZ/szabályozási terv alapján, forrás-URL-lel, ellenőrzési dátummal és „Ellenőrizve” állapottal kerülhet be. Bizonytalanság esetén kézi ellenőrzés kell; a rendszer nem kutatja fel automatikusan az övezeti előírásokat.
+6. A „Magyaratád 531” csak példaként hangzott el: nem igazolt övezeti adat és nem alapértelmezett helyszín.
+
+## Dokumentumok, PDF, levelek
+- Az ajánlat, szerződés, meghatalmazás, aláírólap és műszaki leírás Google Docs-másolatként készül; a DRAFT névvel jelölt tartományokon keresztül szinkronizálható.
+- PDF-et csak sikeres PDF/A-2b validálás után ment a rendszer. A tanúsítványos digitális aláírással ellátott PDF-et nem alakítja át, mert az érvénytelenítené az aláírást.
+- A levelek HTML-sablonjai a Drive `_System` mappájában vannak; a szerver küldés előtt tisztítja a HTML-t. A dokumentumletöltés egyedi, lejáró hivatkozáson megy, a megnyitásokat követőkép rögzíti.
+- A küldött levél MIME-másolata IMAP-on az **Elküldött** mappába kerül. Ha a küldés sikerül, de a mentés nem, a felület figyelmeztet; ellenőrzés nélkül nem szabad újraküldeni.
+
+## Fejlesztési munkamód
+- Kódváltoztatás előtt nézd át az érintett modult, a Sheet-oszlopokat és a sablont; utána jelöld, mi van ténylegesen kész.
+- A már működő ügyféladat-folyamatot és UID-kat őrizd meg. Ne rendezd át a meglévő Sheet-oszlopokat vagy a kitöltött adatokat.
+- Új Google-hívásnál használd a `quota.cjs` keretét, és lehetőség szerint vonj össze olvasásokat.
+- A személyes adatokat, jelszavakat, API-kulcsokat és tokeneket ne írd naplóba, forrásfájlba vagy tesztbe. A `.env`, `keys`, `.clasprc.json`, szolgáltatásfiók-JSON és IMAP-jelszó nem kerülhet verziókezelésbe.
+- Éles telepítés előtt helyben futtasd az `npm test`-et, majd a tesztprojekten ellenőrizd az űrlap beküldését, a meglévő rekord módosítását, a mobilos megjelenést, a dokumentumba illesztést és a levélküldést.
+- A `/health` végpontnak `{"ok":true}` választ kell adnia; ez a Railway healthcheck alapja.
+
+## Amit még a projektből kell megállapítani
+- A tényleges Sheet-azonosító, munkalapnevek és a végleges oszlopkiosztás ellenőrzése éles adaton.
+- Az élő Google OAuth-kliens, a Drive-mappák és a sablonok aktuális állapota.
+- A Railway-szolgáltatás tényleges domainje, a beállított változók és a legutóbbi telepítés eredménye.

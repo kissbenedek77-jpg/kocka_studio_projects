@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Ajánlatkérés · Kocka Stúdió</title>
+  <style>
+    :root{--dark:#3E3E3E;--green:#77c59e;--paper:#f5f5f1;--line:#d9dfd9;--ink:#26312e}
+    *{box-sizing:border-box}body{margin:0;color:var(--ink);background:var(--paper)}
+    .inquiry-shell{min-height:100dvh;display:grid;grid-template-columns:minmax(280px,42%) minmax(0,1fr)}
+    .inquiry-intro{position:relative;overflow:hidden;background:var(--dark);color:#fff;padding:clamp(28px,5vw,76px);display:flex;flex-direction:column;justify-content:space-between;gap:70px}
+    .inquiry-intro::after{content:"";position:absolute;right:-140px;bottom:-160px;width:520px;height:520px;border:1px solid #a5d9b830;border-radius:50%;box-shadow:0 0 0 90px #a5d9b811,0 0 0 180px #a5d9b807;pointer-events:none}
+    .inquiry-logo{display:block;max-width:min(250px,75%);max-height:78px;object-fit:contain;object-position:left center}
+    .inquiry-kicker{color:var(--green);font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin:0 0 14px}
+    .inquiry-intro h1{color:#fff;font-size:clamp(38px,5vw,70px);font-weight:300;line-height:1.08;letter-spacing:-.045em;margin:0 0 20px}
+    .inquiry-intro p:not(.inquiry-kicker){color:#d7e2da;font-size:clamp(16px,1.5vw,19px);line-height:1.6;max-width:510px;margin:0}
+    .inquiry-steps{position:relative;z-index:1;display:grid;gap:12px;max-width:430px}.inquiry-step{display:flex;gap:14px;align-items:flex-start;color:#d7e2da;font-size:14px;line-height:1.45}.inquiry-step b{display:grid;place-items:center;flex:0 0 27px;height:27px;border:1px solid var(--green);border-radius:50%;color:var(--green);font-size:12px}
+    .inquiry-panel{width:min(100%,820px);margin:auto;padding:clamp(28px,5vw,68px)}.inquiry-panel header{margin-bottom:30px}.inquiry-panel h2{font-size:clamp(28px,3vw,38px);font-weight:300;margin:0 0 9px}.inquiry-panel header p{color:#637069;margin:0;line-height:1.5}
+    .inquiry-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 16px}.inquiry-field{min-width:0}.inquiry-field.wide{grid-column:1/-1}.inquiry-field label{display:block;margin:0 0 7px;font-weight:700;font-size:13px;color:#36443d}.inquiry-field input,.inquiry-field select,.inquiry-field textarea{display:block;width:100%;min-height:46px;border:1px solid #b8c3ba;border-radius:4px;background:#fff;padding:10px 12px;font:inherit;color:var(--ink)}.inquiry-field textarea{min-height:120px;resize:vertical;line-height:1.5}.inquiry-field input:focus,.inquiry-field select:focus,.inquiry-field textarea:focus{outline:2px solid var(--green);outline-offset:1px}.inquiry-help{display:block;color:#69766e;font-size:12px;line-height:1.4;margin-top:5px}
+    .inquiry-divider{height:1px;background:var(--line);margin:28px 0}.inquiry-photo-box{border:1px dashed #91aa98;border-radius:7px;background:#eff6f0;padding:18px}.inquiry-photo-box h3{font-size:17px;font-weight:600;margin:0 0 6px}.inquiry-photo-box p{color:#52635a;font-size:13px;line-height:1.5;margin:0 0 15px}.inquiry-photo-actions{display:flex;flex-wrap:wrap;gap:9px}.inquiry-photo-actions button{min-height:44px;padding:9px 14px;border:1px solid #6a9476;border-radius:4px;background:#fff;color:var(--ink);font-weight:700}.inquiry-photo-actions button:hover{background:#e1eee4}.inquiry-photo-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}.inquiry-photo-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:10px;margin-top:15px}.inquiry-photo-item{position:relative;background:#fff;border:1px solid var(--line);border-radius:4px;overflow:hidden}.inquiry-photo-item img{display:block;width:100%;height:84px;object-fit:cover}.inquiry-photo-item span{display:block;padding:6px 8px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.inquiry-photo-item button{position:absolute;top:4px;right:4px;width:29px;height:29px;border:0;border-radius:50%;background:#26312ee8;color:#fff;font-size:17px;line-height:1}
+    .inquiry-privacy{margin:24px 0 18px;font-size:13px;line-height:1.5;color:#52635a}.inquiry-privacy p{margin:0 0 10px}.inquiry-privacy-link{color:#1a73e8;text-decoration:underline;text-underline-offset:3px}.inquiry-privacy label{display:flex;align-items:flex-start;gap:9px;cursor:pointer}.inquiry-privacy input{width:18px;height:18px;flex:0 0 18px;margin:1px 0 0}
+    .privacy-modal{display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center;overflow:auto;padding:16px;background:rgba(0,0,0,.5)}.privacy-modal.open{display:flex}.privacy-modal-content{position:relative;width:100%;max-width:760px;max-height:90dvh;overflow:auto;padding:24px;border-radius:10px;background:#fff;box-shadow:0 8px 35px rgba(0,0,0,.25)}.privacy-modal-content h2{margin:0 40px 20px 0}.privacy-modal-content h3{margin:20px 0 8px;font-size:16px}.privacy-modal-content p,.privacy-modal-content li{font-size:14px;line-height:1.55}.privacy-modal-content p{margin:0 0 12px}.privacy-modal-content li{margin:0 0 12px}.privacy-close{position:absolute;right:10px;top:8px;min-width:40px;min-height:40px;border:0;background:transparent;color:#333;font-size:28px;line-height:1;cursor:pointer}.privacy-close:focus-visible,.inquiry-privacy-link:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+    .inquiry-submit{width:100%;min-height:52px;border:0;border-radius:4px;background:var(--green);color:#1e3228;font-size:16px;font-weight:700;cursor:pointer}.inquiry-submit:disabled{opacity:.65;cursor:wait}.inquiry-message{margin:15px 0;padding:14px;border-left:4px solid #bd5148;background:#fff1ee;color:#812e27;line-height:1.45}.inquiry-success{padding:24px;border:1px solid #a1cdb0;border-radius:6px;background:#edf8f0}.inquiry-success h2{margin:0 0 12px}.inquiry-success p{line-height:1.55}.inquiry-footer{margin-top:22px;color:#65736b;font-size:12px;line-height:1.5}
+    @media(max-width:1000px){.inquiry-shell{grid-template-columns:1fr}.inquiry-intro{gap:34px;padding:30px max(24px,5vw)}.inquiry-intro::after{width:340px;height:340px;bottom:-240px}.inquiry-intro h1{max-width:620px}.inquiry-steps{grid-template-columns:repeat(3,1fr);max-width:none}.inquiry-panel{padding:32px max(24px,5vw)}}
+    @media(max-width:620px){.inquiry-intro{padding:24px 18px;gap:24px}.inquiry-logo{max-width:185px;max-height:54px}.inquiry-intro h1{font-size:39px}.inquiry-steps{grid-template-columns:1fr;gap:8px}.inquiry-step{font-size:12px}.inquiry-step b{flex-basis:23px;height:23px}.inquiry-panel{padding:28px 17px 50px}.inquiry-grid{grid-template-columns:1fr;gap:16px}.inquiry-field.wide{grid-column:auto}.privacy-modal{padding:0;align-items:stretch}.privacy-modal-content{width:100%;max-width:none;max-height:100dvh;min-height:100dvh;border-radius:0;padding:20px 14px 28px}}
+  </style>
+</head>
+<body>
+  <main class="inquiry-shell">
+    <section class="inquiry-intro" aria-labelledby="inquiryTitle">
+      <img class="inquiry-logo" src="/assets/brand/logo2.png" alt="Kocka Stúdió">
+      <div><p class="inquiry-kicker">Építészeti tervezés · első lépés</p><h1 id="inquiryTitle">Mesélj a tervezett projektről.</h1><p>Az alapadatok és a feltöltött képek alapján felvesszük veled a kapcsolatot, és előkészítjük az ajánlatot.</p></div>
+      <div class="inquiry-steps"><div class="inquiry-step"><b>1</b><span>Írd le röviden a projektet.</span></div><div class="inquiry-step"><b>2</b><span>Tölts fel vázlatokat és képeket, ha vannak.</span></div><div class="inquiry-step"><b>3</b><span>Az ajánlatkérést rögzítjük, majd jelentkezünk.</span></div></div>
+    </section>
+    <section class="inquiry-panel" aria-labelledby="formTitle">
+      <header><h2 id="formTitle">Ajánlatkérés</h2><p>A csillaggal jelölt mezők kitöltése szükséges.</p></header>
+      <form id="inquiryForm" novalidate>
+        <div class="inquiry-grid">
+          <div class="inquiry-field"><label for="lastName">Vezetéknév *</label><input id="lastName" name="lastName" autocomplete="family-name" maxlength="80" required></div>
+          <div class="inquiry-field"><label for="firstName">Keresztnév *</label><input id="firstName" name="firstName" autocomplete="given-name" maxlength="80" required></div>
+          <div class="inquiry-field"><label for="email">E-mail-cím *</label><input id="email" name="email" type="email" autocomplete="email" maxlength="254" required></div>
+          <div class="inquiry-field"><label for="phone">Telefonszám *</label><input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="40" required></div>
+        </div>
+        <div class="inquiry-divider"></div>
+        <div class="inquiry-grid">
+          <div class="inquiry-field wide"><label for="projectType">Milyen projekthez kérsz ajánlatot? *</label><select id="projectType" name="projectType" required><option value="">Válassz projekt típust…</option><option value="Új építés">Új építés</option><option value="Bővítés">Bővítés</option><option value="Átépítés">Átépítés</option><option value="Egyéb">Egyéb</option></select></div>
+          <div id="projectTypeOtherWrap" class="inquiry-field wide" hidden><label for="projectTypeOther">Egyéb projekt típus *</label><input id="projectTypeOther" name="projectTypeOther" maxlength="100" disabled></div>
+          <div class="inquiry-field"><label for="city">Település *</label><input id="city" name="city" autocomplete="address-level2" maxlength="100" required></div>
+          <div class="inquiry-field"><label for="parcelNumber">Helyrajzi szám</label><input id="parcelNumber" name="parcelNumber" maxlength="60"><small class="inquiry-help">Cím nélkül is megadható a településsel együtt.</small></div>
+          <div class="inquiry-field"><label for="street">Utca / közterület</label><input id="street" name="street" autocomplete="address-line1" maxlength="120"></div>
+          <div class="inquiry-field"><label for="houseNumber">Házszám</label><input id="houseNumber" name="houseNumber" maxlength="40"><small class="inquiry-help">Teljes címet vagy helyrajzi számot kérünk.</small></div>
+          <div class="inquiry-field wide"><label for="description">Mit szeretnél megvalósítani? *</label><textarea id="description" name="description" maxlength="3000" placeholder="Méret, funkció, meglévő állapot, fontos igények és tervezett időzítés" required></textarea></div>
+        </div>
+        <div class="inquiry-divider"></div>
+        <div class="inquiry-photo-box"><h3>Vázlatok és fotók</h3><p>Töltsd fel ide a kézzel rajzolt vázlatod fotóját, helyszíni és magazinfotókat, vagy bármilyen más képet, ami segít megérteni a projektet.</p><p>Legfeljebb 6 kép, képenként 6 MB, összesen 16 MB. JPEG, PNG, WebP és HEIC formátum fogadható. A képek a projekt kapott anyagai közé és az értesítő levél mellékletébe kerülnek.</p>
+          <div class="inquiry-photo-actions"><button id="choosePhotos" type="button">Fájlok kiválasztása</button><button id="takePhoto" type="button">Fotó készítése</button></div>
+          <input id="existingPhotos" class="inquiry-photo-input" type="file" accept="image/jpeg,image/png,image/webp,image/heic,.heic" multiple tabindex="-1" aria-hidden="true">
+          <input id="cameraPhoto" class="inquiry-photo-input" type="file" accept="image/*" capture="environment" tabindex="-1" aria-hidden="true">
+          <div id="photoList" class="inquiry-photo-list" aria-live="polite"></div>
+        </div>
+        <div class="inquiry-privacy"><p>Az adatokat a megadott célból és a vonatkozó adatvédelmi szabályoknak megfelelően kezeljük. <a href="#privacyModal" class="inquiry-privacy-link" id="gdprOpenLink">Az adatvédelmi tájékoztató elolvasása</a></p><label><input name="privacy" type="checkbox" value="yes" required><span>Elolvastam és elfogadom az adatvédelmi nyilatkozatot. *</span></label></div>
+        <input name="website" type="text" autocomplete="off" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px">
+        <div id="inquiryMessage" class="inquiry-message" role="alert" hidden></div>
+        <button id="submitInquiry" class="inquiry-submit" type="submit">Ajánlatkérés elküldése</button>
+      </form>
+      <section id="inquirySuccess" class="inquiry-success" role="status" hidden><h2>Köszönjük az ajánlatkérést!</h2><p id="inquirySuccessText"></p></section>
+      <p class="inquiry-footer">Kocka Stúdió · <a href="mailto:info@kockastudio.hu">info@kockastudio.hu</a></p>
+    </section>
+  </main>
+  <div id="privacyModal" class="privacy-modal" role="dialog" aria-modal="true" aria-labelledby="privacyTitle">
+    <div class="privacy-modal-content">
+      <button type="button" class="privacy-close" id="privacyClose" aria-label="Bezárás">×</button>
+
+      <h2 id="privacyTitle">Adatkezelési tájékoztató</h2>
+
+      <p><strong>Hatályos:</strong> 2026. szeptember 24.</p>
+
+      <h3>1. Az adatkezelő</h3>
+      <p>
+        <strong>Név:</strong> Kocka Stúdió Tervező és Szolgáltató Betéti Társaság (Kocka Stúdió Bt.)<br>
+        <strong>Székhely:</strong> 7451 Kaposvár, Bánkutai u. 41.<br>
+        <strong>Cégjegyzékszám:</strong> 14-06-308797<br>
+        <strong>Adószám:</strong> 21984712-2-14<br>
+        <strong>E-mail:</strong> info@kockastudio.hu<br>
+        <strong>Telefon:</strong> +36-70/318-1632
+      </p>
+
+      <h3>2. Az adatkezelés célja</h3>
+      <p>
+        Az ügyféli kapcsolatfelvétel, üzenetek megválaszolása, építészeti tervezési, tanácsadási,
+        hatósági ügyintézési és kapcsolódó mérnöki szolgáltatások előkészítése, szerződések megkötése
+        és teljesítése, valamint a kapcsolódó dokumentumok elkészítése.
+      </p>
+
+      <h3>3. Kezelt adatok köre</h3>
+      <p>
+        Az online kapcsolatfelvételi űrlapon megadott adatok: név, e-mail-cím, telefonszám,
+        valamint az üzenet mezőben önkéntesen megadott egyéb személyes, ingatlanra vagy projektre vonatkozó adatok.
+        Szerződéskötés esetén az adatok köre kiegészülhet a számlázási címmel, adószámmal/adóazonosító jellel és hivatalos iratokhoz szükséges születési adatokkal.
+      </p>
+
+      <h3>4. Az adatkezelés jogalapja</h3>
+      <p>
+        Az adatkezelés jogalapja elsődlegesen a GDPR 6. cikk (1) bekezdés b) pontja: <strong>szerződés teljesítése</strong>
+        illetve a szerződés megkötését megelőző lépések megtétele az érintett kérésére (ajánlatkérés, kapcsolatfelvétel).
+        Számlázás és iratmegőrzés esetén a jogalap jogi kötelezettség teljesítése (GDPR 6. cikk (1) c) pont).
+      </p>
+
+      <h3>5. Adatfeldolgozók és adattovábbítás</h3>
+      <p>
+        Az adatok tárolására és feldolgozására az alábbi adatfeldolgozók informatikai rendszereit használjuk:
+      </p>
+      <ul>
+        <li><strong>Google Cloud / IT rendszerek:</strong> Google Ireland Limited (Gordon House, Barrow Street, Dublin 4, Ireland) – az űrlapadatok feldolgozása Google Apps Script és Google Sheets segítségével történik.</li>
+        <li><strong>Webtárhely-szolgáltató:</strong> Mobila Magyarország Kft (2310 Szigetszentmiklós, Csepeli u. 15-17.)</li>
+      </ul>
+
+      <h3>6. Adatmegőrzési idő</h3>
+      <ul>
+        <li><strong>Sima kapcsolatfelvétel / ajánlatkérés esetén (ha nem jön létre szerződés):</strong> Az üzenet megválaszolásától, illetve az üzleti kommunikáció lezárultától számított <strong>1 év</strong> elteltével az adatok törlésre kerülnek.</li>
+        <li><strong>Létrejött szerződés esetén:</strong> A számviteli kötelezettségek teljesítése érdekében a Számviteli törvény alapján a számlákat és a szerződéses adatokat <strong>8 évig</strong> köteles megőrizni az adatkezelő.</li>
+      </ul>
+
+      <h3>7. Az érintett jogai</h3>
+      <p>
+        Önnek joga van kérelmezni az adatkezelőtől az Önre vonatkozó személyes adatokhoz való hozzáférést,
+        azok helyesbítését, törlését (a jogszabályi kötelezettségek keretein belül) vagy kezelésének korlátozását.
+        Tiltakozhat a személyes adatok kezelése ellen, valamint megilleti az adathordozhatósághoz való jog is.
+      </p>
+
+      <h3>8. Jogorvoslat és panasz</h3>
+      <p>
+        Amennyiben úgy érzi, hogy személyes adatainak kezelése során megsértették a GDPR előírásait,
+        panaszt tehet a felügyeleti hatóságnál:<br><br>
+        <strong>Nemzeti Adatvédelmi és Információszabadság Hatóság (NAIH)</strong><br>
+        Postacím: 1055 Budapest, Falk Miksa utca 9-11.<br>
+        E-mail: ugyfelszolgalat@naih.hu<br>
+        Web: www.naih.hu
+      </p>
+
+    </div>
+  </div>
+  <script>
+    const form=document.getElementById('inquiryForm'),message=document.getElementById('inquiryMessage'),
+      list=document.getElementById('photoList'),photos=[];
+    const maxPhotos=6,maxPhotoBytes=6*1024*1024,maxTotalPhotoBytes=16*1024*1024;
+    const projectType=document.getElementById('projectType'),projectTypeOther=document.getElementById('projectTypeOther'),
+      projectTypeOtherWrap=document.getElementById('projectTypeOtherWrap');
+    function updateProjectType(){const other=projectType.value==='Egyéb';projectTypeOtherWrap.hidden=!other;
+      projectTypeOther.required=other;projectTypeOther.disabled=!other;if(!other)projectTypeOther.value=''}
+    projectType.addEventListener('change',updateProjectType);updateProjectType();
+    const privacyModal=document.getElementById('privacyModal'),privacyLink=document.getElementById('gdprOpenLink'),
+      privacyClose=document.getElementById('privacyClose');
+    function closePrivacyModal(){privacyModal.classList.remove('open');privacyLink.focus()}
+    privacyLink.addEventListener('click',event=>{event.preventDefault();privacyModal.classList.add('open');privacyClose.focus()});
+    privacyClose.addEventListener('click',closePrivacyModal);
+    privacyModal.addEventListener('click',event=>{if(event.target===privacyModal)closePrivacyModal()});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&privacyModal.classList.contains('open'))closePrivacyModal()});
+    function showError(text){message.textContent=text;message.hidden=false;message.scrollIntoView({block:'nearest',behavior:'smooth'})}
+    function renderPhotos(){list.replaceChildren();for(const [index,file] of photos.entries()){
+      const card=document.createElement('div');card.className='inquiry-photo-item';
+      const image=document.createElement('img'),url=URL.createObjectURL(file);
+      image.src=url;image.alt='Kiválasztott fotó '+(index+1);image.onload=()=>URL.revokeObjectURL(url);
+      image.onerror=()=>{URL.revokeObjectURL(url);image.remove()};
+      const title=document.createElement('span');title.textContent=file.name||'Fotó '+(index+1);
+      const remove=document.createElement('button');remove.type='button';remove.textContent='×';
+      remove.setAttribute('aria-label','Fotó eltávolítása: '+title.textContent);
+      remove.addEventListener('click',()=>{photos.splice(index,1);renderPhotos()});
+      card.append(image,title,remove);list.append(card)
+    }}
+    function addPhotos(files){message.hidden=true;for(const file of files){
+      if(photos.length>=maxPhotos){showError('Legfeljebb 6 fotót tölthetsz fel.');break}
+      if(file.size>maxPhotoBytes){showError('Egy fotó legfeljebb 6 MB lehet.');continue}
+      if(photos.reduce((total,item)=>total+item.size,0)+file.size>maxTotalPhotoBytes){
+        showError('A fotók összesen legfeljebb 16 MB méretűek lehetnek.');continue}
+      if(!file.type.startsWith('image/')&&!/\.(jpg|jpeg|png|webp|heic)$/i.test(file.name)){
+        showError('Csak képfájl tölthető fel.');continue}
+      photos.push(file)
+    }renderPhotos()}
+    document.getElementById('choosePhotos').addEventListener('click',()=>document.getElementById('existingPhotos').click());
+    document.getElementById('takePhoto').addEventListener('click',()=>document.getElementById('cameraPhoto').click());
+    for(const id of ['existingPhotos','cameraPhoto'])document.getElementById(id).addEventListener('change',event=>{
+      addPhotos(event.target.files);event.target.value=''
+    });
+    form.addEventListener('submit',async event=>{event.preventDefault();message.hidden=true;
+      if(!form.reportValidity())return;
+      if(!(document.getElementById('street').value.trim()&&document.getElementById('houseNumber').value.trim())&&
+          !document.getElementById('parcelNumber').value.trim()){
+        showError('Add meg a teljes helyszíni címet vagy a helyrajzi számot.');return}
+      const button=document.getElementById('submitInquiry');button.disabled=true;button.textContent='Ajánlatkérés küldése…';
+      try{const payload=new FormData(form);for(const photo of photos)payload.append('photos',photo,photo.name);
+        const response=await fetch('/api/inquiry',{method:'POST',credentials:'omit',
+          headers:{'X-Kocka-Inquiry':'1'},body:payload});
+        const result=await response.json();if(!response.ok)throw Error(result.error||'A küldés nem sikerült.');
+        const incomplete=result.prepared===false||result.photosSaved<photos.length;
+        document.getElementById('inquirySuccessText').textContent='Az ajánlatkérés azonosítója: '+result.uid+
+          (incomplete?'. A projekt vagy néhány fotó előkészítése nem sikerült; kérjük, írd meg ezt és az azonosítót az info@kockastudio.hu címre.':
+            result.notificationSent?'. Hamarosan felvesszük veled a kapcsolatot.':
+            '. A kérés rögzült, de az automatikus értesítés nem ment ki. Kérjük, jelezd ezt az info@kockastudio.hu címen az azonosítóval.');
+        form.hidden=true;document.getElementById('inquirySuccess').hidden=false;
+        document.getElementById('inquirySuccess').scrollIntoView({block:'start',behavior:'smooth'});
+      }catch(error){showError(error.message||'A küldés nem sikerült.');button.disabled=false;button.textContent='Ajánlatkérés elküldése'}
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "id": "/dashboard",
+  "name": "Kocka Stúdió Projektmenedzser",
+  "short_name": "Kocka Projektek",
+  "description": "A Kocka Stúdió projektmenedzser alkalmazása.",
+  "lang": "hu",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#3e3e3e",
+  "theme_color": "#3e3e3e",
+  "icons": [
+    {"src": "/assets/kocka-icon-192.png?v=3", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "/assets/kocka-icon-512.png?v=3", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

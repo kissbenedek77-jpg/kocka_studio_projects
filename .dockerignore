@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+!.env.example
+.clasprc.json
+keys
+node_modules
+_backups
+coverage
+*.log

@@ -1,0 +1,992 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <title>Marketing demó · Kocka Stúdió</title>
+  <style>
+    :root{--ink:#343434;--muted:#68716b;--dark:#3e3e3e;--mint:#77c59e;--line:#dfe5df;--soft:#f5f7f4}
+    *{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:#f5f5f5;color:var(--ink)}button,input,textarea,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:default}
+    .market-top{background:var(--dark);color:#fff;padding:15px max(20px,calc((100vw - 1500px)/2));display:flex;align-items:center;justify-content:space-between;gap:20px}.market-logo{width:min(190px,45vw);max-height:58px;object-fit:contain}.market-top nav{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.market-top a{color:#fff;text-decoration:none;font-size:13px}.market-top a:hover{text-decoration:underline}.demo-pill{border:1px solid var(--mint);border-radius:100px;padding:4px 10px;color:var(--mint);font-size:12px;font-weight:700;letter-spacing:.07em}
+    .market-shell{max-width:1500px;margin:auto;padding:30px 20px 90px}.market-intro{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:22px}.market-intro h1{margin:0 0 8px;font-size:clamp(30px,4vw,48px);font-weight:300;letter-spacing:-.04em}.market-intro p{max-width:800px;margin:0;color:var(--muted);line-height:1.5}.market-intro .note{font-size:12px;max-width:240px;text-align:right;color:var(--muted)}
+    .market-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:17px}.market-kpi,.market-card{min-width:0;background:#fff;border:1px solid var(--line);border-radius:6px;box-shadow:0 3px 16px #2b2b2b0a}.market-kpi{padding:18px}.market-kpi small{display:block;color:var(--muted);margin-bottom:8px}.market-kpi strong{font-size:clamp(22px,2.6vw,32px);font-weight:600}.market-kpi em{display:block;color:var(--muted);font-size:11px;font-style:normal;margin-top:4px}
+    .market-overview{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,.7fr);gap:14px;margin-bottom:18px}.market-card{padding:20px}.market-card h2{font-size:21px;font-weight:400;margin:0 0 6px}.market-card .sub{font-size:12px;color:var(--muted);margin:0 0 15px}.market-chart{min-height:142px;display:flex;align-items:end;gap:9px;border-bottom:1px solid var(--line);padding:0 8px 0}.market-bar{display:flex;align-items:center;flex:1;flex-direction:column;justify-content:flex-end;min-width:0;gap:6px;height:142px}.market-bar i{display:block;width:min(100%,36px);min-height:3px;border-radius:4px 4px 0 0;background:var(--mint)}.market-bar span{font-size:10px;color:var(--muted);white-space:nowrap}.market-funnel{display:grid;gap:10px}.market-funnel div{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:8px;font-size:13px}.market-funnel b{font-size:17px}
+    .market-workspace{display:grid;grid-template-columns:minmax(230px,285px) minmax(0,1fr);gap:14px;align-items:start}.market-sidebar{position:sticky;top:16px}.market-side-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.market-side-head h2{margin:0;font-size:20px;font-weight:400}.market-list{display:grid;gap:8px;margin:15px 0}.market-campaign{width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:5px;padding:12px;color:var(--ink);min-height:64px}.market-campaign.active{border-color:#4fa977;box-shadow:inset 4px 0 var(--mint)}.market-campaign strong{display:block;font-size:14px}.market-campaign small{display:block;color:var(--muted);margin-top:4px}.market-main{display:grid;gap:14px;min-width:0}.market-title-row{display:flex;justify-content:space-between;align-items:start;gap:10px}.market-status{font-size:12px;border-radius:40px;background:#eaf5ed;color:#246b43;padding:5px 10px;white-space:nowrap}.market-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.market-field{min-width:0}.market-field.wide{grid-column:1/-1}.market-field label{display:block;font-size:12px;font-weight:700;margin-bottom:5px;color:#526057}.market-field input,.market-field textarea,.market-field select,.market-copy input,.market-copy textarea,.market-link{display:block;width:100%;border:1px solid #bcc9bf;border-radius:4px;background:#fff;color:var(--ink);min-height:43px;padding:9px 10px}.market-field textarea,.market-copy textarea{min-height:86px;resize:vertical;line-height:1.45}.market-checks{display:flex;flex-wrap:wrap;gap:10px}.market-checks label{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:4px;padding:8px 11px;min-height:42px;font-size:13px;cursor:pointer}.market-checks input{accent-color:#387d54}.market-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:17px}.market-button{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border:1px solid var(--dark);border-radius:4px;background:var(--dark);color:white;min-height:42px;padding:9px 14px;font-weight:600;font-size:13px}.market-button:hover{background:#202824}.market-button.alt{background:#fff;color:var(--dark)}.market-button.alt:hover{background:var(--soft)}.market-button.mint{background:var(--mint);color:#173c27;border-color:var(--mint)}.market-button.small{min-height:36px;padding:6px 10px;font-size:12px}.market-button.danger{border-color:#a34b45;color:#8c3933;background:#fff}.market-notice{margin:0 0 13px;padding:10px 12px;border-left:3px solid var(--mint);background:#eff8f1;font-size:13px}.market-notice.error{border-color:#ac514b;background:#fff1ef;color:#843a34}
+    .market-creative{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.8fr);gap:14px}.market-copy-list{display:grid;gap:12px}.market-copy{border:1px solid var(--line);border-radius:5px;padding:13px;background:#fff}.market-copy h3{display:flex;justify-content:space-between;align-items:center;font-size:15px;margin:0 0 9px}.market-copy label{display:block;font-size:11px;color:var(--muted);margin:8px 0 4px}.market-copy textarea{min-height:100px}.market-preview{border:1px solid var(--line);background:var(--soft);border-radius:5px;padding:16px;align-self:start;position:sticky;top:16px}.market-preview small{color:var(--muted)}.market-preview h3{font-size:19px;margin:14px 0 9px}.market-preview p{white-space:pre-wrap;line-height:1.5;font-size:14px}.market-preview .mock-action{display:block;background:var(--mint);padding:10px;text-align:center;font-size:13px;font-weight:700}.market-link-row{display:flex;gap:7px;margin:8px 0 12px}.market-link{font-size:12px;min-width:0}.market-calendar{display:grid;gap:8px}.market-calendar-item{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:6px 0;font-size:13px}.market-help{font-size:12px;color:var(--muted);line-height:1.5;margin:7px 0 0}.market-empty{padding:18px;background:var(--soft);color:var(--muted);font-size:13px}.market-suggestions{margin:0;padding-left:19px;line-height:1.6;font-size:13px}
+    .market-image-workspace{display:grid;grid-template-columns:minmax(260px,.8fr) minmax(0,1fr);gap:20px;align-items:start}.market-image-controls{display:grid;gap:12px}.market-image-controls .market-field input,.market-image-controls .market-field select{display:block;width:100%;border:1px solid #bcc9bf;border-radius:4px;background:#fff;color:var(--ink);min-height:43px;padding:9px 10px}.market-image-controls .market-field input[type=file]{padding:8px}.market-image-colors{display:flex;gap:12px}.market-image-colors .market-field{flex:1}.market-image-controls .market-field input[type=color]{padding:3px;min-height:43px}.market-image-preview{min-width:0;text-align:center;background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:14px}.market-image-preview canvas{display:block;width:auto;max-width:100%;max-height:580px;height:auto;margin:auto;box-shadow:0 8px 25px #23352d25;background:#fff}.market-image-preview .market-help{text-align:left}.market-photo-list{display:flex;gap:8px;overflow-x:auto}.market-photo-choice{border:2px solid var(--line);border-radius:4px;background:#fff;padding:4px;min-width:74px;max-width:90px}.market-photo-choice.active{border-color:#38925c}.market-photo-choice img{display:block;width:64px;height:56px;object-fit:cover}.market-photo-choice span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}.market-full-ad{margin:14px auto 0;max-width:580px;text-align:left;background:#fff;border:1px solid var(--line);padding:13px}.market-full-ad strong,.market-full-ad small{display:block}.market-full-ad p{white-space:pre-wrap;line-height:1.45;font-size:13px}.market-full-ad .mock-action{display:block;background:var(--mint);padding:10px;text-align:center;font-size:13px;font-weight:700}
+    .market-brand{margin-bottom:17px}.market-brand summary{font-size:20px;cursor:pointer;min-height:42px}.market-brand-grid,.market-ai-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.market-brand-grid .market-field input,.market-brand-grid .market-field select,.market-ai-grid .market-field input,.market-ai-grid .market-field textarea{display:block;width:100%;border:1px solid #bcc9bf;border-radius:4px;min-height:43px;padding:8px;background:#fff}.market-brand-grid input[type=color]{padding:3px}.market-brand-logo{display:block;max-width:160px;max-height:80px;margin:8px 0}.market-override{display:flex;align-items:center;gap:5px;margin:3px 0;font-size:12px}.market-override input{width:auto!important;min-height:0!important}.market-ai-grid .market-field textarea{min-height:90px}.market-ai-grid .market-field.wide{grid-column:1/-1}.market-ai-preview{display:block;max-width:130px;max-height:90px;margin-top:6px}.market-ai-busy{opacity:.7;pointer-events:none}
+    .market-generated-image{margin:15px auto 0;max-width:580px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:5px;text-align:left}.market-generated-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.market-generated-image strong{font-size:13px}.market-generated-thumb{display:block;width:100%;max-height:240px;object-fit:contain;background:var(--soft);border:0;cursor:zoom-in}.market-generated-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.market-generated-actions .market-button{flex:1 1 auto}.market-generated-image .market-button.danger{min-width:42px}.market-image-dialog{border:0;border-radius:8px;padding:12px;max-width:min(96vw,1200px);max-height:96vh;background:#fff;box-shadow:0 18px 60px #0007}.market-image-dialog::backdrop{background:#101814c9}.market-image-dialog img{display:block;max-width:calc(96vw - 24px);max-height:calc(96vh - 80px);width:auto;height:auto;object-fit:contain;margin:auto}.market-image-dialog .market-generated-head{margin-bottom:8px}
+    .market-type-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:5px;min-width:0;padding:7px;border:1px solid var(--line);border-radius:5px;background:var(--soft)}.market-brand-grid .market-type-toolbar{grid-column:1/-1}.market-type-label{flex:0 0 90px;font-size:12px;font-weight:700;color:#526057}.market-type-toolbar select,.market-type-toolbar input[type=number]{height:38px;min-height:38px;border:1px solid #bcc9bf;border-radius:4px;background:#fff;color:var(--ink);padding:5px 7px}.market-type-toolbar .market-type-font{flex:1 1 150px;min-width:120px;max-width:230px}.market-type-toolbar .market-type-size{flex:0 0 65px;width:65px}.market-type-toolbar .market-type-weight{flex:0 0 90px;width:90px}.market-type-tool{display:inline-flex;align-items:center;justify-content:center;flex:0 0 38px;width:38px;height:38px;padding:0;border:1px solid #bcc9bf;border-radius:4px;background:#fff;color:var(--ink);font-size:15px;font-weight:700}.market-type-tool[aria-pressed=true]{background:var(--dark);border-color:var(--dark);color:#fff}.market-type-tool:hover{border-color:#448c65}.market-type-tool:focus-visible,.market-type-toolbar select:focus-visible,.market-type-toolbar input:focus-visible{outline:2px solid #2f8754;outline-offset:2px}.market-type-reset{font-size:19px}.market-visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+    .market-output-section{margin-top:24px;border-top:1px solid var(--line);padding-top:20px}.market-output-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.market-output-card{border:1px solid var(--line);border-radius:6px;padding:10px;background:#fff;min-width:0}.market-output-card img{width:100%;height:160px;object-fit:contain;background:#eceeea}.market-output-card a{display:block;overflow-wrap:anywhere;font-weight:600;margin-top:8px}.market-output-card small{color:#536259}.market-strategy-editor{min-height:420px!important;font:13px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace!important}.market-strategy-details{margin-top:18px}.market-strategy-details>summary{cursor:pointer;font-weight:700;padding:10px 0}.market-strategy-preview{padding:22px;border:1px solid var(--line);border-radius:5px;background:#fff;line-height:1.6;overflow-wrap:anywhere}.market-strategy-preview h1{font-size:23px}.market-strategy-preview h2{font-size:19px;margin-top:26px}.market-strategy-preview h3{font-size:16px;margin-top:20px}.market-strategy-preview p,.market-strategy-preview li{font-size:14px}.market-strategy-preview ul,.market-strategy-preview ol{padding-left:22px}.market-strategy-preview blockquote{margin:14px 0;padding:9px 12px;background:var(--soft);border-left:3px solid var(--mint)}
+    .market-tabs{display:flex;gap:7px;overflow-x:auto;scrollbar-width:thin;padding:3px 2px 11px;margin:0 0 16px;border-bottom:1px solid var(--line)}.market-tab{flex:0 0 auto;min-height:46px;padding:9px 17px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-weight:650;white-space:nowrap}.market-tab:hover,.market-tab:focus-visible{border-color:#448c65;background:#eef7f1}.market-tab[aria-selected=true]{background:var(--dark);color:#fff;border-color:var(--dark)}.market-tab.featured{border-color:#448c65}.market-tab-panel{min-width:0}.market-tab-panel[hidden],.market-workspace[hidden]{display:none!important}.market-tab-panel>.market-card+.market-card{margin-top:14px}.market-model-first{border-left:4px solid var(--mint)}.market-model-first .market-image-controls>.market-field:first-child{padding:13px;background:#f0f8f2;border:1px solid #c5dfce;border-radius:5px}.market-model-first #imageModel{font-weight:700}.market-reference-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0;padding:14px;background:var(--soft);border:1px solid var(--line);border-radius:5px}.market-reference-grid .market-field input[type=file]{width:100%}.market-ai-accordion{margin-top:14px}.market-ai-accordion>summary{cursor:pointer;list-style:none;font-size:19px;font-weight:600;min-height:48px;display:flex;align-items:center;gap:9px}.market-ai-accordion>summary::before{content:'▸';color:#347d55;font-size:20px}.market-ai-accordion[open]>summary::before{content:'▾'}.market-ai-accordion>summary::-webkit-details-marker{display:none}
+    .market-topic-list,.market-post-list{display:grid;gap:10px;margin:12px 0 18px}.market-topic{display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid var(--line);border-radius:5px;background:#fff;cursor:pointer}.market-topic:has(input:checked){border-color:#3d9463;background:#f1f9f3}.market-topic input{margin-top:3px;accent-color:#387d54}.market-topic strong,.market-topic small{display:block}.market-topic small{margin-top:4px;color:var(--muted)}.market-post{display:grid;grid-template-columns:minmax(160px,240px) minmax(0,1fr);gap:14px;padding:14px;border:1px solid var(--line);border-radius:5px;background:#fff}.market-post img{width:100%;height:auto;max-height:300px;object-fit:contain;background:var(--soft)}.market-post textarea{width:100%;min-height:150px;resize:vertical;border:1px solid #bcc9bf;border-radius:4px;padding:10px;font:inherit}.market-post h3{margin:0 0 8px}.market-post-meta{font-size:12px;color:var(--muted);overflow-wrap:anywhere}.market-post .market-actions{margin-top:10px}
+    @media(max-width:1000px){.market-overview{grid-template-columns:1fr}.market-creative{grid-template-columns:1fr}.market-preview{position:static}}
+    @media(max-width:600px){.market-post{grid-template-columns:1fr}.market-post img{max-height:260px}}
+    @media(max-width:760px){.market-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.market-workspace,.market-image-workspace{grid-template-columns:1fr}.market-sidebar{position:static}.market-list{display:flex;overflow-x:auto;padding-bottom:5px}.market-campaign{min-width:205px;flex:0 0 205px}.market-intro{display:block}.market-intro .note{text-align:left;max-width:none;margin-top:10px}}
+    @media(max-width:520px){.market-top{padding:12px}.market-top nav{gap:8px}.market-top a{font-size:11px}.market-shell{padding:20px 12px 70px}.market-field-grid,.market-brand-grid,.market-ai-grid,.market-reference-grid{grid-template-columns:1fr}.market-field.wide,.market-ai-grid .market-field.wide{grid-column:auto}.market-card{padding:15px}.market-kpi{padding:13px}.market-actions>*{flex:1 1 auto}.market-link-row{flex-wrap:wrap}.market-link-row .market-button{width:100%}.market-tabs{margin-right:-12px;padding-right:12px}.market-tab{padding:9px 13px}}
+  </style>
+</head>
+<body>
+  <header class="market-top"><img class="market-logo" src="/assets/brand/logo2.png" alt="Kocka Stúdió"><nav aria-label="Oldalak"><span class="demo-pill">DEMÓ</span><a href="/dashboard">Projektmenedzser</a><a href="/auth/logout">Kijelentkezés</a></nav></header>
+  <main class="market-shell">
+    <div class="market-intro"><div><h1>Marketing műhely</h1><p>Tervezd meg a kampányokat, készíts szövegváltozatokat és nézd meg, hogyan állnának össze az eredmények egy helyen.</p><button id="openStrategy" class="market-button mint" type="button" style="margin-top:14px">AI kampányterv készítése</button></div><p class="note">A kampányok és eredmények demóadatok, közzététel nincs. Az AI-tervező gomb valódi Gemini API-kérést indít, amely a szolgáltatói kvótába számít.</p></div>
+    <div id="marketNotice" class="market-notice" role="status" aria-live="polite" hidden></div>
+    <nav class="market-tabs" role="tablist" aria-label="Marketing funkciók">
+      <button class="market-tab" id="tabOverview" type="button" role="tab" aria-controls="panelOverview" aria-selected="false" tabindex="-1">Áttekintés</button>
+      <button class="market-tab" id="tabStrategy" type="button" role="tab" aria-controls="panelStrategy" aria-selected="false" tabindex="-1">AI kampányterv</button>
+      <button class="market-tab" id="tabCampaign" type="button" role="tab" aria-controls="panelCampaign" aria-selected="false" tabindex="-1">Kampány</button>
+      <button class="market-tab" id="tabCopy" type="button" role="tab" aria-controls="panelCopy" aria-selected="false" tabindex="-1">Hirdetésszövegek</button>
+      <button class="market-tab" id="tabPosts" type="button" role="tab" aria-controls="panelPosts" aria-selected="false" tabindex="-1">Bejegyzések</button>
+      <button class="market-tab featured" id="tabImage" type="button" role="tab" aria-controls="panelImage" aria-selected="true" tabindex="0">Képkészítés · modellválasztó</button>
+      <button class="market-tab" id="tabLinks" type="button" role="tab" aria-controls="panelLinks" aria-selected="false" tabindex="-1">Kampánylinkek</button>
+      <button class="market-tab" id="tabBrand" type="button" role="tab" aria-controls="panelBrand" aria-selected="false" tabindex="-1">Arculat</button>
+    </nav>
+    <div class="market-tab-panel" id="panelOverview" role="tabpanel" aria-labelledby="tabOverview" hidden>
+    <section class="market-kpis" aria-label="Szimulált eredmények"><div class="market-kpi"><small>Demó költés</small><strong id="kpiSpend">0 Ft</strong><em>Nem valódi kiadás</em></div><div class="market-kpi"><small>Demó érdeklődés</small><strong id="kpiLeads">0</strong><em>Ajánlatkérő űrlap</em></div><div class="market-kpi"><small>Minősített megkeresés</small><strong id="kpiQualified">0</strong><em>Szimulált projektállapot</em></div><div class="market-kpi"><small>Költség / megkeresés</small><strong id="kpiCpl">–</strong><em>Demó számítás</em></div></section>
+    <section class="market-overview" aria-label="Szimulált kimutatások"><div class="market-card"><h2>Az elmúlt 7 nap</h2><p class="sub">Demó megkeresések napi bontásban</p><div id="marketChart" class="market-chart"></div></div><div class="market-card"><h2>Értékesítési tölcsér</h2><p class="sub">A kampányok szimulált eredménye együtt</p><div id="marketFunnel" class="market-funnel"></div></div></section>
+    <section class="market-overview"><div class="market-card"><h2>Próbaütemezés</h2><div id="marketCalendar" class="market-calendar"></div></div><div class="market-card"><h2>Automatikus javaslatok</h2><ul id="marketSuggestions" class="market-suggestions"></ul><button id="simulateWeek" class="market-button alt small" type="button">Új demó hét szimulálása</button></div></section>
+    </div>
+    <div class="market-tab-panel" id="panelBrand" role="tabpanel" aria-labelledby="tabBrand" hidden>
+    <section class="market-card market-brand" id="brandSettings"><h2>Arculati alapbeállítások</h2><p class="market-help">Az itt választott színek, betűkészletek és logó minden demó kampányra érvényesek. A kreatív szerkesztőjében kampányonként felülírhatók. A Source Sans Pro minden eszközön a projektből töltődik be; a többi betű a böngészőben elérhető rendszerfonttól függ.</p><div class="market-brand-grid">
+      <div class="market-field"><label for="brandBackground">Alap háttérszín</label><input id="brandBackground" type="color" value="#3e3e3e"></div><div class="market-field"><label for="brandAccent">Alap kiemelőszín</label><input id="brandAccent" type="color" value="#77c59e"></div>
+        <div class="market-type-toolbar" role="group" aria-label="Globális címsorformázás"><span class="market-type-label">Címsor</span><select id="brandFont" class="market-type-font" aria-label="Címsor betűkészlete" title="Betűkészlet"></select><input id="brandHeadingSize" class="market-type-size" type="number" min="24" max="120" step="1" aria-label="Címsor mérete" title="Méret a képen"><select id="brandHeadingWeight" class="market-type-weight" aria-label="Címsor vastagsága" title="Vastagság"><option value="300">300</option><option value="400">400</option><option value="600">600</option><option value="700">700</option></select><select id="brandHeadingStyle" hidden><option value="normal">Álló</option><option value="italic">Dőlt</option></select><input id="brandHeadingUppercase" type="checkbox" hidden><button id="brandHeadingItalicToggle" class="market-type-tool" type="button" aria-label="Címsor dőlt betűje" aria-pressed="false" title="Dőlt"><i>I</i></button><button id="brandHeadingUppercaseToggle" class="market-type-tool" type="button" aria-label="Címsor nagybetűsítése" aria-pressed="false" title="Nagybetűs">AA</button></div>
+        <div class="market-type-toolbar" role="group" aria-label="Globális kísérőszöveg-formázás"><span class="market-type-label">Kísérőszöveg</span><select id="brandBodyFont" class="market-type-font" aria-label="Kísérőszöveg betűkészlete" title="Betűkészlet"></select><input id="brandBodySize" class="market-type-size" type="number" min="16" max="64" step="1" aria-label="Kísérőszöveg mérete" title="Méret a képen"><select id="brandBodyWeight" class="market-type-weight" aria-label="Kísérőszöveg vastagsága" title="Vastagság"><option value="300">300</option><option value="400">400</option><option value="600">600</option><option value="700">700</option></select><select id="brandBodyStyle" hidden><option value="normal">Álló</option><option value="italic">Dőlt</option></select><input id="brandBodyUppercase" type="checkbox" hidden><button id="brandBodyItalicToggle" class="market-type-tool" type="button" aria-label="Kísérőszöveg dőlt betűje" aria-pressed="false" title="Dőlt"><i>I</i></button><button id="brandBodyUppercaseToggle" class="market-type-tool" type="button" aria-label="Kísérőszöveg nagybetűsítése" aria-pressed="false" title="Nagybetűs">AA</button></div>
+      <div class="market-field"><label for="brandLogo">Globális logó</label><input id="brandLogo" type="file" accept="image/png,image/jpeg,image/webp"><img id="brandLogoPreview" class="market-brand-logo" alt="Beállított logó előnézete" hidden><button id="brandLogoRemove" class="market-button alt small" type="button">Logó törlése</button><p class="market-help">A logó külön képfájlként kerül a Drive _Marketing mappájába.</p></div>
+    </div></section>
+    </div>
+    <div class="market-workspace"><aside class="market-sidebar market-card"><div class="market-side-head"><h2>Kampányok</h2><button id="newCampaign" class="market-button small" type="button">+ Új</button></div><div id="campaignList" class="market-list" aria-label="Kampányok"></div><p id="driveSaveStatus" class="market-help" role="status">Drive betöltése…</p><div class="market-actions"><button id="resetDemo" class="market-button alt small" type="button">Frissítés Drive-ról</button><a id="marketingFolderLink" class="market-button alt small" target="_blank" rel="noopener" hidden>_Marketing mappa</a></div><p class="market-help">A kampányok a Drive _Marketing mappájában vannak. A kampány adatai szerkeszthető UTF-8 JSON-fájlok, a képek külön fájlok.</p></aside>
+      <div class="market-main"><div class="market-tab-panel" id="panelStrategy" role="tabpanel" aria-labelledby="tabStrategy" hidden><section class="market-card"><h2>AI kampányterv egy kattintással</h2><p class="sub">Add meg az alapokat, majd egy kattintással készíts tervet, hirdetésképeket, carousel-lapokat, videót és landingoldal-vázlatot. A szöveg külön <code>strategia.md</code> fájlban mentődik a kampány Drive-mappájába. A részletes célzást és csatornákat később a Kampány fülön pontosíthatod.</p><div class="market-field-grid"><div class="market-field"><label for="strategyName">Kampány neve *</label><input id="strategyName" maxlength="100" placeholder="Például Őszinte otthontervezés"></div><div class="market-field"><label for="strategyGoal">Cél</label><select id="strategyGoal"><option value="Ajánlatkérések">Ajánlatkérések</option><option value="Ismertség">Ismertség</option><option value="Portfólió bemutatása">Portfólió bemutatása</option></select></div><div class="market-field"><label for="strategyAudience">Kinek szól? *</label><input id="strategyAudience" maxlength="160" placeholder="Például építkezést tervezők"></div><div class="market-field"><label for="strategyCity">Terület (opcionális)</label><input id="strategyCity" maxlength="100" placeholder="Például Somogy vármegye"></div><div class="market-field wide"><label for="strategyBrief">Mit szeretnél kommunikálni? *</label><textarea id="strategyBrief" maxlength="1200" placeholder="Miben segít a stúdió és mi a kampány fő célja?"></textarea></div><div class="market-field wide"><label for="strategyServices">Szolgáltatások és egyedi szempontok</label><textarea id="strategyServices" maxlength="1800" placeholder="Például családi ház tervezése, meglévő ház bővítése, előzetes tanácsadás; milyen szemlélettel dolgoztok?"></textarea></div><div class="market-field wide"><label for="strategyEvidence">Igazolható referenciák és állítások (opcionális)</label><textarea id="strategyEvidence" maxlength="1200" placeholder="Például publikálható referenciaprojektek, ügyfélvélemények, portré. Ha nincs, hagyd üresen."></textarea></div></div><div class="market-actions"><button id="generateStrategy" class="market-button mint" type="button">Teljes kampánycsomag készítése AI-val</button><button id="generateExample" class="market-button alt" type="button">Mellékelt kampányterv előállítása egy kattintással</button></div><p id="strategyStatus" class="market-help" role="status" aria-live="polite">A terv márkaüzenetet, landingoldal-vázlatot, mérési checklistet, három hirdetési ötletet és négyhetes ütemezést tartalmaz. Új kampánynál a Facebook és Instagram az alapértelmezett próba-csatorna. Közzététel előtt ellenőrizd.</p><div class="market-field" style="margin-top:18px"><label for="strategyMarkdown">Szerkeszthető kampányterv</label><textarea id="strategyMarkdown" class="market-strategy-editor" maxlength="50000" placeholder="Itt jelenik meg az AI-terv. A szöveget közvetlenül szerkesztheted."></textarea></div><div class="market-actions"><button id="strategyDownload" class="market-button alt small" type="button">Terv letöltése (.md)</button><button id="strategyCopy" class="market-button alt small" type="button">Szöveg másolása</button></div><details class="market-strategy-details" open><summary>Formázott előnézet</summary><div id="strategyPreview" class="market-strategy-preview"></div></details><section class="market-output-section"><h3>Elkészült kampányanyagok</h3><p class="market-help">A képek, szerkeszthető SVG-források, videó és landingoldal-vázlat a kampány Drive-mappájában vannak. A készítés közben tartsd nyitva ezt az oldalt.</p><div id="campaignOutputs" class="market-output-grid"></div></section></section></div><div class="market-tab-panel" id="panelCampaign" role="tabpanel" aria-labelledby="tabCampaign" hidden><section class="market-card"><div class="market-title-row"><div><h2>Kampányterv</h2><p class="sub">A mezőkből készülnek a csatornához igazított szövegek.</p></div><span id="campaignStatus" class="market-status">Vázlat</span></div><form id="campaignForm"><div class="market-field-grid">
+        <div class="market-field"><label for="campaignName">Kampány neve *</label><input id="campaignName" maxlength="100" required></div>
+        <div class="market-field"><label for="campaignGoal">Cél *</label><select id="campaignGoal" required><option value="">Válassz célt…</option><option value="Ajánlatkérések">Ajánlatkérések</option><option value="Ismertség">Ismertség</option><option value="Portfólió bemutatása">Portfólió bemutatása</option></select></div>
+        <div class="market-field"><label for="campaignAudience">Célközönség *</label><input id="campaignAudience" maxlength="160" required placeholder="Például építkezést tervező családok"></div>
+        <div class="market-field"><label for="campaignCity">Helyszín / célterület</label><input id="campaignCity" maxlength="100" placeholder="Például Somogy vármegye"></div>
+        <div class="market-field"><label for="campaignBudget">Tervezett keret (Ft)</label><input id="campaignBudget" type="number" min="0" max="100000000" step="1000" value="0"></div>
+        <div class="market-field"><label for="campaignDate">Próbaütemezés</label><input id="campaignDate" type="date"></div>
+        <div class="market-field wide"><label>Csatornák *</label><div class="market-checks"><label><input type="checkbox" name="channel" value="facebook"> Facebook</label><label><input type="checkbox" name="channel" value="instagram"> Instagram</label><label><input type="checkbox" name="channel" value="google"> Google</label><label><input type="checkbox" name="channel" value="tiktok"> TikTok</label></div></div>
+        <div class="market-field wide"><label for="campaignBrief">Rövid leírás / fő üzenet</label><textarea id="campaignBrief" maxlength="1200" placeholder="Milyen szolgáltatást, problémát vagy előnyt mutasson be a hirdetés?"></textarea></div>
+        <div class="market-field wide"><label for="campaignPostEnding">Posztvégi javaslat</label><textarea id="campaignPostEnding" maxlength="700" placeholder="Például: Személyre szabott ajánlatkérés: https://projects.kockastudio.hu/ajanlatkeres&#10;&#10;#KockaStúdió #ÉpítészetiTervezés #CsaládiHáz"></textarea><p class="market-help">Az új bejegyzések végére kerülő, kampányspecifikus CTA, ajánlatkérő link és tagek. A tervezetben később is szerkeszthető.</p></div>
+      </div><div class="market-actions"><button id="saveCampaign" class="market-button" type="submit">Kampány mentése</button><a id="campaignFolderLink" class="market-button alt" target="_blank" rel="noopener" hidden>Kampánymappa</a><button id="approveCampaign" class="market-button alt" type="button">Jóváhagyás (demó)</button><button id="scheduleCampaign" class="market-button alt" type="button">Ütemezés (demó)</button><button id="archiveCampaign" class="market-button danger" type="button">Archiválás</button></div></form></section></div>
+      <div class="market-tab-panel" id="panelCopy" role="tabpanel" aria-labelledby="tabCopy" hidden><section class="market-card"><h2>Hirdetésszövegek és előnézet</h2><p class="sub">A javaslatok demó sablonból készülnek. A szöveg közvetlenül szerkeszthető.</p><button id="generateCopies" class="market-button mint" type="button">Szövegek készítése</button><div class="market-creative" style="margin-top:14px"><div id="copyList" class="market-copy-list"></div><div id="adPreview" class="market-preview"></div></div></section></div>
+      <div class="market-tab-panel" id="panelImage" role="tabpanel" aria-labelledby="tabImage"><section class="market-card market-model-first"><h2>Képkészítés és modellválasztás</h2><p class="sub">Válassz modellt, készíts háttérképet, majd igazítsd hozzá a feliratokat. A helyi demó a böngészőben rajzol; az AI-modellek a képleírást és a kiválasztott referenciákat kapják meg.</p><div class="market-image-workspace"><div class="market-image-controls">
+        <div class="market-field"><label for="imageModel">Képkészítő modell</label><select id="imageModel"><option value="local">Helyi grafika (demó)</option><option value="flux-1-schnell">FLUX.1 schnell · új háttér</option><option value="flux-2-klein-4b">FLUX.2 klein 4B · képreferenciával</option><option value="gemini-image">Gemini 3.1 Flash Lite Image · képreferenciával</option></select><p id="imageModelStatus" class="market-help" role="status" aria-live="polite">A helyi grafika azonnal használható.</p></div>
+        <div class="market-field"><label for="imagePrompt">AI háttérkép leírása</label><textarea id="imagePrompt" maxlength="1800" placeholder="Például világos, kortárs családi ház természetes anyagokkal, feliratok nélkül"></textarea><p class="market-help">A FLUX.2 és a Gemini képkészítője a lent feltöltött háttérképet és grafikai elemet referenciaként használhatja. A FLUX.1 csak a szövegből készít képet.</p></div>
+        <div class="market-field"><label for="imageFormat">A végső hirdetéskép aránya és mérete</label><select id="imageFormat"><option value="square">Négyzet · 1080 × 1080</option><option value="portrait">Álló feed · 1080 × 1350</option><option value="story">Story / TikTok · 1080 × 1920</option><option value="landscape">Fekvő · 1200 × 628</option></select><p class="market-help">A FLUX.1 saját képméretet készít; a szerkesztő ezt a választott hirdetési arányra vágja.</p></div>
+        <div class="market-field"><label for="imageStyle">Grafikai stílus</label><select id="imageStyle"><option value="architecture">Építészeti vonalrajz</option><option value="geometry">Geometrikus kompozíció</option><option value="minimal">Letisztult tipográfia</option></select></div>
+        <div class="market-image-colors"><div class="market-field"><label for="imageBackground">Háttér</label><label class="market-override"><input id="imageOverrideBackground" type="checkbox"> Helyi szín</label><input id="imageBackground" type="color" value="#3e3e3e"></div><div class="market-field"><label for="imageAccent">Kiemelés</label><label class="market-override"><input id="imageOverrideAccent" type="checkbox"> Helyi szín</label><input id="imageAccent" type="color" value="#77c59e"></div></div>
+        <div class="market-type-toolbar" role="group" aria-label="Kampány címsorformázása"><span class="market-type-label">Címsor</span><select id="imageFont" class="market-type-font" aria-label="Címsor betűkészlete" title="Betűkészlet"></select><input id="imageHeadingSize" class="market-type-size" type="number" min="24" max="120" step="1" placeholder="Méret" aria-label="Címsor mérete" title="Üresen a globális méret"><select id="imageHeadingWeight" class="market-type-weight" aria-label="Címsor vastagsága" title="Vastagság"><option value="">Örökölt</option><option value="300">300</option><option value="400">400</option><option value="600">600</option><option value="700">700</option></select><select id="imageHeadingStyle" hidden><option value="">Globális</option><option value="normal">Álló</option><option value="italic">Dőlt</option></select><select id="imageHeadingUppercase" hidden><option value="">Globális</option><option value="true">NAGYBETŰS</option><option value="false">Eredeti</option></select><button id="imageHeadingItalicToggle" class="market-type-tool" type="button" aria-label="Címsor dőlt betűje" aria-pressed="false" title="Dőlt"><i>I</i></button><button id="imageHeadingUppercaseToggle" class="market-type-tool" type="button" aria-label="Címsor nagybetűsítése" aria-pressed="false" title="Nagybetűs">AA</button><button id="imageHeadingReset" class="market-type-tool market-type-reset" type="button" aria-label="Címsor globális beállításainak visszaállítása" title="Globális beállítások">↺</button></div>
+        <div class="market-type-toolbar" role="group" aria-label="Kampány kísérőszöveg-formázása"><span class="market-type-label">Kísérőszöveg</span><select id="imageBodyFont" class="market-type-font" aria-label="Kísérőszöveg betűkészlete" title="Betűkészlet"></select><input id="imageBodySize" class="market-type-size" type="number" min="16" max="64" step="1" placeholder="Méret" aria-label="Kísérőszöveg mérete" title="Üresen a globális méret"><select id="imageBodyWeight" class="market-type-weight" aria-label="Kísérőszöveg vastagsága" title="Vastagság"><option value="">Örökölt</option><option value="300">300</option><option value="400">400</option><option value="600">600</option><option value="700">700</option></select><select id="imageBodyStyle" hidden><option value="">Globális</option><option value="normal">Álló</option><option value="italic">Dőlt</option></select><select id="imageBodyUppercase" hidden><option value="">Globális</option><option value="true">NAGYBETŰS</option><option value="false">Eredeti</option></select><button id="imageBodyItalicToggle" class="market-type-tool" type="button" aria-label="Kísérőszöveg dőlt betűje" aria-pressed="false" title="Dőlt"><i>I</i></button><button id="imageBodyUppercaseToggle" class="market-type-tool" type="button" aria-label="Kísérőszöveg nagybetűsítése" aria-pressed="false" title="Nagybetűs">AA</button><button id="imageBodyReset" class="market-type-tool market-type-reset" type="button" aria-label="Kísérőszöveg globális beállításainak visszaállítása" title="Globális beállítások">↺</button></div>
+        <p id="imageFontStatus" class="market-help" role="status" aria-live="polite"></p>
+        <div class="market-field"><label for="imageHeadline">Fő üzenet</label><input id="imageHeadline" maxlength="140" placeholder="Például Otthon, ami rád van szabva"></div>
+        <div class="market-field"><label for="imageSubtitle">Kísérőszöveg</label><input id="imageSubtitle" maxlength="180" placeholder="Például Egyedi építészeti tervezés"></div>
+        <div class="market-field"><label for="imageCta">Képen látható gombszöveg</label><input id="imageCta" maxlength="32" value="Kérj ajánlatot"></div>
+        <div class="market-field"><label for="imagePhoto">Saját képek (opcionális)</label><input id="imagePhoto" type="file" accept="image/jpeg,image/png,image/webp" multiple><p class="market-help">Legfeljebb 8 kép tölthető be. A képek a kampány Drive-mappájába kerülnek.</p><div id="imagePhotoList" class="market-photo-list"></div><button id="imageClearPhotos" class="market-button alt small" type="button">Képek eltávolítása</button></div>
+        <div class="market-actions"><button id="imageUseCopy" class="market-button alt" type="button">Szöveg átvétele</button><button id="imageGenerate" class="market-button mint" type="button">Kép készítése</button><button id="imageDownload" class="market-button" type="button">PNG letöltése</button><button id="adDownload" class="market-button alt" type="button">Teljes hirdetés letöltése</button></div>
+      </div><div class="market-image-preview"><canvas id="imageCanvas" width="1080" height="1080" role="img" aria-label="Hirdetéskép előnézete"></canvas><p id="imagePreviewNote" class="market-help">A képet a „Kép készítése” gomb rajzolja meg.</p><div id="generatedImageCard" class="market-generated-image" hidden><div class="market-generated-head"><strong>Generált háttérkép · feliratok nélkül</strong><button id="generatedImageDelete" class="market-button danger small" type="button" aria-label="Generált kép törlése" title="Generált kép törlése">×</button></div><button id="generatedImageOpen" class="market-generated-thumb" type="button" aria-label="Generált kép nagyítása"><img id="generatedImageThumb" alt="Generált háttérkép" style="display:block;max-width:100%;max-height:240px;margin:auto"></button><div class="market-generated-actions"><button id="generatedImageView" class="market-button alt small" type="button">Nagyítás</button><button id="generatedImageDownload" class="market-button alt small" type="button">Eredeti kép letöltése</button></div></div><div id="fullAdPreview" class="market-full-ad"></div></div></div>
+      <div class="market-reference-grid" aria-label="Képreferenciák">
+        <div class="market-field"><label for="aiLogo">Logó a kreatívhoz</label><input id="aiLogo" type="file" accept="image/png,image/jpeg,image/webp"><img id="aiLogoPreview" class="market-ai-preview" alt="Logó előnézete" hidden><p class="market-help">Ha üres, a globális logót használja. A logót nem rajzoltatjuk újra az AI-val.</p></div>
+        <div class="market-field"><label for="aiBackground">Háttérkép / AI-referencia</label><input id="aiBackground" type="file" accept="image/png,image/jpeg,image/webp"><img id="aiBackgroundPreview" class="market-ai-preview" alt="Háttérkép előnézete" hidden></div>
+        <div class="market-field"><label for="aiElement">Grafikai elem / AI-referencia</label><input id="aiElement" type="file" accept="image/png,image/jpeg,image/webp"><img id="aiElementPreview" class="market-ai-preview" alt="Elem előnézete" hidden></div>
+      </div><button id="aiClearAssets" class="market-button alt small" type="button">Képreferenciák eltávolítása</button></section>
+      <details class="market-card market-ai-accordion" id="aiCreativeSection"><summary>AI kreatívtervező · Gemini (szöveg és elrendezés)</summary><p class="sub">Ez a lépés címsort, posztszöveget, színeket és elrendezést készít, majd az eredményt a fenti hirdetéskép-előnézetre rajzolja. Új AI-háttérképhez válaszd fent a Gemini képkészítő modellt, majd kattints a „Kép készítése” gombra.</p><div class="market-ai-grid">
+        <div class="market-field wide"><label for="aiBrief">Mit mutasson be a hirdetés?</label><textarea id="aiBrief" maxlength="1200" placeholder="Például új családi házak tervezése, természetes anyagok, személyes tervezési folyamat"></textarea></div>
+        <div class="market-field"><label class="market-override"><input id="aiUseColors" type="checkbox"> Az AI helyben felülírhatja az arculati színeket</label><p class="market-help">Kikapcsolva a globális vagy kampányszintű színek maradnak. Az AI-kérés a megadott képek kisebbített változatát elküldi a Gemini szolgáltatásnak; a kész kreatívot továbbra is helyben állítjuk össze.</p></div>
+      </div><div class="market-actions"><button id="aiCreate" class="market-button mint" type="button">AI kreatívterv készítése</button></div><p id="aiStatus" class="market-help" role="status" aria-live="polite">Az AI-kéréshez a Railway-en GEMINI_API_KEY szükséges. A napi limit 12 kérés szerverpéldányonként.</p></details></div>
+      <div class="market-tab-panel" id="panelLinks" role="tabpanel" aria-labelledby="tabLinks" hidden><section class="market-card"><h2>Kampánylinkek</h2><p class="sub">UTM-paraméterezett mintalinkek. Az example.invalid cím nem vezet az éles ajánlatkérőre.</p><div id="campaignLinks"></div></section></div>
+      <div class="market-tab-panel" id="panelPosts" role="tabpanel" aria-labelledby="tabPosts" hidden>
+        <section class="market-card"><h2>Bejegyzésötletek és tervezetek</h2><p class="sub">Friss építészeti hírcímekből és időtálló témákból választhatsz. A forráslink a tervezet mellett marad; az AI önálló szöveget és képet készít. A bejegyzések csak a kampány Drive-mappájába kerülnek.</p>
+          <div class="market-actions"><button id="postFindTopics" class="market-button alt" type="button">Témák keresése</button></div>
+          <p id="postTopicStatus" class="market-help" role="status" aria-live="polite"></p><div id="postTopics" class="market-topic-list" aria-label="Javasolt témák"></div>
+          <div class="market-field"><label for="postOwnTopic">Saját téma (opcionális)</label><input id="postOwnTopic" maxlength="180" placeholder="Például: hogyan kezdődik egy házbővítés tervezése?"></div>
+          <div class="market-field"><label for="postImageModel">Kép készítése</label><select id="postImageModel"><option value="gemini-image">Gemini AI-kép</option><option value="flux-1-schnell">FLUX AI-kép</option><option value="local">Helyi arculati grafika</option></select></div>
+          <div class="market-actions"><button id="postGenerate" class="market-button mint" type="button">Bejegyzés készítése a kiválasztott témából</button></div>
+          <p id="postGenerateStatus" class="market-help" role="status" aria-live="polite">Az AI-szöveghez Gemini API-kulcs kell. AI-kép hiányában helyi grafika készül. A napi korlát 4 új bejegyzés.</p><p id="postFacebookStatus" class="market-help" role="status" aria-live="polite">Facebook-kapcsolat ellenőrzése…</p>
+        </section>
+        <section class="market-card"><h2>Rendszeres tervezetkészítés</h2><p class="sub">A szerver a megadott időközönként friss témát választ, majd szöveges és képes tervezetet ment. Google-hozzáférés és Gemini API-kulcs szükséges. Közzététel nincs.</p>
+          <div class="market-field-grid"><div class="market-field"><label for="postInterval">Ismétlés</label><select id="postInterval"><option value="3">3 naponta</option><option value="7" selected>Hetente</option><option value="14">Kéthetente</option><option value="30">30 naponta</option></select></div><div class="market-field"><label for="postFirstRun">Első alkalom</label><input id="postFirstRun" type="datetime-local"></div></div>
+          <div class="market-actions"><button id="postScheduleSave" class="market-button" type="button">Automatika bekapcsolása</button><button id="postScheduleStop" class="market-button alt" type="button">Automatika kikapcsolása</button></div><p id="postScheduleStatus" class="market-help" role="status" aria-live="polite"></p>
+        </section>
+        <section class="market-card"><h2>Elkészült bejegyzések</h2><div id="postDrafts" class="market-post-list"></div></section>
+      </div>
+      </div></div>
+  </main>
+  <dialog id="generatedImageDialog" class="market-image-dialog" aria-label="Generált kép nagyított nézete"><div class="market-generated-head"><strong>Generált háttérkép</strong><button id="generatedImageClose" class="market-button alt small" type="button" aria-label="Bezárás">Bezárás ×</button></div><img id="generatedImageLarge" alt="Generált háttérkép nagy méretben"></dialog>
+  <script src="/assets/marketing-auto.js"></script>
+  <script>
+  (()=>{
+    const KEY='kocka-marketing-demo-v1';
+    const PENDING_KEY='kocka-marketing-drive-pending-v1';
+    const $=id=>document.getElementById(id);
+    const marketingTabs=['Overview','Strategy','Campaign','Copy','Posts','Image','Links','Brand'];
+    function activateMarketingTab(name,focus=false){
+      if(!marketingTabs.includes(name))name='Strategy';
+      for(const key of marketingTabs){const active=key===name,button=$('tab'+key),panel=$('panel'+key);
+        button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;panel.hidden=!active;}
+      document.querySelector('.market-workspace').hidden=name==='Overview'||name==='Brand';
+      try{sessionStorage.setItem('kocka-marketing-tab',name)}catch(_){/* private browsing */}
+      const rail=document.querySelector('.market-tabs'),selected=$('tab'+name);
+      rail.scrollLeft=selected.offsetLeft-rail.offsetLeft-(rail.clientWidth-selected.offsetWidth)/2;
+      if(focus)$('tab'+name).focus();
+    }
+    for(const [index,key] of marketingTabs.entries()){
+      const button=$('tab'+key);
+      button.addEventListener('click',()=>activateMarketingTab(key));
+      button.addEventListener('keydown',event=>{let target;
+        if(event.key==='ArrowRight')target=marketingTabs[(index+1)%marketingTabs.length];
+        else if(event.key==='ArrowLeft')target=marketingTabs[(index+marketingTabs.length-1)%marketingTabs.length];
+        else if(event.key==='Home')target=marketingTabs[0];
+        else if(event.key==='End')target=marketingTabs[marketingTabs.length-1];
+        if(target){event.preventDefault();activateMarketingTab(target,true)}});
+    }
+    $('openStrategy').addEventListener('click',()=>activateMarketingTab('Strategy',true));
+    const platforms={facebook:'Facebook',instagram:'Instagram',google:'Google',tiktok:'TikTok'};
+    const FONT_CHOICES=['Source Sans Pro','Arial','Georgia','Verdana','Trebuchet MS','Tahoma','Times New Roman','Courier New','Segoe UI'];
+    const sourceSansReady=new Map();
+    function loadSourceSans(graphic){
+      if(!document.fonts?.load)return Promise.resolve();
+      const variants=[[graphic.font,graphic.headingWeight,graphic.headingStyle],[graphic.bodyFont,graphic.bodyWeight,graphic.bodyStyle]]
+        .filter(([font])=>font==='Source Sans Pro');
+      return Promise.all(variants.map(([,weight,style])=>{const key=style+'-'+weight;
+        if(!sourceSansReady.has(key))sourceSansReady.set(key,
+          document.fonts.load(`${style} ${weight} 78px "Source Sans Pro"`,'Árvíztűrő tükörfúrógép')
+            .then(faces=>{if(!faces.length)throw Error('A Source Sans Pro betűfájl nem tölthető be. Frissítsd az oldalt.');})
+            .catch(error=>{sourceSansReady.delete(key);throw error}));
+        return sourceSansReady.get(key)}));
+    }
+    async function readyForGraphic(item){
+      const graphic=effectiveGraphic(item);
+      await loadSourceSans(graphic);
+      drawImage(item);
+    }
+    const seed=()=>({selected:'demo-otthon',campaigns:[
+      {id:'demo-otthon',name:'Új otthon tervezése',goal:'Ajánlatkérések',audience:'Családi ház építését tervezők',city:'Somogy vármegye',budget:80000,brief:'Egyedi családi ház tervezése az első ötlettől a megvalósításig.',channels:['facebook','instagram'],status:'scheduled',date:'2026-10-20',drafts:[],metrics:{spend:44500,views:12300,clicks:219,leads:12,qualified:7,offers:3,daily:[1,2,1,3,2,1,2]}},
+      {id:'demo-felujitas',name:'Felújítási tervek',goal:'Ajánlatkérések',audience:'Meglévő házukat átalakítók',city:'Kaposvár és környéke',budget:45000,brief:'Átgondolt átépítési és felújítási terv meglévő épületekhez.',channels:['facebook','google'],status:'approved',date:'',drafts:[],metrics:{spend:22100,views:5600,clicks:109,leads:5,qualified:3,offers:1,daily:[0,1,1,0,1,1,1]}},
+      {id:'demo-portfolio',name:'Referenciák bemutatása',goal:'Portfólió bemutatása',audience:'Építészet iránt érdeklődők',city:'Dél-Dunántúl',budget:30000,brief:'Megvalósult munkák és tervezési szemlélet bemutatása.',channels:['instagram','tiktok'],status:'draft',date:'',drafts:[],metrics:{spend:0,views:0,clicks:0,leads:0,qualified:0,offers:0,daily:[0,0,0,0,0,0,0]}}
+    ]});
+    const blankMetrics=()=>({spend:0,views:0,clicks:0,leads:0,qualified:0,offers:0,daily:[0,0,0,0,0,0,0]});
+    let state;
+    try{const saved=JSON.parse(localStorage.getItem(KEY)||'null');state=saved&&Array.isArray(saved.campaigns)?saved:seed()}catch(_){state=seed()}
+    const defaultBrand=()=>({background:'#3e3e3e',accent:'#77c59e',font:'Source Sans Pro',bodyFont:'Source Sans Pro',
+      headingSize:78,headingWeight:600,headingStyle:'normal',headingUppercase:false,
+      bodySize:28,bodyWeight:400,bodyStyle:'normal',bodyUppercase:false,logoDataUrl:''});
+    state.brand={...defaultBrand(),...(state.brand&&typeof state.brand==='object'?state.brand:{})};
+    let chosenDraft=0;
+    let imagePhoto=null;
+    let imagePhotos=[];
+    let imageCampaignId=null;
+    let brandLogoImage=null;
+    const roleImages={logo:null,background:null,element:null};
+    let imageModels=[];
+    const imageSizes={square:[1080,1080],portrait:[1080,1350],story:[1080,1920],landscape:[1200,628]};
+    const defaultGraphic=()=>({format:'square',style:'architecture',background:null,accent:null,font:null,bodyFont:null,
+      headingSize:null,headingWeight:null,headingStyle:null,headingUppercase:null,
+      bodySize:null,bodyWeight:null,bodyStyle:null,bodyUppercase:null,
+      layout:'editorial',headline:'',subtitle:'',cta:'Kérj ajánlatot',variant:0});
+    let remoteReady=false,saveTimer=null,saveChain=Promise.resolve(),brandSaved='',campaignSaved=new Map();
+    let remoteAssets={},remoteOutputs={},remoteFolders={},assetLoadNumber=0,autoBuilding=false;
+    const brandForSave=()=>{const value={...state.brand};delete value.logoDataUrl;return value};
+    const hasUnsaved=()=>JSON.stringify(brandForSave())!==brandSaved||
+      state.campaigns.some(item=>campaignSaved.get(item.id)!==JSON.stringify(item));
+    function persist(){
+      try{localStorage.setItem(KEY,JSON.stringify(state))}catch(_){/* A Drive az elsődleges tárhely. */}
+      if(!remoteReady||!hasUnsaved())return;
+      try{localStorage.setItem(PENDING_KEY,'1')}catch(_){/* privát böngészés */}
+      $('driveSaveStatus').textContent='Módosítások mentése…';
+      clearTimeout(saveTimer);saveTimer=setTimeout(()=>{saveChain=saveChain.then(flushSave).catch(error=>{
+        $('driveSaveStatus').textContent='Mentési hiba · a módosítások nincsenek a Drive-on';notice(error.message,true)})},900);
+    }
+    async function storeRequest(path,method='GET',body){
+      const response=await fetch('/api/marketing/store/'+path,{method,credentials:'same-origin',
+        headers:body===undefined?{}:{'Content-Type':'application/json','x-kocka-rpc':'1'},
+        body:body===undefined?undefined:JSON.stringify(body)});
+      if(response.status===401){window.location.href='/auth/login?return=%2Fmarketing&reason=expired';throw Error('A munkamenet lejárt.')}
+      const result=await response.json();if(!response.ok)throw Error(result.error||'A Drive művelet nem sikerült.');
+      return result;
+    }
+    async function postRequest(path,method='GET',body){
+      const response=await fetch('/api/marketing/posts/'+path,{method,credentials:'same-origin',
+        headers:body===undefined?{}:{'Content-Type':'application/json','x-kocka-rpc':'1'},
+        body:body===undefined?undefined:JSON.stringify(body)});
+      if(response.status===401){window.location.href='/auth/login?return=%2Fmarketing&reason=expired';throw Error('A munkamenet lejárt.')}
+      const result=await response.json();if(!response.ok)throw Error(result.error||'A bejegyzés művelet nem sikerült.');
+      return result;
+    }
+    async function saveBeforePost(){
+      if(!remoteReady)throw Error('Várd meg, amíg a Drive betöltése befejeződik.');
+      clearTimeout(saveTimer);saveTimer=null;saveChain=saveChain.then(flushSave);await saveChain;
+    }
+    const outputUrl=(campaignId,fileId)=>'/api/marketing/store/output?campaignId='+encodeURIComponent(campaignId)+'&fileId='+encodeURIComponent(fileId);
+    async function saveCampaignOutput(campaignId,name,mimeType,dataUri){
+      const result=await storeRequest('output','POST',{campaignId,name,mimeType,dataUri});
+      const entries=remoteOutputs[campaignId]||[];
+      remoteOutputs[campaignId]=entries.filter(file=>file.name!==name).concat(result);
+      if(current()?.id===campaignId)renderOutputs(current());
+      return result;
+    }
+    function renderOutputs(item){const host=$('campaignOutputs');host.replaceChildren();
+      const files=remoteOutputs[item?.id]||[];
+      if(!files.length){host.append(el('p','market-empty','A kampányanyagok az automatikus készítés után jelennek meg.'));return}
+      for(const file of files){const card=el('div','market-output-card');
+        if(['image/png','image/jpeg'].includes(file.mimeType)){const img=el('img');img.src=outputUrl(item.id,file.id);img.alt=file.name;img.loading='lazy';card.append(img)}
+        if(file.mimeType==='video/webm'){const video=el('video');video.src=outputUrl(item.id,file.id);video.controls=true;video.preload='metadata';video.style.width='100%';card.append(video)}
+        const link=el('a','',file.name);link.href=outputUrl(item.id,file.id);link.download=file.name;card.append(link);
+        card.append(el('small','',file.mimeType==='image/svg+xml'?'Szerkeszthető vektoros forrás':file.mimeType==='video/webm'?'Letölthető videó':file.mimeType==='text/html'?'Szerkeszthető landingoldal':'Kész hirdetéskép'));
+        host.append(card)}
+    }
+    async function autoImage(prompt,format,item){
+      if(!imageModels.length)await loadImageModels();
+      const model=[item.imageModel,'flux-1-schnell','flux-2-klein-4b','gemini-image']
+        .filter((value,index,array)=>value&&value!=='local'&&array.indexOf(value)===index)
+        .find(value=>imageModels.some(model=>model.id===value&&model.available));
+      if(!model)throw Error('Nincs elérhető AI képmodell. '+imageModels.filter(entry=>entry.id!=='local').map(entry=>entry.label+': '+entry.reason).join('; '));
+      const response=await fetch('/api/marketing/image',{method:'POST',credentials:'same-origin',
+        headers:{'Content-Type':'application/json','x-kocka-rpc':'1'},body:JSON.stringify({
+          model,prompt:`Koncepcionális építészeti illusztráció hirdetéshez, felirat és logó nélkül. Ne ábrázolj kitalált referenciaépületet vagy valódi ügyfélprojektet. ${prompt}`,
+          format,references:[]})});
+      if(response.status===401){window.location.href='/auth/login?return=%2Fmarketing&reason=expired';throw Error('A munkamenet lejárt')}
+      const data=await response.json();if(!response.ok)throw Error(data.error||'A képgenerálás nem sikerült');
+      return encodeImage(await decodeImage(data.image),768,'image/jpeg');
+    }
+    async function flushSave(){
+      if(!remoteReady)return;
+      const brand=brandForSave(),brandText=JSON.stringify(brand);
+      if(brandText!==brandSaved){const response=await storeRequest('brand','POST',{brand});brandSaved=brandText;
+        $('marketingFolderLink').href=response.folderUrl;$('marketingFolderLink').hidden=false}
+      for(const item of state.campaigns){const value=JSON.stringify(item);
+        if(campaignSaved.get(item.id)===value)continue;
+        const response=await storeRequest('campaign','POST',{campaign:item});campaignSaved.set(item.id,value);
+        remoteFolders[item.id]=response.folderUrl;
+        if(item.id===state.selected){$('campaignFolderLink').href=response.folderUrl;$('campaignFolderLink').hidden=false}
+      }
+      $('driveSaveStatus').textContent='Mentve a Google Drive-on';
+      if(hasUnsaved())persist();else try{localStorage.removeItem(PENDING_KEY)}catch(_){/* privát böngészés */}
+    }
+    const assetUrl=(campaignId,fileId)=>'/api/marketing/store/asset?campaignId='+encodeURIComponent(campaignId)+'&fileId='+encodeURIComponent(fileId);
+    const fileDataUri=file=>new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(Error('A kép nem olvasható.'));reader.readAsDataURL(file)});
+    async function uploadAsset(campaignId,kind,file,name,generated=false){
+      const dataUri=typeof file==='string'?file:await fileDataUri(file);
+      const result=await storeRequest('asset','POST',{campaignId,kind,name,dataUri,generated});
+      const list=remoteAssets[campaignId]||[];remoteAssets[campaignId]=list.filter(item=>kind==='photo'||item.kind!==kind).concat(result);
+      return result;
+    }
+    async function deleteAsset(campaignId,fileId){await storeRequest('asset','DELETE',{campaignId,fileId});
+      remoteAssets[campaignId]=(remoteAssets[campaignId]||[]).filter(item=>item.id!==fileId)}
+    async function hydrateAssets(campaignId){const sequence=++assetLoadNumber;
+      if(!campaignId)return;
+      const files=remoteAssets[campaignId]||[];
+      for(const entry of files){if(sequence!==assetLoadNumber||current()?.id!==campaignId)return;
+        try{const url=assetUrl(campaignId,entry.id),photo=await decodeImage(url);
+          if(sequence!==assetLoadNumber||current()?.id!==campaignId)return;
+          if(entry.kind==='photo')imagePhotos.push({name:entry.name,url,image:photo,driveId:entry.id});
+          else if(roleImages[entry.kind]!==undefined){const data=encodeImage(photo,entry.kind==='background'?768:512,
+            entry.kind==='background'?'image/jpeg':'image/png');
+            roleImages[entry.kind]={url,image:photo,data,original:entry.generated?url:null,
+              generated:entry.generated,driveId:entry.id};
+            const preview=$('ai'+entry.kind[0].toUpperCase()+entry.kind.slice(1)+'Preview');preview.src=url;preview.hidden=false;}
+        }catch(_){notice('Az egyik Drive-kép nem tölthető be: '+entry.name,true)}
+      }
+      if(sequence===assetLoadNumber&&current()?.id===campaignId){renderPhotoList();syncGeneratedImageView();drawImage(current())}
+    }
+    async function reloadDrive(){
+      if(saveTimer&&remoteReady){clearTimeout(saveTimer);saveTimer=null;saveChain=saveChain.then(flushSave);}
+      await saveChain;
+      if(remoteReady&&hasUnsaved())await flushSave();
+      $('driveSaveStatus').textContent='Drive betöltése…';
+      const data=await storeRequest('state');
+      const previous=state,hadRemote=data.campaigns.length||data.brand;
+      let recover=false;
+      if(!remoteReady&&hadRemote){try{recover=localStorage.getItem(PENDING_KEY)==='1'&&
+        window.confirm('Korábban félbemaradt Drive-mentés maradt ebben a böngészőben. Megpróbálod most feltölteni a helyi módosításokat?')}
+        catch(_){/* privát böngészés */}}
+      if(hadRemote){state={selected:previous.selected,campaigns:data.campaigns,
+        brand:{...defaultBrand(),...(data.brand||{})}};
+        if(!state.campaigns.some(item=>item.id===state.selected))state.selected=state.campaigns[0]?.id||'';
+      }else{state={...previous,brand:{...defaultBrand(),...previous.brand}}}
+      if(recover)state={...previous,brand:{...defaultBrand(),...previous.brand}};
+      remoteAssets=data.assets||{};remoteOutputs=data.outputs||{};remoteFolders=data.folders||{};
+      campaignSaved=new Map((hadRemote?state.campaigns:[]).map(item=>[item.id,JSON.stringify(item)]));
+      brandSaved=data.brand?JSON.stringify(data.brand):'';
+      remoteReady=true;
+      $('marketingFolderLink').hidden=!data.folderUrl;if(data.folderUrl)$('marketingFolderLink').href=data.folderUrl;
+      const legacyLogo=(!hadRemote||recover)&&String(previous.brand?.logoDataUrl||'').startsWith('data:')
+        ?previous.brand.logoDataUrl:'';
+      imageCampaignId=null;releasePhotos();clearRoleImages();brandLogoImage=null;state.brand.logoDataUrl='';
+      const logo=(remoteAssets.brand||[])[0];
+      if(logo)try{state.brand.logoDataUrl=assetUrl('brand',logo.id);brandLogoImage=await decodeImage(state.brand.logoDataUrl)}
+        catch(_){notice('A Drive-on lévő logó nem olvasható.',true)}
+      else if(legacyLogo)try{const saved=await uploadAsset('brand','brand',legacyLogo,'logo.png');
+        state.brand.logoDataUrl=assetUrl('brand',saved.id);brandLogoImage=await decodeImage(state.brand.logoDataUrl)}
+        catch(_){notice('A korábbi logó Drive-ra mentése nem sikerült.',true)}
+      fillBrandControls();render();await hydrateAssets(current()?.id);
+      if(!hadRemote||recover){persist();notice('A helyi kampányok Drive-ra mentése folyamatban.')}else{
+        try{localStorage.removeItem(PENDING_KEY)}catch(_){/* privát böngészés */}
+        $('driveSaveStatus').textContent='Betöltve a Google Drive-ról';}
+    }
+    window.addEventListener('beforeunload',event=>{if(autoBuilding||remoteReady&&hasUnsaved()){
+      event.preventDefault();event.returnValue='';}});
+    function notice(text,error=false){const item=$('marketNotice');item.textContent=text;item.classList.toggle('error',error);item.hidden=false}
+    const current=()=>state.campaigns.find(item=>item.id===state.selected)||state.campaigns[0];
+    const money=value=>new Intl.NumberFormat('hu-HU').format(value||0)+' Ft';
+    const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node};
+    for(const id of ['brandFont','brandBodyFont','imageFont','imageBodyFont']){
+      const select=$(id);select.replaceChildren();if(id.startsWith('image')){
+        const inherited=el('option','', 'Globális beállítás');inherited.value='';select.append(inherited)}
+      for(const name of FONT_CHOICES){const option=el('option','',name);option.value=name;select.append(option)}}
+    function fields(){return {name:$('campaignName').value.trim(),goal:$('campaignGoal').value,
+      audience:$('campaignAudience').value.trim(),city:$('campaignCity').value.trim(),
+      budget:Number($('campaignBudget').value||0),date:$('campaignDate').value,
+      brief:$('campaignBrief').value.trim(),postEnding:$('campaignPostEnding').value.trim(),
+      channels:[...document.querySelectorAll('[name=channel]:checked')].map(item=>item.value)}}
+    function fillForm(item){$('campaignName').value=item.name;$('campaignGoal').value=item.goal;
+      $('campaignAudience').value=item.audience;$('campaignCity').value=item.city;
+      $('campaignBudget').value=item.budget;$('campaignDate').value=item.date||'';
+      $('campaignBrief').value=item.brief;$('campaignPostEnding').value=item.postEnding||'';
+      document.querySelectorAll('[name=channel]').forEach(input=>input.checked=item.channels.includes(input.value));
+      $('campaignStatus').textContent=({draft:'Vázlat',approved:'Jóváhagyva',scheduled:'Próbaütemezve',archived:'Archiválva'})[item.status]||'Vázlat'}
+    function appendStrategyText(node,value){const parts=String(value).split(/(\*\*[^*]+\*\*)/g);
+      for(const part of parts){if(part.startsWith('**')&&part.endsWith('**'))node.append(el('strong','',part.slice(2,-2)));
+        else node.append(document.createTextNode(part))}}
+    function renderStrategyPreview(value){const host=$('strategyPreview');host.replaceChildren();let list=null;
+      for(const raw of String(value||'').split(/\r?\n/)){
+        const line=raw.trim();if(!line){list=null;continue}
+        const heading=/^(#{1,3})\s+(.+)$/.exec(line);
+        if(heading){list=null;host.append(el('h'+heading[1].length,'',heading[2]));continue}
+        if(line.startsWith('> ')){list=null;const quote=el('blockquote');appendStrategyText(quote,line.slice(2));host.append(quote);continue}
+        const bullet=/^[-*]\s+(?:\[([ xX])\]\s+)?(.+)$/.exec(line);
+        const numbered=/^\d+\.\s+(.+)$/.exec(line);
+        if(bullet||numbered){const type=numbered?'ol':'ul';if(!list||list.tagName.toLowerCase()!==type){list=el(type);host.append(list)}
+          const item=el('li');appendStrategyText(item,(bullet?.[1]!==undefined?(bullet[1].toLowerCase()==='x'?'☑ ':'☐ '):'')+
+            (bullet?.[2]||numbered?.[1]));list.append(item);continue}
+        list=null;const paragraph=el('p');appendStrategyText(paragraph,line);host.append(paragraph)}
+      if(!value)host.append(el('p','market-empty','A generált kampányterv itt jelenik meg.'))}
+    function fillStrategy(item){$('strategyName').value=item.name||'';
+      $('strategyGoal').value=item.goal||'Ajánlatkérések';
+      $('strategyAudience').value=item.audience||'';$('strategyCity').value=item.city||'';
+      $('strategyBrief').value=item.brief||'';$('strategyServices').value=item.strategyServices||'';
+      $('strategyEvidence').value=item.strategyEvidence||'';
+      $('strategyMarkdown').value=item.strategyMarkdown||'';
+      renderStrategyPreview(item.strategyMarkdown||'')}
+    function saveForm(announce=true){const item=current();if(!item)return null;
+      if(!$('campaignForm').checkValidity()){activateMarketingTab('Campaign');$('campaignForm').reportValidity();return null}
+      const value=fields();if(!value.channels.length){activateMarketingTab('Campaign');notice('Válassz legalább egy csatornát.',true);return null}
+      Object.assign(item,value);item.drafts=item.drafts.filter(draft=>value.channels.includes(draft.channel));persist();render(false);
+      if(announce)notice('A kampány mentése folyamatban a Drive-ra.');return item}
+    function makeDrafts(item){const place=item.city?' '+item.city+' térségében':'';
+      const message=item.brief||item.goal.toLowerCase();
+      return item.channels.flatMap(channel=>{
+        let first;
+        if(channel==='google')first={channel,headline:'Építészeti tervezés',body:'Kérj személyre szabott ajánlatot a Kocka Stúdiótól.',cta:'Ajánlatkérés'};
+        else if(channel==='instagram')first={channel,headline:'Tervezz velünk',body:`${message}\nMeséld el, mit szeretnél megvalósítani, és küldj inspirációs képeket.`,cta:'Ajánlatkérés'};
+        else if(channel==='tiktok')first={channel,headline:'Az ötlettől a tervig',body:`${message}\nMutasd meg az elképzelésed.`,cta:'Ajánlatkérés'};
+        else first={channel,headline:`Építészeti tervezés${place}`,body:`${message}\nBeszéljük át a lehetőségeket. Kérj ajánlatot a Kocka Stúdiótól.`,cta:'Ajánlatkérés'};
+        const second=channel==='google'
+          ?{channel,headline:'Tervek az ötlettől',body:'Építészeti tervezés és személyes egyeztetés. Kérj ajánlatot.',cta:'Ajánlatkérés'}
+          :{channel,headline:'Van egy elképzelésed?',body:`${message}\nOszd meg velünk a terveidet és a vázlataidat, hogy együtt tisztázzuk a következő lépést.`,cta:'Ajánlatkérés'};
+        return [{...first,variant:'a'},{...second,variant:'b'}];
+      })}
+    function renderStats(){const totals=state.campaigns.reduce((sum,item)=>{for(const key of ['spend','views','clicks','leads','qualified','offers'])sum[key]+=(item.metrics?.[key]||0);return sum},
+      {spend:0,views:0,clicks:0,leads:0,qualified:0,offers:0});
+      $('kpiSpend').textContent=money(totals.spend);$('kpiLeads').textContent=String(totals.leads);
+      $('kpiQualified').textContent=String(totals.qualified);$('kpiCpl').textContent=totals.leads?money(Math.round(totals.spend/totals.leads)):'–';
+      const daily=Array.from({length:7},(_,index)=>state.campaigns.reduce((sum,item)=>sum+(item.metrics?.daily?.[index]||0),0));
+      const max=Math.max(1,...daily),chart=$('marketChart');chart.replaceChildren();
+      daily.forEach((count,index)=>{const bar=el('div','market-bar');bar.title=`${count} megkeresés`;const fill=el('i');fill.style.height=Math.max(3,Math.round(count/max*108))+'px';bar.append(fill,el('span','',new Intl.DateTimeFormat('hu-HU',{weekday:'short'}).format(new Date(Date.now()-(6-index)*86400000))));chart.append(bar)});
+      const funnel=$('marketFunnel');funnel.replaceChildren();
+      [['Megjelenés',totals.views],['Kattintás',totals.clicks],['Megkeresés',totals.leads],['Minősített',totals.qualified],['Ajánlat',totals.offers]].forEach(([label,count])=>{const row=el('div');row.append(el('span','',label),el('b','',String(count)));funnel.append(row)});
+    }
+    function renderList(){const list=$('campaignList');list.replaceChildren();
+      for(const item of state.campaigns){const button=el('button','market-campaign'+(item.id===state.selected?' active':''));button.type='button';button.append(el('strong','',item.name||'Új kampány'),el('small','',`${item.channels.map(value=>platforms[value]).join(', ')||'Csatorna nélkül'} · ${item.metrics?.leads||0} demó megkeresés`));
+        button.addEventListener('click',()=>{state.selected=item.id;chosenDraft=0;persist();render();hydrateAssets(item.id)});list.append(button)}}
+    function renderPreview(item){const host=$('adPreview');host.replaceChildren();const draft=item.drafts[chosenDraft];
+      host.append(el('small','',draft?platforms[draft.channel]+' · '+(draft.variant||'a').toUpperCase()+' változat · demó előnézet':'Válassz egy szövegváltozatot'));
+      if(!draft){host.append(el('p','', 'A „Szövegek készítése” gombbal készíthetsz szerkeszthető változatokat.'));renderFullAd(item);return}
+      host.append(el('h3','',draft.headline),el('p','',draft.body),el('span','mock-action',draft.cta));renderFullAd(item)}
+    function renderCopies(item){const list=$('copyList');list.replaceChildren();
+      if(!item.drafts.length){list.append(el('p','market-empty','Ehhez a kampányhoz még nincs szöveg.'));renderPreview(item);return}
+      item.drafts.forEach((draft,index)=>{const card=el('div','market-copy');const heading=el('h3');heading.append(el('span','',(platforms[draft.channel]||draft.channel)+' · '+(draft.variant||'a').toUpperCase()));
+        const preview=el('button','market-button alt small','Előnézet');preview.type='button';preview.addEventListener('click',()=>{chosenDraft=index;renderPreview(item)});heading.append(preview);card.append(heading);
+        for(const [key,label,tag] of [['headline','Címsor','input'],['body','Szöveg','textarea'],['cta','Gombszöveg','input']]){
+          const id=`copy-${index}-${key}`,caption=el('label','',label),input=el(tag);caption.htmlFor=id;input.id=id;input.value=draft[key];input.maxLength=key==='body'?900:key==='headline'?100:40;
+          input.addEventListener('input',()=>{draft[key]=input.value;persist();if(chosenDraft===index)renderPreview(item)});card.append(caption,input)}
+        const copy=el('button','market-button alt small','Szöveg másolása');copy.type='button';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(`${draft.headline}\n\n${draft.body}\n\n${draft.cta}`);notice('A szöveg a vágólapra került.')}catch(_){notice('A másolás nem sikerült. Jelöld ki a szöveget a mezőben.',true)}});card.append(copy);list.append(card)});
+      if(chosenDraft>=item.drafts.length)chosenDraft=0;renderPreview(item)}
+    function renderLinks(item){const host=$('campaignLinks');host.replaceChildren();
+      for(const channel of item.channels)for(const variant of ([...new Set(item.drafts.filter(draft=>draft.channel===channel).map(draft=>draft.variant||'a'))].length?[...new Set(item.drafts.filter(draft=>draft.channel===channel).map(draft=>draft.variant||'a'))]:['a'])){const url=new URL('https://example.invalid/ajanlatkeres');url.searchParams.set('utm_source',channel);url.searchParams.set('utm_medium',channel==='google'?'cpc':'paid_social');url.searchParams.set('utm_campaign',item.id);url.searchParams.set('utm_content',variant);
+        const label=el('label','market-help',platforms[channel]+' · '+variant.toUpperCase()+' változat · csak demó mintalink'),row=el('div','market-link-row'),input=el('input','market-link');input.value=url.toString();input.readOnly=true;input.setAttribute('aria-label',platforms[channel]+' '+variant.toUpperCase()+' mintalink');
+        const copy=el('button','market-button alt small','Másolás');copy.type='button';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(input.value);notice('A demó mintalink a vágólapra került.')}catch(_){input.select();notice('Jelöld ki és másold a mintalinket.')}});row.append(input,copy);host.append(label,row)}
+      if(!item.channels.length)host.append(el('p','market-empty','Válassz csatornát a kampánytervben.'))}
+    function renderCalendar(){const host=$('marketCalendar');host.replaceChildren();const items=state.campaigns.filter(item=>item.status==='scheduled'&&item.date).sort((a,b)=>a.date.localeCompare(b.date));
+      if(!items.length){host.append(el('p','market-empty','Nincs próbaütemezett kampány.'));return}
+      for(const item of items){const row=el('div','market-calendar-item');row.append(el('span','',item.name),el('strong','',item.date));host.append(row)}}
+    function renderSuggestions(item){const host=$('marketSuggestions');host.replaceChildren();let ideas=[];
+      if(!item.drafts.length)ideas.push('Készíts legalább egy szöveget minden kiválasztott csatornához.');
+      if(!item.brief)ideas.push('Add meg a fő üzenetet, így célzottabb szöveg készül.');
+      if(!item.city)ideas.push('Jelöld meg a tervezett célterületet.');
+      if(item.metrics?.leads&&item.metrics.spend/item.metrics.leads>10000)ideas.push('A demó megkeresés költsége magas. Próbálj más címsort vagy célközönséget.');
+      if(item.metrics?.leads&&!item.metrics.qualified)ideas.push('A megkeresések minőségét is érdemes mérni az ajánlatkérőből.');
+      if(!ideas.length)ideas=['A kampány előkészítve. A következő lépés az éles fiókok összekapcsolása lenne.'];
+      for(const idea of ideas)host.append(el('li','',idea))}
+    let availablePostTopics=[],postCampaignId='';
+    function renderPostTopics(){const host=$('postTopics'),chosen=host.querySelector('[name=postTopic]:checked')?.value;
+      host.replaceChildren();for(const [index,topic] of availablePostTopics.entries()){
+        const row=el('label','market-topic'),radio=el('input');radio.type='radio';radio.name='postTopic';
+        radio.value=String(index);radio.checked=chosen?chosen===radio.value:index===0;
+        const text=el('span');text.append(el('strong','',topic.title),
+          el('small','',topic.source+(topic.publishedAt?' · '+new Date(topic.publishedAt).toLocaleDateString('hu-HU'):'')));
+        row.append(radio,text);host.append(row);
+      }}
+    function renderPosts(item){const auto=item.autoPost||{},host=$('postDrafts');host.replaceChildren();
+      if(postCampaignId!==item.id){postCampaignId=item.id;$('postInterval').value=String(auto.intervalDays||7);
+        $('postImageModel').value=auto.imageModel||'gemini-image';
+        const next=auto.nextRunAt?new Date(auto.nextRunAt):new Date(Date.now()+7*86400000);
+        const local=new Date(next.getTime()-next.getTimezoneOffset()*60000);
+        $('postFirstRun').value=local.toISOString().slice(0,16);}
+      $('postScheduleStatus').textContent=auto.enabled?
+        `Bekapcsolva · következő tervezet: ${new Date(auto.nextRunAt).toLocaleString('hu-HU')}${auto.lastError?' · Utolsó hiba: '+auto.lastError:''}`:
+        'Kikapcsolva. A már elkészült tervezetek megmaradnak.';
+      const posts=Array.isArray(item.posts)?[...item.posts].reverse():[];
+      if(!posts.length){host.append(el('p','market-empty','Ehhez a kampányhoz még nincs bejegyzés.'));return}
+      for(const post of posts){const card=el('article','market-post'),picture=el('div'),details=el('div');
+        if(post.imageId){const img=el('img');img.src=outputUrl(item.id,post.imageId)+
+          (post.imageUpdatedAt?'&v='+encodeURIComponent(post.imageUpdatedAt):'');
+          img.alt='A bejegyzés kész képe';img.loading='lazy';picture.append(img)}
+        if(post.imageId){const download=el('a','market-button alt small','Kép letöltése');download.href=outputUrl(item.id,post.imageId);
+          download.target='_blank';download.rel='noopener';picture.append(download)}
+        if(post.svgId){const source=el('a','market-button alt small','SVG-forrás');source.href=outputUrl(item.id,post.svgId);
+          source.target='_blank';source.rel='noopener';picture.append(source)}
+        const title=el('input');title.value=post.headline||'';title.maxLength=120;
+        title.setAttribute('aria-label','Bejegyzés képfelirata');title.readOnly=post.status!=='draft';
+        title.addEventListener('input',()=>{post.headline=title.value;persist()});
+        const body=el('textarea');body.value=post.body||'';body.maxLength=5000;
+        body.setAttribute('aria-label','Bejegyzés szövege');body.readOnly=post.status!=='draft';
+        body.addEventListener('input',()=>{post.body=body.value;persist()});
+        const label=({draft:'Szerkeszthető tervezet',approved:'Jóváhagyva',publishing:'Publikálás folyamatban',
+          published:'Közzétéve',publish_uncertain:'Ellenőrzést igényel'})[post.status]||post.status;
+        const styleSelect=el('select');styleSelect.setAttribute('aria-label','Bejegyzéskép stílusa');
+        for(const [value,name] of [['classic','1 · Klasszikus sötét'],['fresh','2 · Világos, színes'],
+          ['editorial','3 · Magazinos'],['blueprint','4 · Tervrajzos'],['bold','5 · Élénk']]){
+          const option=el('option','',name);option.value=value;styleSelect.append(option)}
+        styleSelect.value=post.style||'fresh';styleSelect.disabled=!['draft','approved'].includes(post.status);
+        details.append(el('h3','',label),el('label','market-help','Képfelirat'),title,
+          el('label','market-help','Kép stílusa'),styleSelect,
+          el('label','market-help','Bejegyzésszöveg'),body,
+          el('p','market-post-meta',new Date(post.createdAt).toLocaleString('hu-HU')+
+            (post.automatic?' · automatikusan készült':' · kézzel indítva')));
+        const topic=el('p','market-post-meta','Téma: '+(post.topic?.title||''));details.append(topic);
+        if(post.topic?.url){const source=el('a','market-post-meta','Téma forrása: '+post.topic.source);
+          source.href=post.topic.url;source.target='_blank';source.rel='noopener noreferrer';details.append(source)}
+        if(post.imageError)details.append(el('p','market-post-meta','Képgenerálás: '+post.imageError));
+        if(post.publishError)details.append(el('p','market-post-meta','Publikálási hiba: '+post.publishError));
+        if(post.facebookPostId){const link=el('a','market-button alt small','Megnyitás a Facebookon');
+          link.href='https://www.facebook.com/'+encodeURIComponent(post.facebookPostId);
+          link.target='_blank';link.rel='noopener';details.append(link)}
+        if(post.instagramMediaId)details.append(el('p','market-post-meta','Instagramon közzétéve'+
+          (post.instagramUsername?' · @'+post.instagramUsername:'')+(post.instagramPublishedAt?
+            ' · '+new Date(post.instagramPublishedAt).toLocaleString('hu-HU'):'')));
+        const actions=el('div','market-actions');
+        if(['draft','approved'].includes(post.status)&&post.imageId){
+          const redraw=el('button','market-button alt small','Kép frissítése');redraw.type='button';
+          const refresh=async()=>{redraw.disabled=true;styleSelect.disabled=true;try{
+            await saveBeforePost();
+            const result=await postRequest('redraw','POST',{campaignId:item.id,postId:post.id,
+              headline:title.value,style:styleSelect.value});
+            Object.assign(post,result.post);campaignSaved.set(item.id,JSON.stringify(item));
+            if(current()?.id===item.id)renderPosts(item);
+            notice('A bejegyzés képe az aktuális felirattal frissült.');
+          }catch(error){notice(error.message,true)}finally{redraw.disabled=false;styleSelect.disabled=false}};
+          redraw.addEventListener('click',refresh);actions.append(redraw);
+        }
+        if(post.status==='draft'){const approve=el('button','market-button alt small','Jóváhagyás');approve.type='button';
+          approve.addEventListener('click',async()=>{approve.disabled=true;try{await saveBeforePost();
+            await postRequest('approve','POST',{campaignId:item.id,postId:post.id,headline:title.value,
+              text:body.value,style:styleSelect.value});
+            await reloadDrive();notice('A bejegyzés jóváhagyva. Most külön publikálhatod a Facebook-oldalra.');}
+            catch(error){notice(error.message,true)}finally{approve.disabled=false}});actions.append(approve)}
+        if(post.status==='approved'){const publish=el('button','market-button mint small','Publikálás Facebookon');publish.type='button';
+          publish.addEventListener('click',async()=>{if(!window.confirm('A jóváhagyott bejegyzés most megjelenik a céges Facebook-oldalon. Publikálod?'))return;
+            publish.disabled=true;try{await postRequest('publish','POST',{campaignId:item.id,postId:post.id});
+              await reloadDrive();notice('A bejegyzés megjelent a Facebook-oldalon.');}
+            catch(error){await reloadDrive().catch(()=>{});notice(error.message,true)}finally{publish.disabled=false}});actions.append(publish)}
+        if(post.status==='published'&&!post.instagramMediaId){const instagram=el('button','market-button alt small','Közzététel Instagramon');instagram.type='button';
+          instagram.addEventListener('click',async()=>{if(!window.confirm('A bejegyzés képe és szövege most megjelenik a kapcsolt Instagram-fiókban. Publikálod?'))return;
+            instagram.disabled=true;try{await postRequest('instagram-publish','POST',{campaignId:item.id,postId:post.id});
+              await reloadDrive();notice('A bejegyzés megjelent az Instagramon.');}
+            catch(error){notice(error.message,true)}finally{instagram.disabled=false}});actions.append(instagram)}
+        if(post.status==='published'){const remove=el('button','market-button danger small',post.instagramMediaId?'Törlés a közösségi oldalakról':'Törlés Facebookról');remove.type='button';
+          remove.addEventListener('click',async()=>{const destinations=post.instagramMediaId?'a Facebook- és Instagram-oldalról':'a Facebook-oldalról';
+            if(!window.confirm('A bejegyzés végleg törlődik '+destinations+' és ebből a kampánylistából is. Folytatod?'))return;
+            remove.disabled=true;try{await postRequest('delete','POST',{campaignId:item.id,postId:post.id,confirmPublishedDelete:true});
+              await reloadDrive();notice('A bejegyzés törölve a közösségi oldalakról és a kampánylistából.');}
+            catch(error){notice(error.message,true)}finally{remove.disabled=false}});actions.append(remove)}
+        if(['publish_uncertain','publishing'].includes(post.status)){
+          const reset=el('button','market-button alt small','Nem jelent meg: újrapróbálás');reset.type='button';
+          reset.addEventListener('click',async()=>{
+            if(!window.confirm('Ellenőrizted a Facebook-oldalon, hogy ez a bejegyzés biztosan nem jelent meg? Csak ekkor engedélyezd az újrapróbálást.'))return;
+            reset.disabled=true;try{await postRequest('reset-publish','POST',{
+              campaignId:item.id,postId:post.id,confirmNotPublished:true});await reloadDrive();
+              notice('A bejegyzés újra publikálható.');}
+            catch(error){notice(error.message,true)}finally{reset.disabled=false}});actions.append(reset)}
+        details.append(actions);card.append(picture,details);host.append(card)}
+    }
+    function graphicFor(item){if(!item.graphic)item.graphic=defaultGraphic();return item.graphic}
+    function effectiveGraphic(item){const graphic=graphicFor(item),brand=state.brand||defaultBrand();
+      const font=graphic.font||brand.font||'Source Sans Pro',bodyFont=graphic.bodyFont||brand.bodyFont||'Source Sans Pro';
+      const size=(key,min,max,fallback)=>{const value=Number(graphic[key]??brand[key]);return Number.isFinite(value)&&value>=min&&value<=max?Math.round(value):fallback};
+      const weight=(key,fallback)=>{const value=Number(graphic[key]??brand[key]);return [300,400,600,700].includes(value)?value:fallback};
+      const style=key=>['normal','italic'].includes(graphic[key]??brand[key])?graphic[key]??brand[key]:'normal';
+      return {...graphic,
+        background:/^#[0-9a-f]{6}$/i.test(graphic.background||brand.background)?graphic.background||brand.background:'#3e3e3e',
+        accent:/^#[0-9a-f]{6}$/i.test(graphic.accent||brand.accent)?graphic.accent||brand.accent:'#77c59e',
+        font:FONT_CHOICES.includes(font)?font:'Source Sans Pro',
+        bodyFont:FONT_CHOICES.includes(bodyFont)?bodyFont:'Source Sans Pro',
+        headingSize:size('headingSize',24,120,78),bodySize:size('bodySize',16,64,28),
+        headingWeight:weight('headingWeight',600),bodyWeight:weight('bodyWeight',400),
+        headingStyle:style('headingStyle'),bodyStyle:style('bodyStyle'),
+        headingUppercase:(graphic.headingUppercase??brand.headingUppercase)===true,
+        bodyUppercase:(graphic.bodyUppercase??brand.bodyUppercase)===true}}
+    function updateImageFontStatus(item){const override=graphicFor(item).font,active=effectiveGraphic(item).font;
+      $('imageFontStatus').textContent=override?'Címsor: '+active+' · helyi beállítás · ↺ = globális':'↺ = globális arculati beállítások';}
+    function syncTypeButtons(scope,item){const source=scope==='image'?effectiveGraphic(item):state.brand;
+      for(const role of ['Heading','Body']){
+        $(''+scope+role+'ItalicToggle').setAttribute('aria-pressed',String(source[role.toLowerCase()+'Style']==='italic'));
+        $(''+scope+role+'UppercaseToggle').setAttribute('aria-pressed',String(source[role.toLowerCase()+'Uppercase']===true));
+        if(scope==='image'){
+          const graphic=graphicFor(item);
+          $('image'+role+'Reset').disabled=!['Font','Size','Weight','Style','Uppercase'].some(field=>{
+            const key=field==='Font'?(role==='Heading'?'font':'bodyFont'):role.toLowerCase()+field;
+            return graphic[key]!==null&&graphic[key]!==undefined&&graphic[key]!==''})}}}
+    function syncGeneratedImageView(){const source=roleImages.background?.generated?roleImages.background.original:null;
+      const card=$('generatedImageCard'),dialog=$('generatedImageDialog');card.hidden=!source;
+      if(source){$('generatedImageThumb').src=source;if(dialog.open)$('generatedImageLarge').src=source}
+      else{$('generatedImageThumb').removeAttribute('src');$('generatedImageLarge').removeAttribute('src');if(dialog.open)dialog.close()}}
+    function clearRoleImages(){for(const role of ['logo','background','element']){
+      if(roleImages[role]?.url?.startsWith('blob:'))URL.revokeObjectURL(roleImages[role].url);
+      roleImages[role]=null;const preview=$('ai'+role[0].toUpperCase()+role.slice(1)+'Preview');preview.hidden=true;preview.removeAttribute('src');
+      $('ai'+role[0].toUpperCase()+role.slice(1)).value=''}syncGeneratedImageView()}
+    function releasePhotos(){for(const photo of imagePhotos)URL.revokeObjectURL(photo.url);imagePhotos=[];imagePhoto=null;renderPhotoList()}
+    function renderPhotoList(){const host=$('imagePhotoList');host.replaceChildren();
+      const blank=el('button','market-photo-choice'+(!imagePhoto?' active':''));blank.type='button';blank.append(el('span','', 'Grafika'));blank.addEventListener('click',()=>{imagePhoto=null;renderPhotoList();drawImage(current())});host.append(blank);
+      for(const photo of imagePhotos){const button=el('button','market-photo-choice'+(imagePhoto===photo.image?' active':''));button.type='button';button.title=photo.name;
+        const thumb=el('img');thumb.src=photo.url;thumb.alt='';button.append(thumb,el('span','',photo.name));button.addEventListener('click',()=>{imagePhoto=photo.image;renderPhotoList();drawImage(current())});host.append(button)}}
+    function fillImageControls(item){const graphic=graphicFor(item);
+      if(imageCampaignId!==item.id){releasePhotos();clearRoleImages();imageCampaignId=item.id;$('imagePhoto').value='';
+        $('aiBrief').value=item.aiBrief||item.brief||'';$('imagePrompt').value=item.imagePrompt||item.brief||'';
+        $('imageModel').value=item.imageModel||'local';$('aiUseColors').checked=item.aiUseColors===true;updateImageModelStatus()}
+      for(const [id,key] of [['imageFormat','format'],['imageStyle','style'],['imageHeadline','headline'],['imageSubtitle','subtitle'],['imageCta','cta']])$(id).value=graphic[key]||defaultGraphic()[key];
+      for(const key of ['background','accent']){
+        $('imageOverride'+key[0].toUpperCase()+key.slice(1)).checked=Boolean(graphic[key]);
+        $('image'+key[0].toUpperCase()+key.slice(1)).value=graphic[key]||state.brand[key];
+        $('image'+key[0].toUpperCase()+key.slice(1)).disabled=!graphic[key]}
+      $('imageFont').value=graphic.font||'';$('imageBodyFont').value=graphic.bodyFont||'';
+      for(const role of ['Heading','Body'])for(const field of ['Size','Weight','Style','Uppercase']){
+        const key=role.toLowerCase()+field,value=graphic[key];
+        $('image'+role+field).value=value===null||value===undefined?'':String(value)}
+      updateImageFontStatus(item);syncTypeButtons('image',item);
+      drawImage(item)}
+    function renderFullAd(item){const host=$('fullAdPreview');host.replaceChildren();const draft=item.drafts[chosenDraft],graphic=effectiveGraphic(item);
+      host.style.fontFamily=graphic.bodyFont;host.style.fontWeight=graphic.bodyWeight;host.style.fontStyle=graphic.bodyStyle;
+      host.append(el('strong','', 'Kocka Stúdió · '+(draft?(platforms[draft.channel]||draft.channel)+' · '+(draft.variant||'a').toUpperCase():'demó hirdetés')));
+      host.append(el('small','', 'Összeállított hirdetés előnézete'));
+      const body=el('p','',draft?.body||item.brief||'A posztszöveg a kiválasztott A/B változatból jelenik meg.');
+      body.style.fontSize=Math.round(graphic.bodySize*.5)+'px';body.style.textTransform=graphic.bodyUppercase?'uppercase':'none';host.append(body);
+      const title=el('strong','',draft?.headline||graphic.headline||item.name||'Hirdetés címsora');
+      title.style.fontFamily=graphic.font;title.style.fontSize=Math.round(graphic.headingSize*.3)+'px';
+      title.style.fontWeight=graphic.headingWeight;title.style.fontStyle=graphic.headingStyle;
+      title.style.textTransform=graphic.headingUppercase?'uppercase':'none';host.append(title);
+      const action=el('span','mock-action',draft?.cta||graphic.cta||'Kérj ajánlatot');action.style.background=graphic.accent;action.style.color=contrastInk(graphic.accent);host.append(action)}
+    function imageLines(ctx,value,maxWidth){const lines=[];let line='';
+      for(const word of value.trim().split(/\s+/).filter(Boolean)){
+        const next=line?line+' '+word:word;
+        if(ctx.measureText(next).width<=maxWidth){line=next;continue}
+        if(line){lines.push(line);line=''}
+        if(ctx.measureText(word).width<=maxWidth){line=word;continue}
+        let part='';for(const char of word){if(part&&ctx.measureText(part+char).width>maxWidth){lines.push(part);part=''}part+=char}line=part}
+      if(line)lines.push(line);return lines}
+    function fitImageText(ctx,value,maxWidth,maxHeight,startingSize,minSize,font,weight,style){let lines=[],size=startingSize;
+      for(;size>=minSize;size-=2){ctx.font=`${style} ${weight} ${size}px "${font}"`;lines=imageLines(ctx,value,maxWidth);if(lines.length*size*1.14<=maxHeight)return {lines,size,truncated:false}}
+      ctx.font=`${style} ${weight} ${minSize}px "${font}"`;lines=imageLines(ctx,value,maxWidth);const count=Math.max(1,Math.floor(maxHeight/(minSize*1.14)));
+      if(lines.length<=count)return {lines,size:minSize,truncated:false};
+      lines=lines.slice(0,count);let last=lines[count-1];while(last&&ctx.measureText(last+'…').width>maxWidth)last=last.slice(0,-1);lines[count-1]=last+'…';return {lines,size:minSize,truncated:true}}
+    function contrastInk(hex){const value=/^#[0-9a-f]{6}$/i.test(hex)?hex:'#3e3e3e';const parts=[1,3,5].map(index=>parseInt(value.slice(index,index+2),16));return parts[0]*.299+parts[1]*.587+parts[2]*.114>155?'#24302a':'#ffffff'}
+    function drawCover(ctx,photo,width,height){const scale=Math.max(width/photo.width,height/photo.height);const dw=photo.width*scale,dh=photo.height*scale;ctx.drawImage(photo,(width-dw)/2,(height-dh)/2,dw,dh)}
+    function drawContain(ctx,photo,x,y,width,height){const scale=Math.min(width/photo.width,height/photo.height);const dw=photo.width*scale,dh=photo.height*scale;ctx.drawImage(photo,x+(width-dw)/2,y+(height-dh)/2,dw,dh)}
+    function drawImage(item){const graphic=effectiveGraphic(item),canvas=$('imageCanvas'),ctx=canvas.getContext('2d');if(!ctx)return;
+      const [width,height]=imageSizes[graphic.format]||imageSizes.square;canvas.width=width;canvas.height=height;
+      const unit=width/1000,H=height/unit;ctx.setTransform(unit,0,0,unit,0,0);
+      ctx.fillStyle=graphic.background;ctx.fillRect(0,0,1000,H);
+      const backgroundImage=roleImages.background?.image||imagePhoto;
+      if(backgroundImage){drawCover(ctx,backgroundImage,1000,H);ctx.fillStyle='rgba(20,27,25,.69)';ctx.fillRect(0,0,1000,H)}
+      else if(graphic.style==='architecture'){
+        ctx.save();ctx.globalAlpha=.32;ctx.strokeStyle=graphic.accent;ctx.lineWidth=3;
+        const shift=(graphic.variant||0)%3*45;ctx.beginPath();ctx.moveTo(450+shift,H*.43);ctx.lineTo(675+shift,H*.16);ctx.lineTo(910,H*.43);ctx.lineTo(910,H*.83);ctx.lineTo(450+shift,H*.83);ctx.closePath();ctx.stroke();
+        ctx.strokeRect(595+shift,H*.49,175,H*.18);ctx.beginPath();ctx.moveTo(680+shift,H*.49);ctx.lineTo(680+shift,H*.67);ctx.moveTo(790+shift,H*.83);ctx.lineTo(790+shift,H*.57);ctx.lineTo(870,H*.57);ctx.lineTo(870,H*.83);ctx.stroke();ctx.restore()}
+      else if(graphic.style==='geometry'){
+        ctx.save();ctx.globalAlpha=.17;ctx.fillStyle=graphic.accent;ctx.beginPath();ctx.arc(780+(graphic.variant||0)%3*35,H*.3,260,0,Math.PI*2);ctx.fill();ctx.fillRect(370,H*.62,530,H*.2);ctx.restore()}
+      if(roleImages.element?.image)drawContain(ctx,roleImages.element.image,610,H*.17,310,Math.min(350,H*.32));
+      ctx.fillStyle=graphic.accent;ctx.fillRect(64,57,70,7);
+      const ink=backgroundImage?'#ffffff':contrastInk(graphic.background);
+      const logo=roleImages.logo?.image||brandLogoImage;
+      if(logo)drawContain(ctx,logo,64,75,250,95);
+      else{ctx.fillStyle=ink;ctx.font=`700 28px "${graphic.bodyFont}"`;ctx.letterSpacing='4px';ctx.fillText('KOCKA STÚDIÓ',64,115);ctx.letterSpacing='0px'}
+      const headlineRaw=(graphic.headline||item.name||'Egyedi építészeti tervezés').trim();
+      const subtitleRaw=(graphic.subtitle||item.brief||'Építészeti tervezés személyre szabva').trim();
+      const headline=graphic.headingUppercase?headlineRaw.toLocaleUpperCase('hu-HU'):headlineRaw;
+      const subtitle=graphic.bodyUppercase?subtitleRaw.toLocaleUpperCase('hu-HU'):subtitleRaw;
+      const top=H<650?(graphic.layout==='bottom'?255:174):H*(graphic.layout==='bottom'?.59:graphic.layout==='centered'?.38:.47);
+      const available=Math.max(80,Math.min(330,H-top-165));
+      const textWidth=roleImages.element?.image?520:865;
+      const headlineSize=graphic.headingSize;
+      const fitted=fitImageText(ctx,headline,textWidth,available,headlineSize,Math.min(24,headlineSize),graphic.font,graphic.headingWeight,graphic.headingStyle);
+      ctx.fillStyle=ink;ctx.font=`${graphic.headingStyle} ${graphic.headingWeight} ${fitted.size}px "${graphic.font}"`;ctx.textBaseline='top';let y=top;
+      for(const line of fitted.lines){ctx.fillText(line,64,y);y+=fitted.size*1.14}
+      ctx.font=`${graphic.bodyStyle} ${graphic.bodyWeight} ${graphic.bodySize}px "${graphic.bodyFont}"`;
+      ctx.fillStyle=ink;const allSubtitleLines=imageLines(ctx,subtitle,textWidth),subtitleLines=allSubtitleLines.slice(0,H<650?2:3);
+      const subtitleLineHeight=graphic.bodySize*1.25;
+      y+=17;let shownSubtitle=0;for(const line of subtitleLines){if(y+subtitleLineHeight>H-117)break;ctx.fillText(line,64,y);y+=subtitleLineHeight;shownSubtitle++}
+      const cta=(graphic.cta||'Kérj ajánlatot').trim();let ctaSize=23;ctx.font=`700 ${ctaSize}px "${graphic.bodyFont}"`;while(ctx.measureText(cta+'  →').width>370&&ctaSize>14){ctaSize--;ctx.font=`700 ${ctaSize}px "${graphic.bodyFont}"`}
+      const ctaWidth=Math.min(420,ctx.measureText(cta+'  →').width+44);ctx.fillStyle=graphic.accent;ctx.fillRect(64,H-93,ctaWidth,53);ctx.fillStyle=contrastInk(graphic.accent);ctx.textBaseline='middle';ctx.fillText(cta+'  →',86,H-66);
+      ctx.font=`20px "${graphic.bodyFont}"`;ctx.fillStyle=ink;ctx.textAlign='right';ctx.fillText('kockastudio.hu',940,H-64);ctx.textAlign='left';
+      const subtitleShortened=shownSubtitle<allSubtitleLines.length;
+      $('imagePreviewNote').textContent=`${width} × ${height} px · helyben összeállított grafika${fitted.truncated||subtitleShortened?' · a hosszú felirat a képen rövidítve látszik':''}${backgroundImage?(roleImages.background?.generated?' · AI-háttérképpel':' · saját háttérképpel'):''}.`;
+      renderFullAd(item)}
+    function render(form=true){const item=current();renderStats();renderList();renderCalendar();
+      const folder=$('campaignFolderLink');folder.hidden=!item||!remoteFolders[item.id];
+      if(item&&remoteFolders[item.id])folder.href=remoteFolders[item.id];
+      if(!item)return;if(form)fillForm(item);fillStrategy(item);renderCopies(item);renderLinks(item);renderSuggestions(item);renderPosts(item);fillImageControls(item);renderOutputs(item)}
+    for(const [id,key] of [['imageFormat','format'],['imageStyle','style'],['imageHeadline','headline'],['imageSubtitle','subtitle'],['imageCta','cta'],['imageFont','font'],['imageBodyFont','bodyFont']]){
+      $(id).addEventListener('input',()=>{const item=current();if(!item)return;graphicFor(item)[key]=$(id).value;persist();if(key==='font')updateImageFontStatus(item);
+        if(key==='font'||key==='bodyFont')syncTypeButtons('image',item);
+        readyForGraphic(item).catch(error=>notice(error.message,true))})}
+    for(const role of ['Heading','Body'])for(const field of ['Size','Weight','Style','Uppercase']){
+      const id='image'+role+field,key=role.toLowerCase()+field;
+      $(id).addEventListener('input',()=>{const item=current(),input=$(id);if(!item||!input.validity.valid)return;
+        const value=input.value;graphicFor(item)[key]=value===''?null:field==='Size'||field==='Weight'?Number(value):field==='Uppercase'?value==='true':value;
+        persist();syncTypeButtons('image',item);readyForGraphic(item).catch(error=>notice(error.message,true))})}
+    for(const role of ['Heading','Body']){
+      const key=role.toLowerCase();
+      $('image'+role+'ItalicToggle').addEventListener('click',()=>{const item=current(),input=$('image'+role+'Style');
+        input.value=effectiveGraphic(item)[key+'Style']==='italic'?'normal':'italic';input.dispatchEvent(new Event('input'))});
+      $('image'+role+'UppercaseToggle').addEventListener('click',()=>{const item=current(),input=$('image'+role+'Uppercase');
+        input.value=effectiveGraphic(item)[key+'Uppercase']?'false':'true';input.dispatchEvent(new Event('input'))});
+      $('image'+role+'Reset').addEventListener('click',()=>{const item=current(),graphic=graphicFor(item);
+        for(const field of ['Size','Weight','Style','Uppercase'])graphic[key+field]=null;
+        graphic[role==='Heading'?'font':'bodyFont']=null;persist();fillImageControls(item);
+        readyForGraphic(item).catch(error=>notice(error.message,true))})}
+    for(const key of ['background','accent']){
+      const suffix=key[0].toUpperCase()+key.slice(1),toggle=$('imageOverride'+suffix),picker=$('image'+suffix);
+      toggle.addEventListener('change',()=>{const item=current();if(!item)return;
+        graphicFor(item)[key]=toggle.checked?picker.value:null;picker.disabled=!toggle.checked;persist();drawImage(item)});
+      picker.addEventListener('input',()=>{const item=current();if(!item||!toggle.checked)return;graphicFor(item)[key]=picker.value;persist();drawImage(item)})}
+    function fillBrandControls(){const brand=state.brand||defaultBrand();$('brandBackground').value=brand.background;$('brandAccent').value=brand.accent;$('brandFont').value=brand.font;$('brandBodyFont').value=brand.bodyFont;
+      for(const role of ['Heading','Body'])for(const field of ['Size','Weight','Style','Uppercase']){
+        const input=$('brand'+role+field),value=brand[role.toLowerCase()+field];
+        if(field==='Uppercase')input.checked=value===true;else input.value=String(value)}
+      syncTypeButtons('brand',current());
+      const preview=$('brandLogoPreview');preview.hidden=!brand.logoDataUrl;if(brand.logoDataUrl)preview.src=brand.logoDataUrl;else preview.removeAttribute('src')}
+    for(const [id,key] of [['brandBackground','background'],['brandAccent','accent'],['brandFont','font'],['brandBodyFont','bodyFont']])
+      $(id).addEventListener('input',()=>{state.brand[key]=$(id).value;persist();fillImageControls(current());
+        readyForGraphic(current()).catch(error=>notice(error.message,true))});
+    for(const role of ['Heading','Body'])for(const field of ['Size','Weight','Style','Uppercase']){
+      const id='brand'+role+field,key=role.toLowerCase()+field;
+      $(id).addEventListener(field==='Uppercase'?'change':'input',()=>{const input=$(id);if(!input.validity.valid)return;
+        const value=field==='Uppercase'?input.checked:field==='Size'||field==='Weight'?Number(input.value):input.value;
+        if(field==='Size'&&!input.value)return;
+        state.brand[key]=value;persist();syncTypeButtons('brand',current());
+        syncTypeButtons('image',current());readyForGraphic(current()).catch(error=>notice(error.message,true))})}
+    for(const role of ['Heading','Body']){
+      $('brand'+role+'ItalicToggle').addEventListener('click',()=>{const input=$('brand'+role+'Style');
+        input.value=input.value==='italic'?'normal':'italic';input.dispatchEvent(new Event('input'))});
+      $('brand'+role+'UppercaseToggle').addEventListener('click',()=>{const input=$('brand'+role+'Uppercase');
+        input.checked=!input.checked;input.dispatchEvent(new Event('change'))})}
+    function encodeImage(photo,maxSide,mime){const scale=Math.min(1,maxSide/Math.max(photo.width,photo.height)),canvas=document.createElement('canvas');
+      canvas.width=Math.max(1,Math.round(photo.width*scale));canvas.height=Math.max(1,Math.round(photo.height*scale));canvas.getContext('2d').drawImage(photo,0,0,canvas.width,canvas.height);
+      return canvas.toDataURL(mime,mime==='image/jpeg'?.78:undefined)}
+    async function decodeImage(url){const photo=new Image();photo.src=url;await photo.decode();return photo}
+    $('brandLogo').addEventListener('change',async event=>{const file=event.target.files?.[0];if(!file)return;
+      if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024){notice('A logó JPG, PNG vagy WebP legyen, legfeljebb 5 MB.',true);return}
+      const url=URL.createObjectURL(file);try{const photo=await decodeImage(url),data=encodeImage(photo,480,'image/png');
+        if(data.length>750000)throw Error('A logó a mentéshez túl nagy; próbálj kisebb felbontású fájlt.');
+        const saved=await uploadAsset('brand','brand',data,file.name);
+        state.brand.logoDataUrl=assetUrl('brand',saved.id);brandLogoImage=await decodeImage(state.brand.logoDataUrl);
+        persist();fillBrandControls();drawImage(current());notice('A globális logó mentve a Drive-on.')}
+      catch(error){notice(error.message||'A logó nem olvasható.',true)}finally{URL.revokeObjectURL(url);event.target.value=''}});
+    $('brandLogoRemove').addEventListener('click',async()=>{try{const old=(remoteAssets.brand||[])[0];
+      if(old)await deleteAsset('brand',old.id);state.brand.logoDataUrl='';brandLogoImage=null;persist();fillBrandControls();drawImage(current())}
+      catch(error){notice(error.message,true)}});
+    for(const role of ['logo','background','element']){
+      const suffix=role[0].toUpperCase()+role.slice(1);
+      $('ai'+suffix).addEventListener('change',async event=>{const file=event.target.files?.[0];if(!file)return;
+        if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>10*1024*1024){notice('A kép JPG, PNG vagy WebP legyen, legfeljebb 10 MB.',true);return}
+        const campaignId=current()?.id,url=URL.createObjectURL(file);
+        try{const photo=await decodeImage(url),data=encodeImage(photo,role==='background'?768:512,role==='background'?'image/jpeg':'image/png');
+          if(data.length>1800000)throw Error('A kép túl nagy az AI-kéréshez; válassz kisebb fájlt.');
+          if(current()?.id!==campaignId){URL.revokeObjectURL(url);return}
+          const saved=await uploadAsset(campaignId,role,file,file.name);
+          if(current()?.id!==campaignId){URL.revokeObjectURL(url);return}
+          if(roleImages[role]?.url?.startsWith('blob:'))URL.revokeObjectURL(roleImages[role].url);
+          roleImages[role]={url,image:photo,data,driveId:saved.id};const preview=$('ai'+suffix+'Preview');preview.src=url;preview.hidden=false;syncGeneratedImageView();drawImage(current());
+          notice('A kép mentve a kampány Drive-mappájába.')}
+        catch(error){URL.revokeObjectURL(url);notice(error.message||'A kép nem olvasható.',true)}})}
+    $('aiClearAssets').addEventListener('click',async()=>{try{const campaignId=current()?.id;
+      for(const role of ['logo','background','element'])if(roleImages[role]?.driveId)
+        await deleteAsset(campaignId,roleImages[role].driveId);
+      clearRoleImages();drawImage(current());notice('A képreferenciák törölve a Drive-ról.')}
+      catch(error){notice(error.message,true)}});
+    $('aiCreate').addEventListener('click',async()=>{const item=saveForm(false);if(!item)return;
+      const brief=$('aiBrief').value.trim()||item.brief,draft=item.drafts[chosenDraft];
+      if(!brief&&!draft?.body){notice('Írd le, mit mutasson be a kreatív.',true);$('aiBrief').focus();return}
+      const images={};for(const role of ['logo','background','element'])if(roleImages[role])images[role]=roleImages[role].data;
+      if(!images.logo&&state.brand.logoDataUrl){
+        const logo=state.brand.logoDataUrl;
+        images.logo=logo.startsWith('data:')?logo:encodeImage(await decodeImage(logo),480,'image/png');
+      }
+      if(!Object.keys(images).length){notice('Tölts fel legalább egy logót, háttérképet vagy grafikai elemet.',true);return}
+      const button=$('aiCreate'),status=$('aiStatus'),campaignId=item.id;button.disabled=true;status.textContent='A Gemini elemzi a képeket és készíti a kreatívtervet…';
+      try{const response=await fetch('/api/marketing/creative',{method:'POST',credentials:'same-origin',
+        headers:{'Content-Type':'application/json','x-kocka-rpc':'1'},body:JSON.stringify({
+          name:item.name,brief,audience:item.audience,headline:draft?.headline||'',body:draft?.body||'',
+          cta:draft?.cta||'Kérj ajánlatot',format:graphicFor(item).format,images,
+          font:effectiveGraphic(item).font,bodyFont:effectiveGraphic(item).bodyFont,
+          background:effectiveGraphic(item).background,accent:effectiveGraphic(item).accent
+        })});
+        if(response.status===401){window.location.href='/auth/login?return=%2Fmarketing&reason=expired';return}
+        const data=await response.json();if(!response.ok)throw Error(data.error||'Az AI-kérés nem sikerült.');
+        if(current()?.id!==campaignId){status.textContent='A terv elkészült, de közben másik kampányt választottál. Indítsd újra a kiválasztott kampányban.';return}
+        const plan=data.plan,graphic=graphicFor(item);graphic.headline=plan.headline;graphic.subtitle=plan.subtitle;graphic.cta=plan.cta;graphic.style=plan.style;graphic.layout=plan.layout;
+        if($('aiUseColors').checked){graphic.background=plan.background;graphic.accent=plan.accent}
+        if(draft){draft.headline=plan.headline;draft.body=plan.body;draft.cta=plan.cta}
+        else{item.drafts.push({channel:item.channels[0]||'facebook',variant:'a',headline:plan.headline,body:plan.body,cta:plan.cta});chosenDraft=item.drafts.length-1}
+        if(item.status==='approved'||item.status==='scheduled')item.status='draft';
+        persist();render(false);await readyForGraphic(item);
+        status.textContent='A kreatívterv a fenti hirdetéskép-előnézeten látható. Új AI-háttérképhez válaszd a Gemini képkészítő modellt, majd kattints a „Kép készítése” gombra.';
+        $('imageCanvas').scrollIntoView({behavior:'smooth',block:'center'});
+        notice('A Gemini kreatívterve a hirdetéskép-előnézeten látható. Új háttérképhez használd a Gemini képkészítő modellt.')}
+      catch(error){status.textContent=error.message;notice(error.message,true)}finally{button.disabled=false}});
+    $('imageUseCopy').addEventListener('click',()=>{const item=current();if(!item)return;const draft=item.drafts[chosenDraft];if(!draft){activateMarketingTab('Copy');notice('Előbb készíts és válassz egy hirdetésszöveget a Hirdetésszövegek fülön.',true);return}
+      const graphic=graphicFor(item);graphic.headline=draft.headline;graphic.subtitle=draft.body.split(/[.!?]\s/)[0].slice(0,180);graphic.cta=draft.cta;persist();fillImageControls(item);notice('A kiválasztott hirdetés címsora, rövid szövege és gombja átkerült a képre.')});
+    function updateImageModelStatus(){const selected=imageModels.find(model=>model.id===$('imageModel').value);
+      const fallback=$('imageModel').value==='local'?'A helyi grafika azonnal használható.':'A modell állapotának ellenőrzése folyamatban…';
+      $('imageModelStatus').textContent=selected?((selected.available?'✓ Kész: ':'⚠ Nem áll készen: ')+selected.reason):fallback}
+    $('imageModel').addEventListener('change',()=>{const item=current();if(item){item.imageModel=$('imageModel').value;persist()}
+      updateImageModelStatus()});
+    for(const [id,key] of [['aiBrief','aiBrief'],['imagePrompt','imagePrompt']])$(id).addEventListener('input',()=>{
+      const item=current();if(item){item[key]=$(id).value;persist()}});
+    $('aiUseColors').addEventListener('change',()=>{const item=current();if(item){item.aiUseColors=$('aiUseColors').checked;persist()}});
+    async function loadImageModels(){try{const response=await fetch('/api/marketing/image/models',{credentials:'same-origin'});
+      if(response.status===401){window.location.href='/auth/login?return=%2Fmarketing&reason=expired';return}
+      if(!response.ok)throw Error('A modellek állapota nem kérdezhető le. Frissítsd az oldalt.');
+      imageModels=(await response.json()).models||[];
+      for(const model of imageModels){const option=[...$('imageModel').options].find(entry=>entry.value===model.id);
+        if(option)option.textContent=model.label+(model.available?'':' · beállítás szükséges')}
+      updateImageModelStatus()}
+      catch(error){$('imageModelStatus').textContent=error.message}}
+    $('imageGenerate').addEventListener('click',async()=>{const item=current(),model=$('imageModel').value;if(!item)return;
+      if(model==='local'){graphicFor(item).variant=(graphicFor(item).variant+1)%3;persist();drawImage(item);
+        $('imageCanvas').scrollIntoView({behavior:'smooth',block:'center'});
+        notice('A hirdetéskép új változata elkészült a böngészőben.');return}
+      const availability=imageModels.find(entry=>entry.id===model);
+      if(availability&&!availability.available){$('imageModelStatus').textContent='⚠ '+availability.reason;notice(availability.reason,true);return}
+      const prompt=$('imagePrompt').value.trim()||item.brief.trim();
+      if(!prompt){$('imageModelStatus').textContent='Írd le az AI háttérképet a képleírás mezőben.';$('imagePrompt').focus();return}
+      const campaignId=item.id,button=$('imageGenerate'),selectedModel=model;
+      const references=[];
+      if(model==='flux-2-klein-4b'||model==='gemini-image')for(const role of ['background','element'])if(roleImages[role]?.image)
+        references.push(encodeImage(roleImages[role].image,480,'image/jpeg'));
+      button.disabled=true;$('imageModelStatus').textContent='A modell készíti a háttérképet…';
+      try{const response=await fetch('/api/marketing/image',{method:'POST',credentials:'same-origin',
+        headers:{'Content-Type':'application/json','x-kocka-rpc':'1'},
+        body:JSON.stringify({model,prompt,format:graphicFor(item).format,references})});
+        if(response.status===401){window.location.href='/auth/login?return=%2Fmarketing&reason=expired';return}
+        const result=await response.json();if(!response.ok)throw Error(result.error||'A képgenerálás nem sikerült.');
+        const photo=await decodeImage(result.image);
+        if(current()?.id!==campaignId||$('imageModel').value!==selectedModel){$('imageModelStatus').textContent='A kép elkészült, de közben másik kampányt vagy modellt választottál. Készíts új képet az aktuális választáshoz.';return}
+        const data=encodeImage(photo,768,'image/jpeg');
+        if(roleImages.background?.url?.startsWith('blob:'))URL.revokeObjectURL(roleImages.background.url);
+        const saved=await uploadAsset(campaignId,'background',result.image,'generalt-hatter.png',true);
+        roleImages.background={data,image:photo,original:result.image,generated:true,driveId:saved.id};
+        $('aiBackgroundPreview').hidden=true;$('aiBackgroundPreview').removeAttribute('src');$('aiBackground').value='';syncGeneratedImageView();
+        drawImage(item);$('generatedImageCard').scrollIntoView({behavior:'smooth',block:'center'});
+        $('imageModelStatus').textContent='✓ A háttérkép elkészült a '+availability?.label+' modellel. A feliratok és a logó helyben kerültek rá.';
+        notice('AI háttérkép elkészült. A hirdetéskép PNG-ként letölthető.')}
+      catch(error){$('imageModelStatus').textContent='⚠ '+error.message;notice(error.message,true)}
+      finally{button.disabled=false}});
+    $('imageClearPhotos').addEventListener('click',async()=>{try{const campaignId=current()?.id;
+      for(const photo of imagePhotos)if(photo.driveId)await deleteAsset(campaignId,photo.driveId);
+      releasePhotos();$('imagePhoto').value='';drawImage(current());notice('A fotók törölve a Drive-ról.')}
+      catch(error){notice(error.message,true)}});
+    $('imagePhoto').addEventListener('change',async event=>{const campaignId=current()?.id,chosen=[...event.target.files],files=chosen.slice(0,Math.max(0,8-imagePhotos.length));
+      if(chosen.length>files.length)notice('Legfeljebb 8 képet tölthetsz be ehhez a demó kreatívhoz.',true);
+      for(const file of files){if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>10*1024*1024){notice('Csak JPG, PNG vagy WebP képet válassz, legfeljebb 10 MB méretben.',true);continue}
+        const url=URL.createObjectURL(file),photo=new Image();photo.src=url;
+        try{await photo.decode();if(current()?.id!==campaignId){URL.revokeObjectURL(url);continue}
+          const saved=await uploadAsset(campaignId,'photo',file,file.name);
+          if(current()?.id!==campaignId){URL.revokeObjectURL(url);continue}
+          const entry={name:file.name,url,image:photo,driveId:saved.id};imagePhotos.push(entry);imagePhoto=photo}
+        catch(error){URL.revokeObjectURL(url);notice(error.message||'Az egyik kép nem menthető.',true)}}
+      event.target.value='';renderPhotoList();if(current()?.id===campaignId)drawImage(current())});
+    function downloadBlob(blob,name){const url=URL.createObjectURL(blob),link=el('a');link.href=url;link.download=name;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)}
+    const imageFilename=()=>{const item=current();return (item?.name||'kocka-hirdetes').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'kocka-hirdetes'};
+    function openGeneratedImage(){const source=roleImages.background?.original;if(!source)return;
+      $('generatedImageLarge').src=source;$('generatedImageDialog').showModal()}
+    $('generatedImageOpen').addEventListener('click',openGeneratedImage);
+    $('generatedImageView').addEventListener('click',openGeneratedImage);
+    $('generatedImageClose').addEventListener('click',()=>$('generatedImageDialog').close());
+    $('generatedImageDialog').addEventListener('click',event=>{if(event.target===$('generatedImageDialog'))event.target.close()});
+    $('generatedImageDownload').addEventListener('click',async()=>{const source=roleImages.background?.original;if(!source)return;
+      try{const blob=await(await fetch(source)).blob(),extension=blob.type==='image/png'?'png':blob.type==='image/webp'?'webp':'jpg';
+        downloadBlob(blob,imageFilename()+'-ai-hatter.'+extension);notice('A generált háttérkép eredeti méretben letöltve.')}
+      catch(_){notice('A generált kép letöltése nem sikerült.',true)}});
+    $('generatedImageDelete').addEventListener('click',async()=>{if(!roleImages.background?.generated)return;
+      try{if(roleImages.background.driveId)await deleteAsset(current()?.id,roleImages.background.driveId);
+        roleImages.background=null;syncGeneratedImageView();drawImage(current());notice('A generált háttérkép törölve a Drive-ról.')}
+      catch(error){notice(error.message,true)}});
+    $('imageDownload').addEventListener('click',async()=>{const item=current();try{await readyForGraphic(item)}catch(error){notice(error.message,true);return}
+      $('imageCanvas').toBlob(blob=>{if(blob){downloadBlob(blob,imageFilename()+'.png');notice('A hirdetéskép PNG-ként letöltve.')}else notice('A PNG mentése nem sikerült.',true)},'image/png')});
+    const escapeHtml=value=>String(value||'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    async function embeddedSourceSans(graphic){let css='';const variants=new Map();
+      if(graphic.font==='Source Sans Pro')variants.set(graphic.headingStyle+'-'+graphic.headingWeight,[graphic.headingStyle,graphic.headingWeight]);
+      if(graphic.bodyFont==='Source Sans Pro'){
+        variants.set(graphic.bodyStyle+'-'+graphic.bodyWeight,[graphic.bodyStyle,graphic.bodyWeight]);
+        variants.set('normal-700',['normal',700])}
+      for(const subset of ['latin','latin-ext'])for(const [style,weight] of variants.values()){
+      const response=await fetch(`/assets/fonts/source-sans-pro-${subset}-${weight}-${style}.woff2`);
+      if(!response.ok)throw Error('A Source Sans Pro nem tölthető be az exporthoz.');
+      const bytes=new Uint8Array(await response.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));
+      css+=`@font-face{font-family:"Source Sans Pro";font-style:${style};font-weight:${weight};src:url(data:font/woff2;base64,${btoa(binary)}) format("woff2");${subset==='latin-ext'?'unicode-range:U+0100-02FF,U+1E00-1EFF;':''}}`}
+      return css}
+    $('adDownload').addEventListener('click',async()=>{const item=current();if(!item)return;const draft=item.drafts[chosenDraft],graphic=effectiveGraphic(item);
+      try{await readyForGraphic(item)}catch(error){notice(error.message,true);return}
+      const image=$('imageCanvas').toDataURL('image/png');
+      let fontCss='';try{fontCss=await embeddedSourceSans(graphic)}
+      catch(error){notice(error.message,true);return}
+      const html=`<!doctype html><html lang="hu"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(item.name||'Hirdetés')} · demó</title><style>${fontCss}body{font:16px "${graphic.bodyFont}",sans-serif;color:#343434;background:#f5f5f5;margin:0;padding:24px}.ad{max-width:620px;margin:auto;background:#fff;border:1px solid #ddd}.ad img{display:block;width:100%}.copy{padding:20px;white-space:pre-wrap;line-height:1.5}.copy p{font:${graphic.bodyStyle} ${graphic.bodyWeight} ${Math.round(graphic.bodySize*.5)}px "${graphic.bodyFont}",sans-serif;text-transform:${graphic.bodyUppercase?'uppercase':'none'}}.copy h1{font:${graphic.headingStyle} ${graphic.headingWeight} ${Math.round(graphic.headingSize*.3)}px "${graphic.font}",sans-serif;text-transform:${graphic.headingUppercase?'uppercase':'none'}}.cta{display:inline-block;background:${graphic.accent};color:${contrastInk(graphic.accent)};padding:12px 20px;font-weight:bold}.note{font-size:12px;color:#666;margin:16px auto;max-width:620px}</style><div class="ad"><img src="${image}" alt="Hirdetéskép"><div class="copy"><strong>Kocka Stúdió · ${escapeHtml(draft?platforms[draft.channel]||draft.channel:'demó')}</strong><p>${escapeHtml(draft?.body||item.brief)}</p><h1>${escapeHtml(draft?.headline||graphic.headline||item.name)}</h1><span class="cta">${escapeHtml(draft?.cta||graphic.cta)}</span></div></div><p class="note">Demó előnézet; nem aktív hirdetés vagy működő kattintási cél.</p></html>`;
+      downloadBlob(new Blob([html],{type:'text/html;charset=utf-8'}),imageFilename()+'-hirdetes.html');notice('A teljes hirdetés önálló HTML előnézetként letöltve.')});
+    for(const [id,key] of [['strategyName','name'],['strategyGoal','goal'],
+      ['strategyAudience','audience'],['strategyCity','city'],['strategyBrief','brief'],
+      ['strategyServices','strategyServices'],['strategyEvidence','strategyEvidence'],
+      ['strategyMarkdown','strategyMarkdown']])$(id).addEventListener('input',()=>{const item=current();if(!item)return;
+        item[key]=$(id).value;persist();if(key==='strategyMarkdown')renderStrategyPreview(item.strategyMarkdown);
+        if(key==='name')renderList()});
+    $('strategyDownload').addEventListener('click',()=>{const markdown=current()?.strategyMarkdown;
+      if(!markdown){notice('Előbb készíts kampánytervet.',true);return}
+      downloadBlob(new Blob([markdown],{type:'text/markdown;charset=utf-8'}),imageFilename()+'-strategia.md')});
+    $('strategyCopy').addEventListener('click',async()=>{const markdown=current()?.strategyMarkdown;
+      if(!markdown){notice('Előbb készíts kampánytervet.',true);return}
+      try{await navigator.clipboard.writeText(markdown);notice('A kampányterv másolva.')}
+      catch(_){notice('A másolás nem sikerült. Jelöld ki a szerkesztő szövegét.',true)}});
+    $('generateExample').addEventListener('click',()=>{
+      if(autoBuilding)return;
+      if(!remoteReady){notice('Várd meg a Drive betöltését, majd indítsd újra a kampánykészítést.',true);return}
+      const id='demo-'+crypto.randomUUID();
+      const item={id,name:'Őszinte építészeti segítség '+new Date().toISOString().slice(0,10),
+        goal:'Ajánlatkérések',audience:'Építkezést vagy házátalakítást tervező, vidéki családok',
+        city:'Saját régió + 50–80 km, valamint vidéki célterületek',budget:90000,
+        brief:'Őszinte, szakértő építészeti segítség az első ötlettől a megvalósításig. Közvetlen, partnerszerű, emberi, transzparens hangnem. A kisebb átalakítás, bővítés és vidéki családi ház éppolyan fontos, mint az új építés. Minőségi ajánlatkérések szerzése.',
+        strategyServices:'Szolgáltatások: új családi ház tervezése; meglévő ház bővítése, átalakítása, modernizálása; tanácsadás és felmérés vásárlás vagy építkezés előtt. Landing: hero, személyes bemutatkozás, szolgáltatások, ellenőrzött referenciák, ajánlatkérő. Kreatív 1: 9:16 Reels, szakértői beszélős videó teleken vagy rajzasztalnál, a jó átalakítás értékéről. Kreatív 2: 4–6 lapos előtte–utána carousel egy átalakításról. Kreatív 3: 1:1 vagy 4:5 statikus hirdetés tervrajz vagy skicc hangulattal. Célzás-javaslat: 28–52 év, családi ház, építkezés, felújítás, telek témák; éles indítás előtt a platform szabályai szerint ellenőrizni. Próba napi 3000–5000 Ft, jóváhagyás után. Négyhetes előkészítés, kreatívkészítés, tesztindítás, majd 10–14 napos kiértékelés. A Meta Pixel, Lead-esemény és GA4 beállítása csak ellenőrzendő feladat; hirdetés nem indul automatikusan.',
+        strategyEvidence:'Nincs átadott publikálható portré, referenciafotó vagy ügyfélvélemény; ezeket ne találd ki. AI grafika csak koncepcióként jelenhet meg.',
+        channels:['facebook','instagram'],status:'draft',date:'',drafts:[],metrics:blankMetrics()};
+      state.campaigns.unshift(item);state.selected=id;persist();render();
+      $('generateStrategy').click();
+    });
+    $('generateStrategy').addEventListener('click',async()=>{const item=current();if(!item||autoBuilding)return;
+      if(!remoteReady){notice('Várd meg a Drive betöltését, majd indítsd újra a kampánykészítést.',true);return}
+      item.name=$('strategyName').value.trim();item.goal=$('strategyGoal').value;
+      item.audience=$('strategyAudience').value.trim();item.city=$('strategyCity').value.trim();
+      item.brief=$('strategyBrief').value.trim();item.strategyServices=$('strategyServices').value.trim();
+      item.strategyEvidence=$('strategyEvidence').value.trim();
+      if(!item.name||!item.audience||!item.brief){$('strategyStatus').textContent='Add meg a kampány nevét, közönségét és fő üzenetét.';
+        notice('Add meg a kampány nevét, közönségét és fő üzenetét.',true);return}
+      if(!item.channels?.length)item.channels=['facebook','instagram'];
+      fillForm(item);persist();renderList();
+      const button=$('generateStrategy'),status=$('strategyStatus'),campaignId=item.id;
+      button.disabled=true;autoBuilding=true;status.textContent='A Gemini összeállítja a kampánytervet…';
+      try{const response=await fetch('/api/marketing/strategy',{method:'POST',credentials:'same-origin',
+        headers:{'Content-Type':'application/json','x-kocka-rpc':'1'},body:JSON.stringify({
+          name:item.name,goal:item.goal,brief:item.brief||'',audience:item.audience,city:item.city||'',
+          services:item.strategyServices||'',evidence:item.strategyEvidence||'',
+          budget:item.budget||0,channels:item.channels
+        })});
+        if(response.status===401){window.location.href='/auth/login?return=%2Fmarketing&reason=expired';return}
+        const result=await response.json();if(!response.ok)throw Error(result.error||'A kampányterv nem készült el.');
+        if(current()?.id!==campaignId){status.textContent='A terv elkészült, de közben másik kampányt választottál. Indítsd újra ott.';return}
+        item.strategyMarkdown=result.markdown;item.strategyPlan=result.plan;
+        const firstNewDraft=item.drafts.length,previousAi=item.drafts.filter(draft=>draft.aiStrategy).length;
+        for(const [index,ad] of result.ads.entries())item.drafts.push({
+          channel:item.channels.includes(ad.channel)?ad.channel:item.channels[0],
+          variant:'ai'+(previousAi+index+1),headline:ad.headline,body:ad.body,cta:ad.cta,
+          aiStrategy:true});
+        if(item.status==='approved'||item.status==='scheduled')item.status='draft';
+        chosenDraft=firstNewDraft;persist();render(false);
+        clearTimeout(saveTimer);saveTimer=null;await (saveChain=saveChain.then(flushSave));
+        autoBuilding=true;
+        let fontCss='';try{fontCss=await embeddedSourceSans(state.brand)}catch(_){/* A rendszerbetűkészlet marad. */}
+        const packageResult=await KockaMarketingAuto.build({plan:result.plan,
+          brand:{...state.brand,logoDataUrl:brandLogoImage?encodeImage(brandLogoImage,300,'image/png'):''},
+          fontCss,
+          url:location.origin+'/ajanlatkeres',
+          generateImage:(prompt,format)=>autoImage(prompt,format,item),
+          save:(name,mimeType,dataUri)=>saveCampaignOutput(campaignId,name,mimeType,dataUri),
+          progress:message=>{status.textContent=message}});
+        autoBuilding=false;
+        item.packageStatus={finishedAt:new Date().toISOString(),files:packageResult.outcomes.length,errors:packageResult.errors};
+        persist();clearTimeout(saveTimer);saveTimer=null;await (saveChain=saveChain.then(flushSave));
+        renderOutputs(item);
+        status.textContent=packageResult.errors.length?`Részben készült el: ${packageResult.outcomes.length} fájl. ${packageResult.errors.join(' ')}`:`Elkészült ${packageResult.outcomes.length} kampányfájl a Drive-on. A szövegek, SVG-k és HTML utólag szerkeszthetők.`;
+        notice(status.textContent,Boolean(packageResult.errors.length))}
+      catch(error){status.textContent='⚠ '+error.message;notice(error.message,true)}finally{autoBuilding=false;button.disabled=false}});
+    $('campaignForm').addEventListener('submit',event=>{event.preventDefault();saveForm()});
+    $('newCampaign').addEventListener('click',()=>{const id='demo-'+crypto.randomUUID();const item={id,name:'',goal:'',audience:'',city:'',budget:0,brief:'',postEnding:'',channels:[],status:'draft',date:'',drafts:[],metrics:blankMetrics()};
+      state.campaigns.unshift(item);state.selected=id;persist();activateMarketingTab('Campaign');render();$('campaignName').focus();notice('Új demó kampány. Töltsd ki, majd mentsd el.')});
+    $('generateCopies').addEventListener('click',()=>{const item=saveForm(false);if(!item)return;item.drafts=makeDrafts(item);chosenDraft=0;persist();render(false);notice('Demó szövegváltozatok elkészültek. Ezek sablonalapúak, nem AI-válaszok.')});
+    $('approveCampaign').addEventListener('click',()=>{const item=saveForm(false);if(!item)return;if(!item.drafts.length){notice('Előbb készíts hirdetésszöveget.',true);return}item.status='approved';persist();render();notice('A kampány demó jóváhagyást kapott.')});
+    $('scheduleCampaign').addEventListener('click',()=>{const item=saveForm(false);if(!item)return;if(item.status!=='approved'&&item.status!=='scheduled'){notice('Az ütemezéshez előbb hagyd jóvá a kampányt.',true);return}if(!item.date){notice('Adj meg próbaütemezési dátumot.',true);return}item.status='scheduled';persist();render();notice('Próbaütemezve. Nem kerül hirdetési fiókba.')});
+    $('archiveCampaign').addEventListener('click',()=>{const item=current();if(!item)return;item.status='archived';persist();render();notice('A kampány archiválva a demóban.')});
+    $('simulateWeek').addEventListener('click',()=>{const item=current();if(!item)return;if(item.status==='archived'){notice('Archivált kampányhoz nem szimulálunk új hetet.',true);return}const metrics=item.metrics||blankMetrics(),week=Math.max(3000,Math.min(item.budget||20000,25000));
+      metrics.spend+=week;metrics.views+=Math.round(week/3.2);metrics.clicks+=Math.round(week/180);const leads=Math.max(1,Math.round(week/4600));metrics.leads+=leads;metrics.qualified+=Math.round(leads*.6);metrics.offers+=Math.round(leads*.2);metrics.daily=metrics.daily.map((value,index)=>value+(index%3===0?2:1));item.metrics=metrics;persist();render(false);notice('Egy hét szimulált eredménye hozzáadva. A számok nem valós platformadatok.')});
+    $('resetDemo').addEventListener('click',()=>reloadDrive().then(()=>notice('A Drive-mappa újraolvasva.'))
+      .catch(error=>notice(error.message,true)));
+    $('postFindTopics').addEventListener('click',async()=>{const button=$('postFindTopics');button.disabled=true;
+      $('postTopicStatus').textContent='Friss témák keresése…';try{const result=await postRequest('topics');
+        availablePostTopics=result.topics||[];renderPostTopics();
+        $('postTopicStatus').textContent=availablePostTopics.length+' téma elérhető. Válassz egyet, vagy írj sajátot.';
+      }catch(error){$('postTopicStatus').textContent=error.message;notice(error.message,true)}finally{button.disabled=false}});
+    $('postGenerate').addEventListener('click',async()=>{const item=current();if(!item)return;
+      const own=$('postOwnTopic').value.trim(),choice=$('postTopics').querySelector('[name=postTopic]:checked');
+      const topic=own?{title:own,source:'Saját téma',url:''}:availablePostTopics[Number(choice?.value)];
+      if(!topic){notice('Válassz témát, vagy írj sajátot.',true);return}
+      const button=$('postGenerate');button.disabled=true;$('postGenerateStatus').textContent='Szöveg és kép készül…';
+      try{await saveBeforePost();const result=await postRequest('generate','POST',{campaignId:item.id,
+          topic,imageModel:$('postImageModel').value});await reloadDrive();
+        $('postGenerateStatus').textContent=result.post.imageError?
+          'A tervezet elkészült helyi grafikával: '+result.post.imageError:'A szerkeszthető tervezet és a kép elkészült.';
+        notice('Új bejegyzéstervezet mentve a Drive-ra.');}
+      catch(error){$('postGenerateStatus').textContent=error.message;notice(error.message,true)}finally{button.disabled=false}});
+    $('postScheduleSave').addEventListener('click',async()=>{const item=current();if(!item)return;
+      const first=$('postFirstRun').value;
+      const button=$('postScheduleSave');button.disabled=true;
+      try{const firstRunAt=first?new Date(first).toISOString():'';
+        await saveBeforePost();await postRequest('schedule','POST',{campaignId:item.id,enabled:true,
+        intervalDays:Number($('postInterval').value),imageModel:$('postImageModel').value,firstRunAt});
+        postCampaignId='';await reloadDrive();notice('A rendszeres tervezetkészítés bekapcsolva.');}
+      catch(error){notice(error.message,true)}finally{button.disabled=false}});
+    $('postScheduleStop').addEventListener('click',async()=>{const item=current();if(!item)return;
+      const button=$('postScheduleStop');button.disabled=true;try{await saveBeforePost();
+        await postRequest('schedule','POST',{campaignId:item.id,enabled:false,
+          intervalDays:Number($('postInterval').value),imageModel:$('postImageModel').value});
+        postCampaignId='';await reloadDrive();notice('A rendszeres tervezetkészítés kikapcsolva.');}
+      catch(error){notice(error.message,true)}finally{button.disabled=false}});
+    postRequest('status').then(result=>{$('postFacebookStatus').textContent=result.facebook.configured?
+      'Facebook-kapcsolat beállítva (oldalazonosító: '+result.facebook.pageId+'). Instagram-közzétételhez a Facebook-oldalhoz kapcsolt professzionális Instagram-fiók és az instagram_content_publish jogosultság szükséges.'+
+      (result.instagram.accountId?' Beállított Instagram-fiókazonosító: '+result.instagram.accountId+'.':''):
+      'Facebook- és Instagram-kapcsolat nincs beállítva: FACEBOOK_PAGE_ID és FACEBOOK_PAGE_ACCESS_TOKEN szükséges a Railway Variables között.';
+    }).catch(error=>{$('postFacebookStatus').textContent=error.message});
+    $('postFindTopics').click();
+    let initialTab='Strategy';try{initialTab=sessionStorage.getItem('kocka-marketing-tab')||'Strategy'}catch(_){/* private browsing */}
+    activateMarketingTab(initialTab);fillBrandControls();render();loadImageModels();
+    reloadDrive().catch(error=>{remoteReady=false;$('driveSaveStatus').textContent='Drive betöltési hiba';
+      notice('A kampányok nem tölthetők be a Drive-ról: '+error.message,true)});
+    readyForGraphic(current()).catch(error=>notice(error.message,true));
+  })();
+  </script>
+</body>
+</html>

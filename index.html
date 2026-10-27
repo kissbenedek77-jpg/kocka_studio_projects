@@ -10,7 +10,7 @@
     /* MARK: Alapstílusok és mezők */
     *{box-sizing:border-box}
     [hidden]{display:none!important}
-    body{margin:0;padding:24px 12px;color:var(--ks-text);background:url("https://www.kockastudio.hu/images/slide_bg.jpg") repeat left top;font-family:Arial,sans-serif;-webkit-text-size-adjust:100%}
+    body{margin:0;padding:24px 12px;color:var(--ks-text);background:url("/assets/brand/slide_bg.jpg") repeat left top;font-family:Arial,sans-serif;-webkit-text-size-adjust:100%}
     .container{width:min(100% - 24px,1100px);margin:0 auto;background:#fff;padding:clamp(16px,3vw,32px);border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
     h1{margin:0 0 20px;font-size:28px} h2{margin:34px 0 16px;padding-bottom:8px;border-bottom:1px solid #ddd;font-size:21px}
     .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}.full{grid-column:1/-1}.field{margin-bottom:14px;min-width:0}
@@ -47,7 +47,7 @@
     .progress-step.active,.progress-step.done{color:var(--ks-dark)}.progress-step.active .progress-dot{background:var(--ks-dark);border-color:var(--ks-dark);color:#fff}.progress-step.done .progress-dot{background:var(--ks-accent);border-color:var(--ks-accent);color:#fff}
     .wizard-page{display:none;animation:wizardIn .18s ease-out}.wizard-page.active{display:block}@keyframes wizardIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
     .wizard-page>h2{margin-top:0;font-weight:400;font-size:24px;border-bottom:2px solid var(--ks-dark);padding-bottom:12px}
-    .wizard-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--ks-line);background:url("https://www.kockastudio.hu/images/slide4_bg.jpg") repeat left top;margin:10px -32px -32px -32px;padding:20px 32px 20px 32px}
+    .wizard-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--ks-line);background:url("/assets/brand/slide4_bg.jpg") repeat left top;margin:10px -32px -32px -32px;padding:20px 32px 20px 32px}
     .wizard-nav .spacer{flex:1}.wizard-next,.save-button{background:var(--ks-dark)}.wizard-back{background:#fff;color:var(--ks-dark);border:1px solid #bbb}.wizard-next:hover,.save-button:hover{background:#000}.wizard-back:hover{background:#f2f2f2}
     .step-note{font-size:13px;color:var(--ks-muted);margin:-6px 0 22px;line-height:1.5}
     .address-section,.gdpr{background:var(--ks-soft);border-color:#e1e1de;border-radius:0}
@@ -82,6 +82,10 @@
       .privacy-modal{padding:0;align-items:stretch}
       .privacy-modal-content{width:100%;max-width:none;max-height:100dvh;min-height:100dvh;border-radius:0;padding:20px 14px 28px}
     }
+    @media (max-width:480px){
+      .modal-backdrop{padding:8px}.modal{max-height:calc(100dvh - 16px);padding:18px 14px;overflow-wrap:anywhere}
+      .wizard-nav{gap:8px}.wizard-nav button{min-width:0}
+    }
     @media (max-width:420px){
       .container{padding-left:10px;padding-right:10px}
       .address-section{padding-left:9px;padding-right:9px}
@@ -113,7 +117,7 @@
         bottom:0;
         padding:12px 32px max(12px, env(safe-area-inset-bottom));
         z-index:20;
-        background:url("https://www.kockastudio.hu/images/slide4_bg.jpg") repeat left top;
+        background:url("/assets/brand/slide4_bg.jpg") repeat left top;
         margin:20px -32px -28px -32px;
       }
     }
@@ -132,7 +136,7 @@
         padding:12px 32px max(12px, env(safe-area-inset-bottom)) !important;
         z-index:1000 !important;
         box-sizing:border-box;
-        background:url("https://www.kockastudio.hu/images/slide4_bg.jpg") repeat left top;
+        background:url("/assets/brand/slide4_bg.jpg") repeat left top;
       }
 
       /* A fix alsó sáv ne takarja el az utolsó mezőket. */
@@ -147,7 +151,7 @@
 <!-- MARK: Fejléc és űrlap -->
 <div class="container">
   <div class="brand-header">
-    <img class="brand-logo" src="https://www.kockastudio.hu/images/logo2.png" alt="Kocka Stúdió">
+    <img class="brand-logo" src="/assets/brand/logo2.png" alt="Kocka Stúdió">
     <div class="brand-kicker">Építészeti tervezés<br>teljes spektruma</div>
   </div>
 
@@ -368,7 +372,27 @@
 // MARK: Kezdőállapot és fordítások
 const INITIAL_UID='<?= uid ?>';
 let currentUID=INITIAL_UID||'';
+const OWNER_EMBED=new URLSearchParams(location.search).get('embed')==='1'&&window.parent!==window;
+function notifyOwner(type,details={}){
+  if(OWNER_EMBED)window.parent.postMessage({kind:'ks-client-form',type,uid:currentUID,...details},location.origin);
+}
+if(OWNER_EMBED){
+  const sendHeight=()=>notifyOwner('resize',{height:document.documentElement.scrollHeight});
+  if('ResizeObserver' in window)new ResizeObserver(sendHeight).observe(document.body);
+  window.addEventListener('load',sendHeight);
+}
 const $=id=>document.getElementById(id);
+function formRpc(name,...args){
+  if(window.google&&google.script&&google.script.run)
+    return new Promise((resolve,reject)=>google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[name](...args));
+  return fetch('/api/form',{method:'POST',credentials:'same-origin',
+    headers:{'Content-Type':'application/json','X-Kocka-Form':'1'},
+    body:JSON.stringify({name,args})}).then(async response=>{
+      const body=await response.json();
+      if(!response.ok)throw new Error(body.error||'A kérés nem sikerült.');
+      return body.result;
+    });
+}
 
 const translations={
   hu:{title:'Adatbekérő',personal:'Személyes adatok',contact:'Elérhetőség és lakcím',property:'Ingatlan / projekt',taxHU:'Adóazonosító jel',taxForeign:'Adóazonosító / TIN',send:'Adatok elküldése',sending:'Küldés...',thankTitle:'Köszönjük!',thankText:'Az adatait sikeresen elküldtük.',error:'Hiba történt az adatok elküldése során.',select:'Válasszon...'},
@@ -634,12 +658,12 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closePrivacy
 function createNewClient(){
   const button=$('newClientButton');if(!button)return;
   button.disabled=true;button.textContent='Létrehozás...';
-  google.script.run.withSuccessHandler(result=>{
+  formRpc('createNewRecordForWeb').then(result=>{
     if(!result||!result.success||!result.url)throw new Error('Nem sikerült létrehozni az új ügyfelet.');
     window.location.href=result.url;
-  }).withFailureHandler(error=>{
+  }).catch(error=>{
     button.disabled=false;button.textContent='+ Új ügyfél';showError(error&&error.message?error.message:'Hiba történt az új ügyfél létrehozásakor.');
-  }).createNewRecordForWeb();
+  });
 }
 
 // MARK: Adatok beküldése és köszönő képernyő
@@ -655,12 +679,13 @@ $('saveButton').addEventListener('click',function(){
     return
   }
   const data=collectData();const language=getValue('language');button.disabled=true;button.textContent=(translations[language]||translations.hu).sending;
-  google.script.run.withSuccessHandler(result=>{
+  formRpc('saveData',data).then(result=>{
     if(!result||!result.success||!result.uid){
       button.disabled=false;applyLanguage(language);showError((translations[language]||translations.hu).error);return;
     }
     currentUID=result.uid;
-    try{window.history.replaceState({},'', '?uid='+encodeURIComponent(result.uid))}catch(error){}
+    if(!OWNER_EMBED)try{window.history.replaceState({},'', '?uid='+encodeURIComponent(result.uid))}catch(error){}
+    notifyOwner('saved');
     const t=translations[language]||translations.hu;
     $('thankYouTitle').textContent=t.thankTitle;
     $('thankYouText').textContent=t.thankText;
@@ -668,14 +693,14 @@ $('saveButton').addEventListener('click',function(){
     $('thankYou').hidden=false;
     window.scrollTo(0,0);
     $('thankYou').focus();
-  }).withFailureHandler(error=>{
+  }).catch(error=>{
     button.disabled=false;applyLanguage(language);showError(error&&error.message?error.message:(translations[language]||translations.hu).error);
-  }).saveData(data);
+  });
 });
 
 // MARK: Meglévő rekord betöltése
 function loadExistingData(uid){
-  google.script.run.withSuccessHandler(data=>{
+  formRpc('getData',uid).then(data=>{
     if(!data){showError('A megadott UID nem található.');return}
     currentUID=data.uid;
     setValue('language',data.language||'hu');setValue('vezeteknev',data.vezeteknev);setValue('keresztnev',data.keresztnev);setValue('szuletesiNev',data.szuletesiNev);setValue('allampolgarsag',data.allampolgarsag);setValue('adoazonosito',data.adoazonosito);if(data.allampolgarsag==='Magyar')setValue('adoazonosito',formatTaxId(data.adoazonosito));setValue('telefon',data.telefon);setValue('email',data.email);setValue('anyjaNeve',data.anyjaNeve);setValue('szuletesiHely',data.szuletesiHely);setValue('szuletesiIdo',data.szuletesiIdo);
@@ -685,7 +710,7 @@ function loadExistingData(uid){
     setChecked('gdprAccepted',data.gdprAccepted);setChecked('ertesitesi_same',data.ertesitesi_same!==false);
     $('newClientContainer').style.display='none';updateProjectType();updateAddressMode(true);applyLanguage(data.language||'hu');
     if(!data.szuletesiNev)updateBirthName();
-  }).withFailureHandler(error=>showError(error&&error.message?error.message:'Nem sikerült betölteni az adatokat.')).getData(uid);
+  }).catch(error=>showError(error&&error.message?error.message:'Nem sikerült betölteni az adatokat.'));
 }
 
 function showError(text){const m=$('message');m.className='error';m.textContent=text;m.style.display='block'}

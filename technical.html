@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Műszaki paraméterek · Kocka Stúdió</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#19313c;background:#f2f5f5}
+    *{box-sizing:border-box}body{margin:0}header{background:#163746;color:white;padding:1.25rem max(1rem,calc((100vw - 1060px)/2))}
+    header h1{font-size:1.45rem;margin:.25rem 0}header p{margin:.25rem 0;color:#d3e1e5}
+    main{max-width:1060px;margin:auto;padding:1.1rem;min-width:0}a{color:#146081;overflow-wrap:anywhere}header a{color:white}header strong{overflow-wrap:anywhere}
+    .links{display:flex;gap:1rem;flex-wrap:wrap;margin:.8rem 0 1.4rem}.notice{background:#e9f3f3;border-left:4px solid #287b82;padding:1rem;margin-bottom:1rem}
+    .error{background:#fff0ed;border-left-color:#bb4b41}.success{background:#e8f4e9;border-left-color:#43844c}
+    section{background:white;border:1px solid #d8e1e4;border-radius:12px;padding:1.2rem;margin:1rem 0}
+    h2{font-size:1.12rem;margin:.1rem 0 1rem}h3{font-size:1rem;margin:0 0 .4rem}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+    label{display:block;font-weight:600;margin-bottom:.35rem}small{display:block;color:#526873;margin-bottom:.45rem;overflow-wrap:anywhere}
+    textarea{width:100%;min-height:5.2rem;resize:vertical;border:1px solid #9fb3bb;border-radius:8px;padding:.7rem;font:inherit;line-height:1.45;background:#fff;color:#19313c}
+    select,input[type=date]{width:100%;min-height:44px;border:1px solid #9fb3bb;border-radius:8px;padding:.7rem;font:inherit;background:#fff;color:#19313c}
+    textarea:focus{outline:3px solid #9ed2dc;border-color:#287b82}button{border:0;border-radius:8px;background:#17667d;color:white;padding:.8rem 1.3rem;font:inherit;font-weight:650;cursor:pointer}
+    button:disabled{opacity:.55;cursor:wait}.actions{position:sticky;bottom:0;background:#f2f5f5eF;padding:.8rem 0;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+    .secondary{background:#e2edf0;color:#163746}.draft-row{border-top:1px solid #d8e1e4;padding:1rem 0}.draft-row:first-child{border-top:0}
+    .draft-row label{display:flex;align-items:center;gap:.6rem}.draft-row input[type=checkbox]{width:1.15rem;height:1.15rem}
+    .draft-row textarea{min-height:7rem}.draft-note{color:#526873;margin:.5rem 0}
+    @media(max-width:700px){.grid{grid-template-columns:1fr}section{padding:1rem}header{padding:1rem}.actions{padding:.8rem 0 max(.8rem,env(safe-area-inset-bottom))}}
+    @media(max-width:480px){main{padding:.75rem}.actions{display:grid;grid-template-columns:minmax(0,1fr);gap:.6rem}.actions button{width:100%;min-height:44px}.notice,section{overflow-wrap:anywhere}}
+  </style>
+</head>
+<body>
+  <header><h1>Műszaki paraméterek</h1><p>Projekt: <strong id="projectUid"></strong></p></header>
+  <main>
+    <div class="links"><a id="dashboardLink" href="/dashboard">Vissza a dashboardra</a><a id="sheetLink" hidden>Tervezési adatlap megnyitása</a></div>
+    <p class="notice">A numerikus területeket, az övezeti alapértékeket és az a–p tervezési programot a tervezési adatlapon add meg. A szöveges mezőkbe rövid, tényszerű pontokat is írhatsz; ezekből az AI szerkeszthető tervezetet készít. A gomb megnyomásakor a megadott jegyzetek és a tervezési adatlap kiválasztott számai a Gemini API-hoz kerülnek. A tervezetet ellenőrizd a tervekkel, majd külön illeszd be és mentsd.</p>
+    <div id="status" role="status" aria-live="polite"></div>
+    <form id="form" hidden><div id="groups"></div><div class="actions"><button id="save" type="submit">Műszaki adatok mentése</button><button id="draft" type="button" class="secondary">AI-szövegtervezet készítése</button><span>Mentés után a dashboardon frissítsd a DRAFT műszaki leírást.</span></div></form>
+    <section id="draftPreview" hidden aria-labelledby="draftTitle"><h2 id="draftTitle">AI-tervezet – ellenőrzésre</h2><p class="draft-note">A kijelölt fejezeteket szerkesztheted. A „Beillesztés” csak az űrlap mezőit módosítja; utána mentsd őket. A számokat, anyagokat és műszaki állításokat ellenőrizd.</p><div id="draftRows"></div><button id="applyDraft" type="button">Kijelölt fejezetek beillesztése</button></section>
+  </main>
+  <script>
+    'use strict';
+    const uid=new URLSearchParams(location.search).get('uid')||'';
+    const status=document.getElementById('status'),form=document.getElementById('form');
+    const draftButton=document.getElementById('draft'),preview=document.getElementById('draftPreview');
+    const draftable=key=>key==='EPITES_JELLEGE'||/^(HELYSZIN:|KONCEPCIO:|SZERKEZET:)/.test(key)||
+      ['GEPESZET:szellozes','GEPESZET:energiaellatas','KORNYEZET:kitermelt_asvanyi_nyersanyag','VILLAMOS:teljesitmeny'].includes(key);
+    document.getElementById('projectUid').textContent=uid;
+    document.getElementById('dashboardLink').href='/dashboard?project='+encodeURIComponent(uid)+'&step=5';
+    function message(text,kind=''){status.className=kind?'notice '+kind:'';status.textContent=text}
+    async function rpc(name,...args){const response=await fetch('/api/rpc',{method:'POST',credentials:'same-origin',
+      headers:{'Content-Type':'application/json','X-Kocka-RPC':'1'},body:JSON.stringify({name,args})});
+      const body=await response.json();if(response.status===401){location.replace('/auth/login?return='+encodeURIComponent(location.pathname+location.search)+'&reason=expired');throw new Error('A munkamenet lejárt. Átirányítás a belépéshez…')}if(!response.ok)throw new Error(body.error||'A kérés nem sikerült.');return body.result}
+    function groupFor(key){if(key.startsWith('DOKUMENTUM:'))return 'Dokumentum és tervfázis';
+      if(key.startsWith('HELYSZIN:'))return 'Helyszín és előzmények';
+      if(key.startsWith('KONCEPCIO:'))return 'Építészeti koncepció';
+      if(key.startsWith('SZAKAG:')||key==='TERV_HIVATKOZAS')return 'Tervlapok és szakági egyeztetés';
+      if(key.startsWith('OVEZET:'))return 'Övezeti előírások';
+      if(key.startsWith('TERVEZESI_ADATOK:'))return 'Területek és lakásszám';
+      if(key.startsWith('EPITMENYERTEK:')||key==='SZAMITOTT_EPITMENYERTEK')return 'Építményérték';
+      if(key.startsWith('SZERKEZET:'))return 'Épületszerkezetek';
+      if(key.startsWith('GEPESZET:')||key.startsWith('VILLAMOS:')||key.startsWith('KORNYEZET:'))return 'Szakági adatok';
+      if(key.includes('NYILATKOZAT')||key.includes('RETEGRENDEK'))return 'Jóváhagyott szövegek';
+      return 'Projekt és helyiségek'}
+    async function load(){if(!/^[A-Za-z0-9-]{4,64}$/.test(uid)){message('Érvénytelen projektazonosító.','error');return}
+      message('Adatok betöltése…');try{const data=await rpc('dashboardGetTechnicalFields',uid);
+        const link=document.getElementById('sheetLink');link.href=data.sheetUrl;link.hidden=false;
+        const groups=new Map(),root=document.getElementById('groups');root.replaceChildren();
+        const order=['Dokumentum és tervfázis','Projekt és helyiségek','Helyszín és előzmények',
+          'Építészeti koncepció','Övezeti előírások','Területek és lakásszám','Építményérték',
+          'Épületszerkezetek','Szakági adatok','Tervlapok és szakági egyeztetés','Jóváhagyott szövegek'];
+        data.fields.slice().sort((a,b)=>order.indexOf(groupFor(a.key))-order.indexOf(groupFor(b.key)))
+          .forEach(field=>{const name=groupFor(field.key);let grid=groups.get(name);
+          if(!grid){const section=document.createElement('section'),title=document.createElement('h2');
+            title.textContent=name;grid=document.createElement('div');grid.className='grid';
+            section.append(title,grid);root.append(section);groups.set(name,grid)}
+          const wrapper=document.createElement('div'),label=document.createElement('label');let input;
+          if(field.key==='DOKUMENTUM:tervfazis'){
+            input=document.createElement('select');
+            for(const value of ['','Egyszerű bejelentési','Építési engedélyezési','Kivitelezési'])
+              input.add(new Option(value||'Válassz tervfázist…',value));
+          }else if(field.key==='DOKUMENTUM:kiadas_datuma'){
+            input=document.createElement('input');input.type='date';
+          }else{
+            input=document.createElement('textarea');
+            input.rows=field.key.includes('LEIRAS')||field.key.includes('NYILATKOZAT')||field.key==='HELYISEGLISTA'?7:3;
+          }
+          input.id='field-'+data.fields.indexOf(field);input.dataset.key=field.key;input.value=field.value;
+          label.htmlFor=input.id;label.textContent=field.help;
+          wrapper.append(label,input);grid.append(wrapper)});
+        draftButton.disabled=!data.aiConfigured;draftButton.title=data.aiConfigured?'':'A GEMINI_API_KEY nincs beállítva.';
+        form.hidden=false;message('A mezők betöltve.','success')
+      }catch(error){message(error.message||String(error),'error')}}
+    draftButton.addEventListener('click',async()=>{
+      const inputs=[...form.querySelectorAll('[data-key]')].filter(input=>draftable(input.dataset.key)&&input.value.trim());
+      if(!inputs.length){message('Előbb írj tényszerű pontokat legalább egy szöveges fejezethez.','error');return}
+      const notes=Object.fromEntries(inputs.map(input=>[input.dataset.key,input.value]));
+      draftButton.disabled=true;message('AI-tervezet készül…');
+      try{
+        const result=await rpc('dashboardDraftTechnicalText',uid,notes);
+        const host=document.getElementById('draftRows');host.replaceChildren();
+        for(const input of inputs){const key=input.dataset.key,text=result.sections[key];if(!text)continue;
+          const row=document.createElement('div');row.className='draft-row';row.dataset.key=key;row.dataset.original=input.value;
+          const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=true;
+          label.append(check,document.createTextNode(input.closest('div').querySelector('label')?.textContent||key));
+          const field=document.createElement('textarea');field.value=text;field.setAttribute('aria-label',key+' AI-tervezet');
+          row.append(label,field);host.append(row)}
+        preview.hidden=false;preview.scrollIntoView({behavior:'smooth',block:'start'});
+        message('A tervezet elkészült. Ellenőrizd és szerkeszd beillesztés előtt.','success')
+      }catch(error){message(error.message||String(error),'error')}
+      finally{draftButton.disabled=false}
+    });
+    document.getElementById('applyDraft').addEventListener('click',()=>{
+      let applied=0,changed=0;
+      for(const row of document.querySelectorAll('#draftRows .draft-row')){
+        if(!row.querySelector('input[type=checkbox]').checked)continue;
+        const input=[...form.querySelectorAll('[data-key]')].find(item=>item.dataset.key===row.dataset.key);
+        if(!input)continue;
+        if(input.value!==row.dataset.original){changed++;continue}
+        const text=row.querySelector('textarea').value.trim();if(!text)continue;
+        input.value=text;applied++}
+      message(applied+' fejezet bekerült az űrlapba. '+(changed?changed+' időközben módosított mezőt kihagytam. ':'')+'A dokumentum frissítése előtt mentsd az űrlapot.',applied?'success':'error');
+      if(applied)preview.hidden=true;
+    });
+    form.addEventListener('submit',async event=>{event.preventDefault();const button=document.getElementById('save');
+      const values={};form.querySelectorAll('[data-key]').forEach(input=>{values[input.dataset.key]=input.value});
+      button.disabled=true;message('Mentés…');try{await rpc('dashboardSaveTechnicalFields',uid,values);
+        message('A műszaki adatok mentve. Frissítsd a DRAFT dokumentumot a dashboardon.','success')
+      }catch(error){message(error.message||String(error),'error')}finally{button.disabled=false}});
+    load();
+  </script>
+</body>
+</html>
