@@ -39,6 +39,12 @@ test('Ellenőrizendő helyiségösszeg és tervlap méretarány nem véglegesít
   assert.deepEqual(unresolvedMarkers(doc),['ellenőrizendő szöveg']);
 });
 
+test('Az AI hiányjelölése a véglegesítést blokkolja', () => {
+  const doc={body:{content:[{paragraph:{elements:[{textRun:{
+    content:'Kész szöveg. [KIEGÉSZÍTENDŐ: alapozás rétegrendje]\n'}}]}}]}};
+  assert.deepEqual(unresolvedMarkers(doc),['kiegészítendő: alapozás rétegrendje']);
+});
+
 test('Övezeti jóváhagyás csak ellenőrzött állapot és visszakereshető forrás mellett kerül be', () => {
   const fields = fieldSheetRows().slice(1);
   const set = (key,value) => {fields.find(row => row[0] === key)[1] = value;};

@@ -91,6 +91,10 @@ function unresolvedMarkers(document) {
       for (const match of text.matchAll(/\{\{([^{}]+)\}\}/g))
         if (!/^#IF\b/.test(match[1]) && match[1] !== '/IF') result.add(match[1]);
       if (/ELLENŐRIZENDŐ/i.test(text)) result.add('ellenőrizendő szöveg');
+      for (const match of text.matchAll(/\[KIEGÉSZÍTENDŐ:?\s*([^\]]*)\]/gi)) {
+        const note = match[1].trim().replace(/\s+/g,' ');
+        result.add(note ? 'kiegészítendő: '+note : 'kiegészítendő adat');
+      }
       for (const row of item.table?.tableRows || [])
         for (const cell of row.tableCells || []) scan(cell.content);
     }

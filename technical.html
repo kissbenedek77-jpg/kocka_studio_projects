@@ -30,9 +30,9 @@
   <header><h1>Műszaki paraméterek</h1><p>Projekt: <strong id="projectUid"></strong></p></header>
   <main>
     <div class="links"><a id="dashboardLink" href="/dashboard">Vissza a dashboardra</a><a id="sheetLink" hidden>Tervezési adatlap megnyitása</a></div>
-    <p class="notice">A numerikus területeket, az övezeti alapértékeket és az a–p tervezési programot a tervezési adatlapon add meg. A szöveges mezőkbe rövid, tényszerű pontokat is írhatsz; ezekből az AI szerkeszthető tervezetet készít. A gomb megnyomásakor a megadott jegyzetek és a tervezési adatlap kiválasztott számai a Gemini API-hoz kerülnek. A tervezetet ellenőrizd a tervekkel, majd külön illeszd be és mentsd.</p>
+    <p class="notice">A numerikus területeket, az övezeti alapértékeket és az a–p tervezési programot a tervezési adatlapon add meg. A szöveges mezőkbe rövid, tényszerű pontokat is írhatsz. Az „AI-val kitöltés projektadatból” gomb a rendelkezésre álló tényadatokból megírja valamennyi fejezetet, elmenti őket, majd létrehozza a DRAFT dokumentumot; a hiányzó adat helyén [KIEGÉSZÍTENDŐ: …] jelölés marad. A szövegeket a mentés előtt itt is szerkesztheted. A gomb megnyomásakor a projekt tényadatai a Gemini API-hoz kerülnek.</p>
     <div id="status" role="status" aria-live="polite"></div>
-    <form id="form" hidden><div id="groups"></div><div class="actions"><button id="save" type="submit">Műszaki adatok mentése</button><button id="draft" type="button" class="secondary">AI-szövegtervezet készítése</button><span>Mentés után a dashboardon frissítsd a DRAFT műszaki leírást.</span></div></form>
+    <form id="form" hidden><div id="groups"></div><div class="actions"><button id="save" type="submit">Műszaki adatok mentése</button><button id="draft" type="button" class="secondary">AI-szövegtervezet készítése</button><button id="autoDraft" type="button" class="secondary">AI-val kitöltés projektadatból</button><span>Mentés után a dashboardon frissítsd a DRAFT műszaki leírást.</span></div></form>
     <section id="draftPreview" hidden aria-labelledby="draftTitle"><h2 id="draftTitle">AI-tervezet – ellenőrzésre</h2><p class="draft-note">A kijelölt fejezeteket szerkesztheted. A „Beillesztés” csak az űrlap mezőit módosítja; utána mentsd őket. A számokat, anyagokat és műszaki állításokat ellenőrizd.</p><div id="draftRows"></div><button id="applyDraft" type="button">Kijelölt fejezetek beillesztése</button></section>
   </main>
   <script>
@@ -40,6 +40,7 @@
     const uid=new URLSearchParams(location.search).get('uid')||'';
     const status=document.getElementById('status'),form=document.getElementById('form');
     const draftButton=document.getElementById('draft'),preview=document.getElementById('draftPreview');
+    const autoDraftButton=document.getElementById('autoDraft');let aiReady=false;
     const draftable=key=>key==='EPITES_JELLEGE'||/^(HELYSZIN:|KONCEPCIO:|SZERKEZET:)/.test(key)||
       ['GEPESZET:szellozes','GEPESZET:energiaellatas','KORNYEZET:kitermelt_asvanyi_nyersanyag','VILLAMOS:teljesitmeny'].includes(key);
     document.getElementById('projectUid').textContent=uid;
@@ -86,6 +87,8 @@
           label.htmlFor=input.id;label.textContent=field.help;
           wrapper.append(label,input);grid.append(wrapper)});
         draftButton.disabled=!data.aiConfigured;draftButton.title=data.aiConfigured?'':'A GEMINI_API_KEY nincs beállítva.';
+        autoDraftButton.disabled=!data.aiConfigured;autoDraftButton.title=data.aiConfigured?'A projekt tényadataiból minden fejezetet megír, elment, majd létrehozza a DRAFT dokumentumot.':'A GEMINI_API_KEY nincs beállítva.';
+        aiReady=Boolean(data.aiConfigured);
         form.hidden=false;message('A mezők betöltve.','success')
       }catch(error){message(error.message||String(error),'error')}}
     draftButton.addEventListener('click',async()=>{
@@ -106,6 +109,21 @@
         message('A tervezet elkészült. Ellenőrizd és szerkeszd beillesztés előtt.','success')
       }catch(error){message(error.message||String(error),'error')}
       finally{draftButton.disabled=false}
+    });
+    autoDraftButton.addEventListener('click',async()=>{
+      if(!confirm('A rendszer a projekt tényszerű adataiból megírja a fejezetszövegeket, elmenti a műszaki adatlapra, majd létrehozza vagy frissíti a DRAFT dokumentumot. A hiányzó adat helyén [KIEGÉSZÍTENDŐ: …] jelölés marad. Folytatod?'))return;
+      const tab=window.open('about:blank','_blank');
+      if(tab){tab.opener=null;tab.document.title='Műszaki leírás készítése…'}
+      autoDraftButton.disabled=true;draftButton.disabled=true;
+      message('A műszaki leírás szövegezése folyamatban…');
+      try{
+        const result=await rpc('dashboardGenerateTechnical',uid);
+        if(result.url&&tab)tab.location.replace(result.url);
+        else if(tab)tab.close();
+        await load();
+        message(result.message+(result.url?' A dokumentum új lapon megnyílt.':'')+' Az elkészült fejezetszövegeket itt szerkesztheted, majd mentsd.','success')
+      }catch(error){if(tab)tab.close();message(error.message||String(error),'error')}
+      finally{autoDraftButton.disabled=!aiReady;draftButton.disabled=!aiReady}
     });
     document.getElementById('applyDraft').addEventListener('click',()=>{
       let applied=0,changed=0;

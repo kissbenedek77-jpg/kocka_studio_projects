@@ -63,6 +63,7 @@
 4. A jóváhagyott szöveg a műszaki leírás megfelelő szakaszába kerül; a dokumentum többi részét meg kell őrizni. A DRAFT „ELLENŐRIZENDŐ” jelöléseit a véglegesítés elutasítja.
 5. Övezeti adat (beépítettség, építménymagasság, zöldfelületi és szintterületi mutató) csak az adott ingatlanra hatályos, ellenőrizhető HÉSZ/szabályozási terv alapján, forrás-URL-lel, ellenőrzési dátummal és „Ellenőrizve” állapottal kerülhet be. Bizonytalanság esetén kézi ellenőrzés kell; a rendszer nem kutatja fel automatikusan az övezeti előírásokat.
 6. A „Magyaratád 531” csak példaként hangzott el: nem igazolt övezeti adat és nem alapértelmezett helyszín.
+7. A műszaki leírás egy gombnyomással, AI-val is elkészül: a projekt tényadataiból (tervezési adatlap, a–p program, PLN helyiséglista, PDFA tervlapok, korábbi jegyzetek) 32 fejezetszöveg készül, a hiányzó adat `[KIEGÉSZÍTENDŐ: ...]` jelölést kap, a szövegek mentés után a DRAFT-ba kerülnek. A piszkozat létrehozását a blokkoló ellenőrzések nem gátolják (csak figyelmeztetésként látszanak); a véglegesítés a hiányjelöléseket elutasítja. A szöveg a dashboardon és a `/technical` űrlapon is szerkeszthető.
 
 ## Dokumentumok, PDF, levelek
 - Az ajánlat, szerződés, meghatalmazás, aláírólap és műszaki leírás Google Docs-másolatként készül; a DRAFT névvel jelölt tartományokon keresztül szinkronizálható.

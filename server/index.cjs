@@ -334,6 +334,7 @@ async function rpc(name, args, session) {
   if (name === 'dashboardGetTechnicalFields') return google.getTechnicalFields(uid);
   if (name === 'dashboardSaveTechnicalFields') return google.saveTechnicalFields(uid,args[1]);
   if (name === 'dashboardDraftTechnicalText') return google.draftTechnicalText(uid,args[1]);
+  if (name === 'dashboardGenerateTechnical') return google.generateTechnicalDocument(uid);
   if (name === 'dashboardSetStartDate') return google.setStartDate(uid, args[1]);
   if (name === 'dashboardUploadAudio') return google.uploadAudio(uid, args[1], args[2], args[3]);
   if (name === 'dashboardSummarizeAudio') return google.summarizeAudio(uid, args[1]);
@@ -344,6 +345,8 @@ async function rpc(name, args, session) {
     return google.closeProject(uid,args[2]);
   if (name === 'dashboardPerform' && args[1] === 'archive')
     return google.archiveProject(uid,args[2]);
+  if (name === 'dashboardPerform' && args[1] === 'technical:generate')
+    return google.generateTechnicalDocument(uid);
   if (name === 'dashboardDeleteProject')
     return google.deleteProject(uid,args[1]);
   if (name === 'dashboardEmailPreview') {
@@ -405,10 +408,12 @@ async function rpc(name, args, session) {
     const type = args[1].slice('document:'.length);
     if (type === 'muszakiLeiras') {
       const state = await google.dashboardProject(uid);
-      if (state.stage !== 'started') throw new Error('A műszaki leírás a projekt indítása után készíthető.');
-      const blockers = state.issues.filter(item => item.blocking && !item.resolved);
-      if (blockers.length) throw new Error('Előbb javítsd a hiányzó adatokat és fájlokat: ' +
-        blockers.map(item => item.text).join(' '));
+      if (state.stage === 'closed')
+        throw new Error('Lezárt projekt műszaki leírása nem módosítható.');
+      if (!state.folderUrl)
+        throw new Error('A műszaki leírás elkészítése előtt hozd létre a projektmappát.');
+      // A hiányzó adatok a tervezetben [KIEGÉSZÍTENDŐ: ...] jelölést kapnak, ezért
+      // a blokkoló ellenőrzések a piszkozat elkészítését nem akadályozzák.
     }
     const document = await google.ensureDocument(uid,type);
     return {message:document.created ? 'A dokumentum létrejött.' : 'A dokumentum frissítve.',

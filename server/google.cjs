@@ -11,8 +11,9 @@ const {planScale} = require('./plans.cjs');
 const {restartPostfix,appendPostfix,copiedName,expectedPath} = require('./restart.cjs');
 const {technicalSheetValues, technicalProgramLines} = require('./technical_sheet.cjs');
 const {parseRoomText,areaText} = require('./room_data.cjs');
-const {FIELD_SHEET,MANUAL_FIELDS,fieldSheetRows,validateTechnicalField,technicalReplacements} = require('./technical_document.cjs');
+const {FIELD_SHEET,MANUAL_FIELDS,fieldSheetRows,validateTechnicalField,manualValues,technicalReplacements} = require('./technical_document.cjs');
 const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs');
+const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
 const {technicalSupplementRequests} = require('./technical_upgrade.cjs');
 const {latestRenderCoverFile,coverImageObject,publicImageUrl,coverImageRequest} = require('./cover_image.cjs');
 const {PHASE_COUNT,projectPhases,phaseChange} = require('./phases.cjs');
@@ -669,6 +670,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     const current = new Map(rows.map(row =>
       [String(row[0] || '').trim(),String(row[1] || '')]));
     return {sheetUrl:sheet.url,aiConfigured:Boolean(process.env.GEMINI_API_KEY),
+      autoChapters:AUTO_CHAPTERS,
       fields:MANUAL_FIELDS.map(([key,help]) => ({
       key,help,value:current.get(key) || ''
     }))};
@@ -748,6 +750,83 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     if (!answer.ok) throw new Error('Az AI-tervezet nem készült el (HTTP '+answer.status+').');
     const result = parseDraftResult(await answer.json(),notes);
     return {sections:result,model};
+  }
+
+  // MARK: A teljes műszaki leírás automatikus előállítása
+  // A rendelkezésre álló tényszerű projektadatokból fejezetszövegek készülnek,
+  // azok a műszaki adatlapra mentődnek, majd ebből létrejön a DRAFT dokumentum.
+  // A hiányzó adat helyén [KIEGÉSZÍTENDŐ: ...] jelölés marad, azt nem találja ki.
+  async function generateTechnicalDocument(uid) {
+    const apiKey = String(process.env.GEMINI_API_KEY || '').trim();
+    if (!apiKey) throw new Error('A Gemini API-kulcs nincs beállítva a Railway Variables között.');
+    const model = String(process.env.GEMINI_TECHNICAL_MODEL || process.env.GEMINI_AUDIO_MODEL || 'gemini-2.5-flash');
+    if (!/^[A-Za-z0-9._-]{3,80}$/.test(model)) throw new Error('Érvénytelen Gemini modellnév.');
+    const {data} = await project(uid);
+    if (!extractDriveId(data.projectFolderUrl))
+      throw new Error('A műszaki leírás elkészítése előtt hozd létre a projektmappát.');
+    const sheet = await ensureProjectDataSheet(data.uid);
+    await ensureTechnicalFieldRows(sheet.id);
+    const inputs = await sheetRead(() => sheets.spreadsheets.values.batchGet({
+      spreadsheetId:sheet.id,
+      ranges:["'Munkalap1'!A1:J20","'Tervezési program'!A2:B17",`'${FIELD_SHEET}'!A2:B`],
+      valueRenderOption:'FORMATTED_VALUE'
+    }));
+    const parts = inputs.data.valueRanges || [];
+    const sheetValues = technicalSheetValues(parts[0]?.values || []);
+    const program = (parts[1]?.values || []).map(row =>
+      String(row?.[1] ?? '').replace(/\{\{[^{}]+\}\}/g,' ').trim()).filter(Boolean);
+    const manual = manualValues(parts[2]?.values || []);
+    const projectFolder = await ensureProjectFolder(data.uid);
+    const children = await listChildren(projectFolder.id);
+    const folderNamed = name => children.find(item =>
+      item.mimeType === 'application/vnd.google-apps.folder' &&
+      String(item.name || '').trim().toLowerCase() === name);
+    const pdfa = folderNamed('pdfa');
+    const plans = pdfa ? (await listChildren(pdfa.id)).filter(item =>
+      item.mimeType === 'application/pdf' || /\.pdf$/i.test(item.name)).map(item => {
+      const name = String(item.name || '').replace(/[\r\n\t]+/g,' ').trim();
+      return {name,scale:planScale(name)};
+    }) : [];
+    const pln = folderNamed('pln');
+    let roomData = null;
+    if (pln) {
+      const roomFile = (await listChildren(pln.id)).find(item =>
+        /^(?:helyiségek|helyiséglista)\.txt$/i.test(item.name));
+      if (roomFile && Number(roomFile.size || 0) <= 2*1024*1024) {
+        const response = await googleQuota.run('drive',100,() => drive.files.get({
+          fileId:roomFile.id,alt:'media',supportsAllDrives:true},{responseType:'arraybuffer'}));
+        roomData = parseRoomText(Buffer.from(response.data).toString('utf8'),'PLN/'+roomFile.name);
+      }
+    }
+    const facts = autoFacts({data,sheetValues,program,roomData,plans,manual});
+    let answer;
+    try {
+      answer = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
+        method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
+        signal:AbortSignal.timeout(90000),
+        body:JSON.stringify({contents:[{parts:[{text:autoPrompt({facts,chapters:AUTO_CHAPTERS,
+          projectType:data.projektTipus})}]}],generationConfig:{temperature:0.2,maxOutputTokens:16384,
+          responseMimeType:'application/json',responseSchema:{type:'OBJECT',properties:{
+            sections:{type:'ARRAY',items:{type:'OBJECT',properties:{
+              key:{type:'STRING'},text:{type:'STRING'}},required:['key','text']}}
+          },required:['sections']}}})
+      });
+    } catch (error) {
+      if (error.name === 'TimeoutError' || error.name === 'AbortError')
+        throw new Error('A műszaki leírás szövege időtúllépés miatt nem készült el. Próbáld újra.');
+      throw new Error('A szövegíró szolgáltatás nem érhető el.');
+    }
+    if (!answer.ok) throw new Error('A műszaki leírás szövege nem készült el (HTTP '+answer.status+').');
+    const sections = parseAutoResult(await answer.json(),AUTO_CHAPTERS);
+    const saved = await saveTechnicalFields(data.uid,sections);
+    const document = await ensureDocument(data.uid,'muszakiLeiras');
+    return {message:document.created ?
+      'A nyers műszaki leírás elkészült. A fejezetszövegek alább szerkeszthetők.' :
+      'A fejezetszövegek elkészültek, és a meglévő műszaki leírás frissült.',
+      url:document.url,created:document.created,model,sections,
+      chapters:AUTO_CHAPTERS.map(item => ({key:item.key,title:item.title,
+        value:saved.fields.find(field => field.key === item.key)?.value || ''})),
+      project:await dashboardProject(data.uid)};
   }
 
   // MARK: A címlapkép cseréje a legfrissebb rendercsomagból
@@ -1954,7 +2033,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     createClientRecord, createInquiry, getClientData, saveClientData, ensureProjectFolder, ensureProjectDataSheet,
     listClientSubmissions, markClientSubmissionRead,
     saveMemo, saveExpectedFiles, pdfaExpectedFiles, answerCheck, saveOffer, setStartDate, ensureDocument,
-    uploadAudio, summarizeAudio, draftTechnicalText, syncProject, startProject, closeProject,
+    uploadAudio, summarizeAudio, draftTechnicalText, generateTechnicalDocument, syncProject, startProject, closeProject,
     archiveProject,deleteProject,prepareEmail,
     restartProject, getTechnicalFields, saveTechnicalFields, setPhase,auditProjectPdfs};
 }
