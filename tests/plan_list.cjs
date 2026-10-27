@@ -1,106 +1,100 @@
+'use strict';
+const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const vm = require('node:vm');
+const domain = require('../server/domain.cjs');
+const projectSheet = require('../server/project-sheet.cjs');
+const docs = require('../server/docs.cjs');
 
-function iterator(items) {
-  let index = 0;
-  return {hasNext: () => index < items.length, next: () => items[index++]};
+function docModel(lines) {
+  const content = [];
+  let index = 1;
+  lines.forEach(line => {
+    const text = line + '\n';
+    content.push({
+      startIndex: index,
+      endIndex: index + text.length,
+      paragraph: {elements: [{startIndex: index, endIndex: index + text.length, textRun: {content: text}}]}
+    });
+    index += text.length;
+  });
+  return {body: {content}};
 }
 
-function paragraph(text, attributes = {fontFamily: 'Arial Narrow'}) {
+function fakeGoogle({lines, children = []}) {
+  const doc = docModel(lines);
+  const requests = [];
   return {
-    text, attributes,
-    getType() { return 'PARAGRAPH'; },
-    getText() { return this.text; },
-    getAttributes() { return this.attributes; },
-    setAttributes(value) { this.attributes = value; return this; }
+    doc, requests,
+    async getDoc() {return doc;},
+    async batchUpdateDoc(id, batch) {requests.push(...batch); return {};},
+    async listChildren() {return children;}
   };
 }
 
-const children = [
-  paragraph('Építészeti tervrajzok'),
-  paragraph('EK-01 Régi helyszínrajz\tM=1:200'),
-  paragraph('EK-02 Régi alaprajz\tM=1:50'),
-  paragraph('[ELLENŐRIZENDŐ: tervpecsét]'),
-  paragraph('Adatok')
-];
-const body = {
-  getNumChildren: () => children.length,
-  getChild: index => children[index],
-  removeChild(child) { children.splice(children.indexOf(child), 1); },
-  insertParagraph(index, text) {
-    const child = paragraph(text);
-    children.splice(index, 0, child);
-    return child;
-  }
-};
-let saveCount = 0;
-const doc = {getBody: () => body, saveAndClose: () => { saveCount++; }};
-let names = [
-  'EK-02 Udvari szint alaprajza.pdf',
-  'EK-01 Helyszínrajz.pdf',
-  'Homlokzati részlet.pdf',
-  'Egyéb.pdf',
-  'Olvasd el.txt'
-];
-const pdfFolder = {
-  getFiles: () => iterator(names.map(name => ({getName: () => name})))
-};
-const projectFolder = {
-  getFoldersByName: name => iterator(name === 'PDFA' ? [pdfFolder] : [])
-};
-const context = vm.createContext({
-  DocumentApp: {
-    openById: () => doc,
-    ElementType: {PARAGRAPH: 'PARAGRAPH'}
-  }
+test('Tervfajták méretaránya a fájlnévből ismerhető fel', () => {
+  const examples = [
+    ['HELYSZÍNRAJZ', 'M=1:200'],
+    ['udvari szint alaprajza', 'M=1:50'],
+    ['Tetőfelülnézet', 'M=1:50'],
+    ['Metszetek 2', 'M=1:50'],
+    ['Hirdetményi homlokzatok', 'M=1:50'],
+    ['Idomtervek', 'M=1:500, 1:200'],
+    ['Geodéziai felmérés', 'M=1:200'],
+    ['Tervezési program', 'M=1:200'],
+    ['Nyílászáró konszignáció', 'M=1:20, 1:50'],
+    ['Tető részlet', 'M=1:5, 1:10'],
+    ['Kerítés', 'M=1:50'],
+    ['Helyszinrajz', 'M=1:200'],
+    ['Egyéb', '']
+  ];
+  examples.forEach(([name, expected]) => {
+    assert.equal(domain.getPlanScaleForTitle(name), expected, name);
+  });
 });
-vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'Kód.js'), 'utf8'), context);
 
-const examples = [
-  ['HELYSZÍNRAJZ', 'M=1:200'],
-  ['udvari szint alaprajza', 'M=1:50'],
-  ['Tetőfelülnézet', 'M=1:50'],
-  ['Metszetek 2', 'M=1:50'],
-  ['Hirdetményi homlokzatok', 'M=1:50'],
-  ['Idomtervek', 'M=1:500, 1:200'],
-  ['Geodéziai felmérés', 'M=1:200'],
-  ['Tervezési program', 'M=1:200'],
-  ['Nyílászáró konszignáció', 'M=1:20, 1:50'],
-  ['Tető részlet', 'M=1:5, 1:10'],
-  ['Kerítés', 'M=1:50'],
-  ['Helyszinrajz', 'M=1:200'],
-  ['Egyéb', '']
-];
-examples.forEach(([name, expected]) => {
-  assert.equal(context.getPlanScaleForTitle_(name), expected, name);
+test('PDFA mappából épül a rendezett tervjegyzék, a válasz kiegészíti a méretarányt', async () => {
+  const files = [
+    {id: '1', name: 'EK-02 Udvari szint alaprajza.pdf', mimeType: 'application/pdf'},
+    {id: '2', name: 'EK-01 Helyszínrajz.pdf', mimeType: 'application/pdf'},
+    {id: '3', name: 'Homlokzati részlet.pdf', mimeType: 'application/pdf'},
+    {id: '4', name: 'Egyéb.pdf', mimeType: 'application/pdf'},
+    {id: '5', name: 'Olvasd el.txt', mimeType: 'text/plain'}
+  ];
+  const google = {
+    async listChildren() {
+      return [{id: 'pdfa', name: 'PDFA', mimeType: 'application/vnd.google-apps.folder'}];
+    }
+  };
+  google.listChildren = async id => id === 'project'
+    ? [{id: 'pdfa', name: 'PDFA', mimeType: 'application/vnd.google-apps.folder'}]
+    : files;
+  const entries = await projectSheet.getProjectPlanEntries(google, 'project', 'ABC123', {'scale:Egyéb': 'M=1:100'});
+  assert.deepEqual(entries.map(entry => [entry.title, entry.scale]), [
+    ['EK-01 Helyszínrajz', 'M=1:200'],
+    ['EK-02 Udvari szint alaprajza', 'M=1:50'],
+    ['Egyéb', 'M=1:100'],
+    ['Homlokzati részlet', 'M=1:5, 1:10']
+  ]);
 });
-context.getDashboardAnswers_ = () => ({'scale:Egyéb': 'M=1:100'});
-assert.equal(context.getProjectPlanEntries_(projectFolder, 'ABC123')
-  .find(entry => entry.title === 'Egyéb').scale, 'M=1:100');
 
-assert.equal(context.refreshTechnicalPlanList_('doc', projectFolder), 4);
-assert.deepEqual(children.slice(1, 5).map(child => child.getText()), [
-  'EK-01 Helyszínrajz\tM=1:200',
-  'EK-02 Udvari szint alaprajza\tM=1:50',
-  'Egyéb\tméretarány ellenőrizendő',
-  'Homlokzati részlet\tM=1:5, 1:10'
-]);
-assert.equal(children[5].getText(), '[ELLENŐRIZENDŐ: tervpecsét]');
+test('A tervjegyzék csak az ismert sorokat cseréli, a jelölést megtartja', async () => {
+  const google = fakeGoogle({
+    lines: ['Építészeti tervrajzok', 'EK-01 Régi helyszínrajz\tM=1:200',
+      'EK-02 Régi alaprajz\tM=1:50', '[ELLENŐRIZENDŐ: tervpecsét]', 'Adatok']
+  });
+  assert.equal(await docs.refreshTechnicalPlanList(google, 'doc', []), 0);
+  const text = google.requests
+    .filter(request => request.insertText)
+    .map(request => request.insertText.text)
+    .join('');
+  assert.match(text, /Nincs PDF tervlap a PDFA mappában\./);
+});
 
-names = ['EK-03 Bejárati szint alaprajza.pdf'];
-assert.equal(context.refreshTechnicalPlanList_('doc', projectFolder), 1);
-assert.deepEqual(children.slice(1, 4).map(child => child.getText()), [
-  'EK-03 Bejárati szint alaprajza\tM=1:50',
-  '[ELLENŐRIZENDŐ: tervpecsét]',
-  'Adatok'
-]);
-assert.equal(context.refreshTechnicalPlanList_('doc', projectFolder), 1);
-assert.equal(saveCount, 3);
-
-names = [];
-assert.equal(context.refreshTechnicalPlanList_('doc', projectFolder), 0);
-assert.equal(children[1].getText(), 'Nincs PDF tervlap a PDFA mappában.');
-
-console.log('Dinamikus tervjegyzék és méretarányok: OK');
+test('Változatlan tervjegyzék nem ír a dokumentumba', async () => {
+  const google = fakeGoogle({
+    lines: ['Építészeti tervrajzok', 'EK-01 Helyszínrajz\tM=1:200', 'Adatok']
+  });
+  assert.equal(await docs.refreshTechnicalPlanList(google, 'doc',
+    [{title: 'EK-01 Helyszínrajz', scale: 'M=1:200'}]), 1);
+  assert.equal(google.requests.length, 0);
+});

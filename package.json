@@ -3,14 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "type": "commonjs",
-  "engines": {"node": ">=20"},
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node server/index.cjs",
+    "token": "node scripts/google-token.cjs",
+    "check": "node scripts/check-env.cjs",
     "test": "node --test tests/*.cjs"
   },
   "dependencies": {
+    "archiver": "^8.0.0",
     "googleapis": "^171.0.0",
     "imapflow": "^1.0.195",
-    "mailparser": "^3.7.4"
+    "mailparser": "^3.7.4",
+    "nodemailer": "^7.0.13"
   }
 }
