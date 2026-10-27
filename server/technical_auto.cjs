@@ -59,7 +59,7 @@ function cleanText(value, limit = 2000) {
 // Csak projekt- és tervadatok kerülnek az AI elé; az ügyfél neve, e-mail-címe,
 // telefonszáma és egyéb személyes adata nem.
 function autoFacts({data = {}, sheetValues = {}, program = [], roomData = null,
-  plans = [], manual = {}} = {}) {
+  roomText = '', plans = [], manual = {}} = {}) {
   const facts = {};
   const project = {};
   const put = (target,key,value,limit = 2000) => {
@@ -90,6 +90,10 @@ function autoFacts({data = {}, sheetValues = {}, program = [], roomData = null,
 
   const rooms = cleanText(roomData?.listing,6000);
   if (rooms) facts.helyiseglista = rooms;
+  else {
+    const rawRooms = cleanText(roomText,6000);
+    if (rawRooms) facts.helyiseglista_nyers = rawRooms;
+  }
 
   const planLines = plans.map(plan => {
     const name = cleanText(plan.name,240);
@@ -116,6 +120,7 @@ A meglévő jegyzeteket szakszerű prózává alakíthatod, de adattal nem bőv�
 Ha egy fejezethez nincs használható adat, a fejezet szövege pontosan egy ilyen jelölés legyen: [KIEGÉSZÍTENDŐ: rövid, konkrét útmutató, mit kell pótolni].
 Ha csak részadat van, a meglévő tényeket írd le, és a hiányzó részt a szöveg végén [KIEGÉSZÍTENDŐ: ...] jelöléssel add meg.
 A projektadat és a számadat csak kontextus; önmagában nem jogosít fel új műszaki állításra.
+A "helyiseglista_nyers" feldolgozatlan forrás: csak a benne olvasható tényeket használhatod, bizonytalanság esetén [KIEGÉSZÍTENDŐ: ...] jelölést írj.
 Az eredeti számokat, mértékegységeket, feltételes állításokat és a terv szerinti állapotot tartsd meg.
 Ne változtass bizonytalan vagy tervezett tényt megvalósult állítássá, és ne egészíts ki hiányos adatot.
 Fejezetenként 1–3 mondatot írj, legfeljebb 600 karakterben.

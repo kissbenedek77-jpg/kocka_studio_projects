@@ -416,8 +416,10 @@ async function rpc(name, args, session) {
       // a blokkoló ellenőrzések a piszkozat elkészítését nem akadályozzák.
     }
     const document = await google.ensureDocument(uid,type);
-    return {message:document.created ? 'A dokumentum létrejött.' : 'A dokumentum frissítve.',
-      url:document.url,project:await google.dashboardProject(uid)};
+    const notes = Array.isArray(document.warnings) ? document.warnings.filter(Boolean) : [];
+    return {message:(document.created ? 'A dokumentum létrejött.' : 'A dokumentum frissítve.')+
+      (notes.length ? ' Figyelem: '+notes.join(' ') : ''),
+      url:document.url,warnings:notes,project:await google.dashboardProject(uid)};
   }
   if (name === 'dashboardPerform' && typeof args[1] === 'string' && args[1].startsWith('szakasz:')) {
     const [, phaseAction, phaseNumber] = args[1].split(':');

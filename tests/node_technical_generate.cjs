@@ -3,10 +3,18 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const {google}=require('googleapis');
 const {googleClient}=require('../server/google.cjs');
+const {googleQuota}=require('../server/quota.cjs');
 const {MANUAL_FIELDS}=require('../server/technical_document.cjs');
 const {AUTO_CHAPTERS}=require('../server/technical_auto.cjs');
 
-test('A műszaki leírás egy kéréssel, AI-val elkészül és a fejezetek mentődnek',async()=>{
+// Ez a fájl egy folyamatban több teljes dokumentumfolyamatot futtat, ezért a
+// perckorlát helyett korlátlan keretet használ. Magát a keretet a
+// tests/node_quota.cjs teszteli; a Google-hívások itt amúgy is mockoltak.
+googleQuota.run=(kind,cost,call)=>call();
+
+// Közös Google-mock a műszaki leírás tesztekhez: a hálózat és a Google-hívások
+// mind mockoltak, a tesztek nem érhetnek el élő végpontot.
+function mockTechnical({roomContent,fetch:fetchImpl}={}) {
   const originals=[google.sheets,google.drive,google.docs,global.fetch];
   const row=Array(65).fill(''); row[0]='ABC123'; row[4]='Projekt mappa';
   row[7]='Kiss'; row[8]='Anna'; row[9]='anna@example.com'; row[10]='+36-30/123-4567';
@@ -19,7 +27,7 @@ test('A műszaki leírás egy kéréssel, AI-val elkészül és a fejezetek ment
   const roomRows=[['Helyiség','Terület (m²)'],['Földszint',''],['Nappali','30,00'],
     ['Földszint összesen','30,00'],['Teljes összesen','30,00']];
   const folders=['írásos','_Belső','PDFA','DWG','Adat társtervezőktől','PLN','Render'];
-  let fieldsWrite=null,docWrite=null,fetchBody=null;
+  const state={fieldsWrite:null,docWrite:null,fetchBody:null,fieldRows};
   google.sheets=()=>({spreadsheets:{
     get:async options=>options.includeGridData?{data:{sheets:[{data:[{startRow:1,
       rowData:[{values:[{hyperlink:'https://drive.google.com/drive/folders/generate-root'}]}]}]}]}}:
@@ -33,7 +41,7 @@ test('A műszaki leírás egy kéréssel, AI-val elkészül és a fejezetek ment
         {values:fieldRows},{values:roomRows}]}}),
       update:async()=>({data:{}}),
       batchUpdate:async options=>{
-        fieldsWrite=options;
+        state.fieldsWrite=options;
         for(const item of options.requestBody.data || []){
           const match=/!B(\d+)$/.exec(item.range);
           if(!match)continue;
@@ -46,9 +54,7 @@ test('A műszaki leírás egy kéréssel, AI-val elkészül és a fejezetek ment
     }
   }});
   google.drive=()=>({files:{
-    get:async options=>options.alt==='media'?{data:Buffer.from([
-      '| Helyiség szintjének neve | Helyiség neve | Mért terület',
-      '1 | Földszint | nappali | 30,00'].join('\n'))}:
+    get:async options=>options.alt==='media'?{data:Buffer.from(String(roomContent||''))}:
       {data:{id:options.fileId,name:'Projekt',mimeType:'application/vnd.google-apps.folder',
         parents:['started-root']}},
     list:async options=>{const parent=options.q.match(/'([^']+)' in parents/)?.[1];
@@ -59,34 +65,46 @@ test('A műszaki leírás egy kéréssel, AI-val elkészül és a fejezetek ment
         parent==='folder-2'?[{id:'plan-pdf',name:'EK-01 Helyszínrajz.pdf',
           mimeType:'application/pdf',size:'1000'}]:
         parent==='folder-5'?[{id:'room-text',name:'helyiségek.txt',mimeType:'text/plain',
-          size:'120'}]:[];
+          size:String(String(roomContent||'').length||120)}]:[];
       return {data:{files}};},
     copy:async()=>({data:{id:'generated-technical-doc'}})
   }});
   const body={content:[{paragraph:{elements:[{startIndex:1,textRun:{
     content:'{{TERV_TARGYA}} {{HELYSZIN:meglevo_allapot}} {{HELYISEGLISTA}}\n'}}]}}]};
   google.docs=()=>({documents:{get:async()=>({data:{revisionId:'r1',body,namedRanges:{}}}),
-    batchUpdate:async options=>{docWrite=options;return {data:{}};}}});
+    batchUpdate:async options=>{state.docWrite=options;return {data:{}};}}});
   process.env.GEMINI_API_KEY='test-key';process.env.GEMINI_TECHNICAL_MODEL='gemini-2.5-flash';
-  global.fetch=async(url,options)=>{
-    fetchBody=JSON.parse(options.body);
+  global.fetch=fetchImpl||(async(url,options)=>{
+    state.fetchBody=JSON.parse(options.body);
     const sections=AUTO_CHAPTERS.map(item=>({key:item.key,
       text:`${item.title}: a projekt adatai szerint készült szöveg.`}));
     return {ok:true,status:200,json:async()=>({candidates:[{content:{parts:[
       {text:JSON.stringify({sections})}]}}]})};
-  };
+  });
+  return {state,restore:()=>{[google.sheets,google.drive,google.docs,global.fetch]=originals;}};
+}
+
+function technicalClient(name) {
+  return googleClient({clientId:'test',clientSecret:'test',baseUrl:'https://node.example',
+    sheetId:name,sheetName:'Adatok'});
+}
+
+test('A műszaki leírás egy kéréssel, AI-val elkészül és a fejezetek mentődnek',async()=>{
+  const harness=mockTechnical({roomContent:[
+    '| Helyiség szintjének neve | Helyiség neve | Mért terület',
+    '1 | Földszint | nappali | 30,00'].join('\n')});
+  const {state}=harness;
   try{
-    const client=googleClient({clientId:'test',clientSecret:'test',baseUrl:'https://node.example',
-      sheetId:'technical-generate-main',sheetName:'Adatok'});
+    const client=technicalClient('technical-generate-main');
     const result=await client.generateTechnicalDocument('ABC123');
     assert.equal(result.created,true);
     assert.equal(result.url,'https://docs.google.com/document/d/generated-technical-doc/edit');
     assert.equal(result.chapters.length,AUTO_CHAPTERS.length);
     assert.equal(result.chapters[0].value,
       `${AUTO_CHAPTERS[0].title}: a projekt adatai szerint készült szöveg.`);
-    assert.equal(fieldsWrite.requestBody.data.length,AUTO_CHAPTERS.length);
-    assert.ok(docWrite.requestBody.requests.some(item=>item.replaceNamedRangeContent));
-    const prompt=JSON.stringify(fetchBody);
+    assert.equal(state.fieldsWrite.requestBody.data.length,AUTO_CHAPTERS.length);
+    assert.ok(state.docWrite.requestBody.requests.some(item=>item.replaceNamedRangeContent));
+    const prompt=JSON.stringify(state.fetchBody);
     assert.equal(prompt.includes('Kiss'),false,'Az ügyfél neve nem kerülhet az AI-hoz.');
     assert.equal(prompt.includes('anna@example.com'),false,'Az e-mail-cím nem kerülhet az AI-hoz.');
     assert.equal(prompt.includes('+36-30/123-4567'),false,'A telefonszám nem kerülhet az AI-hoz.');
@@ -94,7 +112,71 @@ test('A műszaki leírás egy kéréssel, AI-val elkészül és a fejezetek ment
     assert.ok(prompt.includes('EK-01 Helyszínrajz'),'A tervlapok kerüljenek az AI elé.');
     assert.match(prompt,/KIEGÉSZÍTENDŐ/,'A hiányzó adat jelölésének szabálya hiányzik.');
   }finally{
-    [google.sheets,google.drive,google.docs,global.fetch]=originals;
+    harness.restore();
+  }
+});
+
+test('AI-hiba esetén is elkészül a nyers műszaki leírás, figyelmeztetéssel',async()=>{
+  const harness=mockTechnical({roomContent:[
+    '| Helyiség szintjének neve | Helyiség neve | Mért terület',
+    '1 | Földszint | nappali | 30,00'].join('\n'),
+  fetch:async()=>({ok:false,status:503,json:async()=>({})})});
+  try{
+    const result=await technicalClient('technical-generate-ai-error')
+      .generateTechnicalDocument('ABC123');
+    assert.equal(result.created,true,'Az AI-hiba nem akadályozhatja a dokumentum létrejöttét.');
+    assert.equal(result.chapters.length,AUTO_CHAPTERS.length);
+    assert.equal(result.chapters[0].value,'');
+    assert.ok(result.warnings.some(text=>text.includes('Az AI-szöveg nem készült el')&&
+      text.includes('HTTP 503')),'A hibaüzenetnek meg kell neveznie az okot: '+result.warnings);
+    assert.match(result.message,/Figyelem:/);
+    assert.equal(harness.state.fieldsWrite,null,'Sikertelen AI-válaszból nem menthető fejezet.');
+  }finally{
+    harness.restore();
+  }
+});
+
+test('Feldolgozhatatlan helyiséglista mellett is elkészül a dokumentum',async()=>{
+  const harness=mockTechnical({roomContent:['Valami;más;dolog','Földszint;Nappali;20'].join('\n')});
+  try{
+    const result=await technicalClient('technical-generate-room-error')
+      .generateTechnicalDocument('ABC123');
+    assert.equal(result.created,true,'A helyiséglista hibája nem akadályozhatja a dokumentumot.');
+    assert.ok(result.warnings.some(text=>text.includes('A PLN helyiséglista nem dolgozható fel')),
+      'A figyelmeztetésnek meg kell neveznie a helyiséglista-problémát: '+result.warnings);
+    assert.ok(result.warnings.some(text=>text.includes('Elfogadott fejlécnevek')),
+      'A hibaüzenetnek meg kell mondania a teendőt: '+result.warnings);
+    const prompt=JSON.stringify(harness.state.fetchBody);
+    assert.match(prompt,/helyiseglista_nyers/,'A nyers lista kerüljön az AI elé.');
+    const marker=harness.state.docWrite.requestBody.requests
+      .find(item=>item.replaceNamedRangeContent?.namedRangeName?.includes('HELYISEGLISTA'));
+    assert.ok(marker,'A helyiséglista helyére jelölés kerüljön.');
+    assert.match(marker.replaceNamedRangeContent.text,/KIEGÉSZÍTENDŐ/);
+  }finally{
+    harness.restore();
+  }
+});
+
+test('Ha a műszaki adatok összeállítása hibás, a dokumentum akkor sem marad el',async()=>{
+  const harness=mockTechnical({roomContent:[
+    '| Helyiség szintjének neve | Helyiség neve | Mért terület',
+    '1 | Földszint | nappali | 30,00'].join('\n')});
+  harness.state.fieldRows.find(item=>item[0]==='HELYISEGLISTA')[1]='x'.repeat(50001);
+  try{
+    const result=await technicalClient('technical-generate-merge-error')
+      .ensureDocument('ABC123','muszakiLeiras');
+    assert.equal(result.created,true);
+    assert.ok(result.warnings.some(text=>
+      text.includes('A műszaki leírás adatainak összeállítása nem sikerült')),
+      'A figyelmeztetésnek meg kell neveznie a hibát: '+result.warnings);
+    assert.ok(result.warnings.some(text=>text.includes('Túl hosszú műszaki adat')));
+    const marker=harness.state.docWrite.requestBody.requests
+      .find(item=>item.replaceNamedRangeContent?.namedRangeName?.includes('HELYISEGLISTA'));
+    assert.ok(marker,'A HELYISEGLISTA mező a beolvasott listával töltődjön ki.');
+    assert.match(marker.replaceNamedRangeContent.text,/nappali/,
+      'Hibás összeállítás esetén is a beolvasott helyiséglista kerüljön a dokumentumba.');
+  }finally{
+    harness.restore();
   }
 });
 

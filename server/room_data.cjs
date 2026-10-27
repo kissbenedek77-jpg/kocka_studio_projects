@@ -8,37 +8,76 @@ function areaCents(value) {
 
 function areaText(cents) {return (cents/100).toFixed(2).replace('.',',');}
 
+const normalizeCell = value => String(value || '').toLowerCase().normalize('NFD')
+  .replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+const HEADER = {
+  floor: /^(?:helyiseg )?szint(?:jenek)? neve$|^helyiseg szintje$|^szint(?:je)?$|^emelet(?: neve)?$|^floor$/,
+  name: /^(?:helyiseg )?neve$|^helyiseg$|^(?:helyiseg )?megnevezese$|^megnevezes$|^nev$|^helyiseg szama es neve$/,
+  area: /mert terulet|^terulet|alapterulet|^m2/,
+  number: /^(?:helyiseg )?(?:szama|sorszama|sorszam|azonositoja|azonosito|jele|jel)$/,
+  covering: /^(?:padlo)?burkolat(?:a)?$/
+};
+function splitCells(line) {
+  if (line.includes('|')) return line.split('|');
+  if (line.includes(';')) return line.split(';');
+  if (line.includes('\t')) return line.split('\t');
+  return line.split(/\s{2,}/);
+}
+function headerHelp(sourceName,firstLine) {
+  return 'A helyiséglista oszlopai nem ismerhetők fel: '+sourceName+'.'+
+    ' A fejlécben szint, helyiség neve és terület oszlop szükséges. Elfogadott fejlécnevek: '+
+    '„Helyiség szintjének neve” vagy „Szint”, „Helyiség neve” vagy „Megnevezés”, '+
+    '„Mért terület” vagy „Terület”. A fájl |, ; vagy tabulátor elválasztású legyen.'+
+    (firstLine?' Első sor: „'+firstLine+'”.':'');
+}
+
 function parseRoomText(content,sourceName='helyiségek.txt') {
   const lines = String(content || '').replace(/^\uFEFF/,'').split(/\r?\n/);
   const rooms = [];
-  let columns = null,sourceTotal = null;
+  let columns = null,sourceTotal = null,firstLine = '',currentFloor = '';
   lines.forEach((line,index) => {
-    const pipe = line.includes('|');
-    const cells = (pipe ? line.split('|') : [line]).map(value => value.trim());
+    const cells = splitCells(line).map(value => value.trim());
     if (cells[0] === '') cells.shift();
+    if (!firstLine && line.trim()) firstLine = line.trim().slice(0,160);
     if (!columns) {
-      const floor = cells.findIndex(value => /helyiség szintjének neve|^szint$/i.test(value));
-      const name = cells.findIndex(value => /helyiség neve|^helyiség$/i.test(value));
-      const area = cells.findIndex(value => /mért terület|^terület/i.test(value));
-      const number = cells.findIndex(value => /^(?:helyiség\s*)?(?:száma|sorszáma|azonosítója|jele)$/i.test(value));
-      const covering = cells.findIndex(value => /^(?:padló)?burkolat(?:a)?$/i.test(value));
-      if (floor>=0 && name>=0 && area>=0) columns={floor,name,area,number,covering};
+      const normalized = cells.map(normalizeCell);
+      const floor = normalized.findIndex(value => HEADER.floor.test(value));
+      const name = normalized.findIndex(value => HEADER.name.test(value));
+      const area = normalized.findIndex(value => HEADER.area.test(value));
+      const number = normalized.findIndex(value => HEADER.number.test(value));
+      const covering = normalized.findIndex(value => HEADER.covering.test(value));
+      if (name>=0 && area>=0) {
+        columns={floor,name,area,number,covering,
+          maxIndex:Math.max(...[floor,name,area,number,covering].filter(item => item>=0))};
+      }
       return;
     }
-    const offset = pipe && /^\d+$/.test(cells[0]) ? 1 : 0;
+    if (columns.floor < 0 && cells.length === 1) {
+      const alone = normalizeCell(cells[0]);
+      if (alone && !/osszesen$/.test(alone) && alone !== 'terasz nelkul' &&
+          !cells[0].startsWith('[')) currentFloor = cells[0];
+      return;
+    }
+    const offset = /^\d+$/.test(cells[0]) && cells.length > columns.maxIndex+1 ? 1 : 0;
     const floor=String(cells[columns.floor+offset] || '').trim();
     const name=String(cells[columns.name+offset] || '').trim();
     const raw=String(cells[columns.area+offset] || '').trim();
-    if (floor && name && !/^-+$/.test(floor)) {
+    const normalizedName = normalizeCell(name);
+    if (normalizedName === 'terasz nelkul' || /osszesen$/.test(normalizedName)) return;
+    if (name && !/^-+$/.test(name) && !/^-+$/.test(floor)) {
       const area=areaCents(raw);
-      if (area === null) throw new Error(`Érvénytelen helyiségterület: ${sourceName}, ${index+1}. sor.`);
+      if (area === null) throw new Error('Érvénytelen helyiségterület: '+sourceName+', '+
+        (index+1)+'. sor („'+line.trim().slice(0,120)+'”). A terület oszlopban csak szám '+
+        'szerepelhet, például 12,50 vagy 12.50, esetleg m² egységgel.');
       const roomNumber=columns.number>=0 ? String(cells[columns.number+offset] || '').trim() : '';
       const covering=columns.covering>=0 ? String(cells[columns.covering+offset] || '').trim() : '';
-      rooms.push({floor,name,area,number:roomNumber,covering});
-    } else if (!floor && !name && raw) sourceTotal=areaCents(raw);
+      rooms.push({floor:floor||currentFloor||'Helyiségek',name,area,number:roomNumber,covering});
+    } else if (!name && raw) sourceTotal=areaCents(raw);
   });
-  if (!columns) throw new Error('A helyiséglista oszlopai nem ismerhetők fel: '+sourceName);
-  if (!rooms.length) throw new Error('A helyiséglistában nincs feldolgozható helyiség: '+sourceName);
+  if (!columns) throw new Error(headerHelp(sourceName,firstLine));
+  if (!rooms.length) throw new Error('A helyiséglistában nincs feldolgozható helyiség: '+sourceName+
+    '. A fejléc után minden sorban szerepeljen a helyiség neve és a területe.'+
+    (firstLine?' Első sor: „'+firstLine+'”.':''));
   const floors = new Map();
   let total=0,external=0;
   for (const room of rooms) {

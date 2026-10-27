@@ -29,3 +29,53 @@ test('A PLN helyiségszámot és burkolatot csak akkor veszi át, ha a forrás t
   assert.deepEqual(data.tableRows[1],['Földszint','']);
   assert.deepEqual(data.tableRows[2],['01 előtér','8,25']);
 });
+
+test('A tabulátoros, pontosvesszős és magyar fejlécváltozat is feldolgozható', () => {
+  const tab=parseRoomText([
+    'Szint\tMegnevezés\tTerület (m²)',
+    'Földszint\tNappali\t21,75',
+    'Földszint\tKonyha\t8,25'
+  ].join('\n'),'PLN/Helyiségek.txt');
+  assert.match(tab.listing,/Nappali\t21,75 m²/);
+  assert.match(tab.listing,/Földszint összesen\t30,00 m²/);
+  const semicolon=parseRoomText([
+    'Helyiség szintje;Helyiség neve;Alapterület',
+    'Emelet;Szoba;12,5',
+    'Emelet;Fürdő;4,5'
+  ].join('\n'));
+  assert.match(semicolon.listing,/Szoba\t12,50 m²/);
+  assert.match(semicolon.listing,/Emelet összesen\t17,00 m²/);
+});
+
+test('A saját generált helyiséglista (szintfejekkel) is visszaolvasható', () => {
+  const data=parseRoomText([
+    'Helyiség száma és neve\tTerület (m²)',
+    'Földszint',
+    '01 előtér\t8,25 m²',
+    '02 nappali\t21,75 m²',
+    'Földszint összesen\t30,00 m²',
+    'Teljes összesen\t30,00 m²',
+    'Terasz nélkül\t30,00 m²'
+  ].join('\n'),'PLN/Helyiségek.txt');
+  assert.equal(data.totalCents,3000);
+  assert.match(data.listing,/Földszint összesen\t30,00 m²/);
+  assert.match(data.listing,/Teljes összesen\t30,00 m²/);
+  assert.equal(data.tableRows.filter(row=>/összesen/.test(row[0])).length,2);
+});
+
+test('A feldolgozhatatlan helyiséglista hibája megmondja a teendőt és a hibás sort', () => {
+  assert.throws(()=>parseRoomText([
+    'Valami;más;dolog',
+    'Földszint;Nappali;20'
+  ].join('\n'),'PLN/Helyiségek.txt'),
+  error => error.message.includes('PLN/Helyiségek.txt') &&
+    error.message.includes('Elfogadott fejlécnevek') &&
+    error.message.includes('Első sor: „Valami;más;dolog”'));
+  assert.throws(()=>parseRoomText([
+    'Szint\tHelyiség neve\tTerület',
+    'Földszint\tNappali\thúsz négyzetméter'
+  ].join('\n'),'PLN/Helyiségek.txt'),
+  error => error.message.includes('2. sor') &&
+    error.message.includes('húsz négyzetméter') &&
+    error.message.includes('például 12,50'));
+});
