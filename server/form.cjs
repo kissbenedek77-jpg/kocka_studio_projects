@@ -36,10 +36,14 @@ const SHIM = `<script>
 })();
 </script>`;
 
+// MARK: A shim beszúrása a sablon első script-blokkja elé (CRLF és LF sablonhoz is)
+const FORM_MARKER = /<script>(\r?\n)\/\/ MARK: Kezdőállapot/;
+
 function renderForm(template, uid) {
   return String(template)
     .replace(/<\?=\s*uid\s*\?>/g, () => escapeHtml(uid || ''))
-    .replace('<script>\n// MARK: Kezdőállapot', () => SHIM + '\n<script>\n// MARK: Kezdőállapot');
+    .replace(FORM_MARKER, (match, newline) =>
+      SHIM + newline + '<script>' + newline + '// MARK: Kezdőállapot');
 }
 
 async function handleFormRequest(store, body) {
