@@ -201,6 +201,35 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     return dashboardProject(data.uid);
   }
 
+  async function pdfaExpectedFiles(uid) {
+    const {data} = await project(uid);
+    const rootId = extractDriveId(data.projectFolderUrl);
+    if (!rootId) return {folder:'PDFA',files:[],missing:true,truncated:false};
+    const pdfa = (await listChildren(rootId)).find(item =>
+      item.mimeType === 'application/vnd.google-apps.folder' &&
+      String(item.name || '').trim().toLowerCase() === 'pdfa');
+    if (!pdfa) return {folder:'PDFA',files:[],missing:true,truncated:false};
+    const files = [];
+    let truncated = false;
+    const clean = name => String(name || '').replace(/[\r\n\t]+/g,' ').trim();
+    const walk = async (folderId, prefix, depth) => {
+      if (files.length >= 200) {truncated = true; return;}
+      for (const item of await listChildren(folderId)) {
+        if (files.length >= 200) {truncated = true; break;}
+        const name = clean(item.name);
+        if (!name || name === '.' || name === '..') continue;
+        if (item.mimeType === 'application/vnd.google-apps.folder') {
+          if (depth < 3) await walk(item.id,prefix + '/' + name,depth + 1);
+          continue;
+        }
+        files.push(prefix + '/' + name);
+      }
+    };
+    await walk(pdfa.id,'PDFA',0);
+    files.sort((a,b) => a.localeCompare(b,'hu'));
+    return {folder:'PDFA',files,missing:false,truncated};
+  }
+
   async function answerCheck(uid, code, answer) {
     const state = await dashboardProject(uid);
     const issue = state.issues.find(item => item.code === code);
@@ -1924,7 +1953,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
   return {oauth, sheets, drive, values, allRows, project, listProjects, dashboardProject, folderFor,projectImage,
     createClientRecord, createInquiry, getClientData, saveClientData, ensureProjectFolder, ensureProjectDataSheet,
     listClientSubmissions, markClientSubmissionRead,
-    saveMemo, saveExpectedFiles, answerCheck, saveOffer, setStartDate, ensureDocument,
+    saveMemo, saveExpectedFiles, pdfaExpectedFiles, answerCheck, saveOffer, setStartDate, ensureDocument,
     uploadAudio, summarizeAudio, draftTechnicalText, syncProject, startProject, closeProject,
     archiveProject,deleteProject,prepareEmail,
     restartProject, getTechnicalFields, saveTechnicalFields, setPhase,auditProjectPdfs};

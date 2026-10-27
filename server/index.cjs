@@ -327,6 +327,7 @@ async function rpc(name, args, session) {
   if (name === 'dashboardListFolder') return google.folderFor(uid, args[1]);
   if (name === 'dashboardSaveMemo') return google.saveMemo(uid, args[1]);
   if (name === 'dashboardSaveExpectedFiles') return google.saveExpectedFiles(uid, args[1]);
+  if (name === 'dashboardExpectedPdfaFiles') return google.pdfaExpectedFiles(uid);
   if (name === 'dashboardAuditPdf') return google.auditProjectPdfs(uid);
   if (name === 'dashboardAnswerCheck') return google.answerCheck(uid, args[1], args[2]);
   if (name === 'dashboardSaveOffer') return google.saveOffer(uid, args[1]);

@@ -44,3 +44,60 @@ test('A Node elvárt fájllistát a meglévő projekt UID-jéhez menti', async (
     google.drive = originalDrive;
   }
 });
+
+test('A PDFA mappa fájljai relatív elvárt útvonalként, magyar sorrendben jönnek', async () => {
+  const originalSheets = google.sheets;
+  const originalDrive = google.drive;
+  const row = ['ABC123','','AKTÍV','','https://drive.google.com/drive/folders/PROJECTFOLDER1234'];
+  const children = {
+    PROJECTFOLDER1234: [{id:'PDFAFOLDER1234',name:'PDFA',
+      mimeType:'application/vnd.google-apps.folder'}],
+    PDFAFOLDER1234: [
+      {id:'f2',name:'B terv.pdf',mimeType:'application/pdf'},
+      {id:'f1',name:'A terv.pdf',mimeType:'application/pdf'},
+      {id:'f3',name:'Hibás\nnév.pdf',mimeType:'application/pdf'},
+      {id:'STATIKA1234',name:'Statika',mimeType:'application/vnd.google-apps.folder'}
+    ],
+    STATIKA1234: [{id:'f4',name:'S-01.pdf',mimeType:'application/pdf'}]
+  };
+  google.sheets = () => ({spreadsheets:{
+    get: async () => ({data:{sheets:[]}}),
+    values:{get: async () => ({data:{values:[row]}})}
+  }});
+  google.drive = () => ({files:{list: async ({q}) => {
+    const parent = /'([^']+)' in parents/.exec(q)?.[1];
+    return {data:{files:children[parent] || []}};
+  }}});
+  try {
+    const client = googleClient({clientId:'test',clientSecret:'test',baseUrl:'http://localhost',
+      sheetId:'pdfa-expected-test',sheetName:'Adatok'});
+    const result = await client.pdfaExpectedFiles('abc123');
+    assert.equal(result.missing, false);
+    assert.equal(result.truncated, false);
+    assert.deepEqual(result.files, [
+      'PDFA/A terv.pdf','PDFA/B terv.pdf','PDFA/Hibás név.pdf','PDFA/Statika/S-01.pdf']);
+  } finally {
+    google.sheets = originalSheets;
+    google.drive = originalDrive;
+  }
+});
+
+test('PDFA mappa hiányában a beemelés üres listát jelez', async () => {
+  const originalSheets = google.sheets;
+  const originalDrive = google.drive;
+  const row = ['ABC123','','AKTÍV','','https://drive.google.com/drive/folders/PROJECTFOLDER5678'];
+  google.sheets = () => ({spreadsheets:{
+    get: async () => ({data:{sheets:[]}}),
+    values:{get: async () => ({data:{values:[row]}})}
+  }});
+  google.drive = () => ({files:{list: async () => ({data:{files:[]}})}});
+  try {
+    const client = googleClient({clientId:'test',clientSecret:'test',baseUrl:'http://localhost',
+      sheetId:'pdfa-missing-test',sheetName:'Adatok'});
+    const result = await client.pdfaExpectedFiles('ABC123');
+    assert.deepEqual(result, {folder:'PDFA',files:[],missing:true,truncated:false});
+  } finally {
+    google.sheets = originalSheets;
+    google.drive = originalDrive;
+  }
+});
