@@ -1,7 +1,7 @@
 'use strict';
 
 const {documentValues} = require('./doc_merge.cjs');
-const {technicalSheetValues, technicalProgramLines} = require('./technical_sheet.cjs');
+const {ADDRESSES, SHEET_PREFIX, technicalSheetValues, technicalProgramLines} = require('./technical_sheet.cjs');
 const {planScale} = require('./plans.cjs');
 
 const FIELD_SHEET = 'Műszaki leírás';
@@ -87,10 +87,13 @@ function numberFromSheet(value) {
 
 function technicalReview(sheet, manual) {
   const read = address => numberFromSheet(sheet[`TERVEZESI_ADATOK:Munkalap1!${address}`]);
-  const land = read('E2'), footprint = read('H2'), builtRatio = read('J2');
-  const greenArea = read('H5'), greenRatio = read('J5');
+  // Az arányok (M2, M5, M7) a sheet képletei: a tervezett érték / telekterület.
+  // A J2 (bruttó alapterület) és J5 (zöldfelület m²) csak keresztellenőrzésre kell;
+  // a táblázatban nem jelennek meg.
+  const land = read('E2'), footprint = read('J2'), builtRatio = read('M2');
+  const greenArea = read('J5'), greenRatio = read('M5');
   const checks = [];
-  if ([land,footprint,builtRatio,greenArea,greenRatio].some(value => value === null))
+  if ([land,builtRatio,greenRatio].some(value => value === null))
     checks.push('A telek, a beépítés vagy a zöldfelület számításához hiányzik adat.');
   if (land !== null && land <= 0) checks.push('A telekterület nem pozitív.');
   if ([footprint,greenArea].some(value => value !== null && value < 0))
@@ -105,19 +108,28 @@ function technicalReview(sheet, manual) {
   if (land > 0 && greenArea !== null && greenRatio !== null &&
       Math.abs(greenArea / land * 100 - greenRatio) > 0.15)
     checks.push('A zöldfelület területe és százaléka eltér.');
+  // A szintterületi mutató csak akkor ellenőrizhető, ha van rá előírás (B7).
   const rows = [
-    ['Földszinti beépítettség',read('B3'),builtRatio,'max'],
-    ['Épületmagasság',read('B6'),read('E6'),'max'],
-    ['Zöldfelületi arány',read('B5'),greenRatio,'min']
+    ['Földszinti beépítettség',read('B3'),builtRatio,'max',' %'],
+    ['Építménymagasság',read('B6'),read('F6'),'max',' m'],
+    ['Zöldfelületi arány',read('B5'),greenRatio,'min',' %'],
+    ['Szintterületi mutató',read('B7'),read('M7'),'max',' m²/m²']
   ];
   const approved = /^ellenőrizve$/i.test(String(manual['OVEZET:ellenorzes_allapota'] || ''));
-  const comparison = approved && rows.every(([,limit,planned]) => limit !== null && planned !== null)
-    ? rows.map(([name,limit,planned,rule]) => {
+  // Csak az a sor hasonlítható össze, amelyhez van előírás. A szintterületi
+  // mutató sora például csak akkor kerül a mérlegbe, ha a B7 ki van töltve.
+  const comparable = rows.filter(([,limit,planned]) => limit !== null && planned !== null);
+  for (const [name,limit,planned] of rows)
+    if (limit !== null && planned === null)
+      checks.push(`${name}: az előírás megvan, a tervezett érték hiányzik.`);
+  const fmt = value => String(value).replace('.',',');
+  const comparison = approved && comparable.length
+    ? comparable.map(([name,limit,planned,rule,unit]) => {
       const compliant = rule === 'min' ? planned >= limit : planned <= limit;
       if (!compliant) checks.push(`${name}: a tervezett érték nem teljesíti az előírást.`);
       return (
-      `${name}: előírt ${rule === 'min' ? 'min.' : 'max.'} ${limit}${name === 'Épületmagasság' ? ' m' : ' %'}; `+
-      `tervezett ${planned}${name === 'Épületmagasság' ? ' m' : ' %'}; `+
+      `${name}: előírt ${rule === 'min' ? 'min.' : 'max.'} ${fmt(limit)}${unit}; `+
+      `tervezett ${fmt(planned)}${unit}; `+
       `${compliant ? 'megfelel' : 'nem felel meg'}`);
     })
     : [];
@@ -145,13 +157,13 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
   values.ADAT_EGYEZTETES = reviewResult.issues.length ?
     '[ELLENŐRIZENDŐ: '+reviewResult.issues.join(' ')+']' :
     'A megadott terület- és arányadatok között nincs számítási eltérés.';
-  const coverage = String(sheet['TERVEZESI_ADATOK:Munkalap1!J2'] || '').trim();
+  const coverage = String(sheet['TERVEZESI_ADATOK:Munkalap1!M2'] || '').trim();
   if (coverage) values['TERVEZESI_ADATOK:tervezett_foldszinti_beepites_szazalek'] =
     coverage.replace(/\s*%\s*$/,'');
-  const footprint = String(sheet['TERVEZESI_ADATOK:Munkalap1!H2'] || '').trim();
+  const footprint = String(sheet['TERVEZESI_ADATOK:Munkalap1!J2'] || '').trim();
   if (footprint) values['TERVEZESI_ADATOK:tervezett_foldszinti_beepites_m2'] = footprint;
   const required = numberFromSheet(sheet['TERVEZESI_ADATOK:Munkalap1!B9']);
-  const planned = numberFromSheet(sheet['TERVEZESI_ADATOK:Munkalap1!E9']);
+  const planned = numberFromSheet(sheet['TERVEZESI_ADATOK:Munkalap1!F9']);
   if (required !== null && planned !== null)
     values.PARKOLOEGYENLEG_ERTEKELES =
       `Előírt: ${required} db; tervezett: ${planned} db; különbség: ${planned-required} db.`;
@@ -170,8 +182,18 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
       .filter(Boolean).filter(name => !/^Építész műszaki leírás/i.test(name))]
     .filter((name,index,array) => array.indexOf(name) === index)
     .sort((a,b) => a.localeCompare(b,'hu')).join('\n');
-  return Object.fromEntries(Object.entries(values).filter(([,value]) =>
-    String(value ?? '').trim()));
+  // A sablon táblázata közvetlen cellahivatkozásokat használ. Ha egy cella üres,
+  // a helyén üres érték marad – nem maradhat nyers {{...}} jelölő. Ezért a mező
+  // létezik, az értéke viszont lehet üres; hiányzó adatot nem találunk ki.
+  // A sablon szöveges szakaszai ugyanígy számítanak a szemantikus kulcsokra.
+  const optionalKeys = new Set([...ADDRESSES.map(address => SHEET_PREFIX+address),
+    'TERVEZESI_ADATOK:megengedett_lakasszam_db',
+    'TERVEZESI_ADATOK:tervezett_foldszinti_beepites_szazalek',
+    'TERVEZESI_ADATOK:tervezett_foldszinti_beepites_m2',
+    'PARKOLOEGYENLEG_ERTEKELES','BEEPITESI_MERLEG','TERVJEGYZEK','IRATJEGYZEK']);
+  for (const key of optionalKeys) if (!(key in values)) values[key] = '';
+  return Object.fromEntries(Object.entries(values).filter(([key,value]) =>
+    optionalKeys.has(key) || String(value ?? '').trim()));
 }
 
 module.exports = {FIELD_SHEET,MANUAL_FIELDS,PLAN_PHASES,validateTechnicalField,fieldSheetRows,manualValues,

@@ -39,9 +39,9 @@ test('Projektadatlap másolata az írásos mappába kerül és Node dashboard-li
     const link = linkUpdate.requestBody.requests[0].updateCells.rows[0].values[1]
       .textFormatRuns[0].format.link.uri;
     assert.equal(link, 'https://node.example/dashboard?project=ABC123');
-    assert.equal(formulaUpdate.requestBody.valueInputOption,'USER_ENTERED');
-    assert.deepEqual(formulaUpdate.requestBody.data.map(item => item.range),
-      ["'Munkalap1'!J2","'Munkalap1'!H5","'Munkalap1'!J5"]);
+    // Az arányképletek (L2/M2, L5/M5, L7/M7) a sablonban vannak, ezért a másolat
+    // létrehozásakor nem írjuk felül őket.
+    assert.equal(formulaUpdate, undefined);
     assert.equal(fieldUpdate.requestBody.values[0][0],'Mező');
     assert.equal(fieldUpdate.requestBody.values[1][0],'TERV_TARGYA');
   } finally {

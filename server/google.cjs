@@ -15,6 +15,7 @@ const {FIELD_SHEET,MANUAL_FIELDS,fieldSheetRows,validateTechnicalField,manualVal
 const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs');
 const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
 const {technicalSupplementRequests} = require('./technical_upgrade.cjs');
+const {technicalTableRequests} = require('./technical_table.cjs');
 const {latestRenderCoverFile,coverImageObject,publicImageUrl,coverImageRequest} = require('./cover_image.cjs');
 const {PHASE_COUNT,projectPhases,phaseChange} = require('./phases.cjs');
 const {googleQuota} = require('./quota.cjs');
@@ -32,7 +33,7 @@ const DOCUMENT_TEMPLATES = {
   meghatalmazas:{title:'Meghatalmazás',templateId:'1mWGG9qcx7BCRTFKdq4WSGFB8mj7gJ91r_3Kcnx1NnOE',folder:'írásos'},
   alairolap:{title:'Aláírólap',templateId:'154O4ujYA_Y4erOeKFv2QCLl34REOOuYSzQsK2yKFmHk',folder:'írásos'},
   muszakiLeiras:{title:'Építész műszaki leírás',
-    templateId:'1DDWBsDgbS53eWXGguuRMjapfrZ27Xwk_Pa3ZFV3vaVs',folder:'írásos'}
+    templateId:'1TIGIBSACypr0ZvMZ2xXRABEcPArkQTwM_AqfnMNVtoA',folder:'írásos'}
 };
 const PHASE_SHEET = '_ProjektSzakasz';
 
@@ -633,12 +634,6 @@ function googleClient(config, refreshToken = '', authOverride = null) {
           parents:[written.id]}, fields:'id,name,mimeType,webViewLink,parents',supportsAllDrives:true
       }))).data;
       googleCache.clear(`children:${written.id}`);
-      await sheetWrite(() => sheets.spreadsheets.values.batchUpdate({spreadsheetId:sheet.id,
-        requestBody:{valueInputOption:'USER_ENTERED',data:[
-          {range:"'Munkalap1'!J2",values:[['=IF(OR(E2="";H2="");"";H2/E2)']]},
-          {range:"'Munkalap1'!H5",values:[['=IF(OR(E2="";H2="");"";E2-SUM(H2:H3))']]},
-          {range:"'Munkalap1'!J5",values:[['=IF(OR(E2="";H5="");"";H5/E2)']]}
-        ]}}));
     }
     const metadata = await sheetRead(() => sheets.spreadsheets.get({spreadsheetId:sheet.id,
       fields:'sheets(properties(sheetId,title))'}));
@@ -725,7 +720,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     const {data} = await project(uid);
     const sheet = await ensureProjectDataSheet(data.uid);
     const response = await sheetRead(() => sheets.spreadsheets.values.get({
-      spreadsheetId:sheet.id,range:"'Munkalap1'!A1:J20",valueRenderOption:'FORMATTED_VALUE'
+      spreadsheetId:sheet.id,range:"'Munkalap1'!A1:M20",valueRenderOption:'FORMATTED_VALUE'
     }));
     const sheetValues = technicalSheetValues(response.data.values || []);
     const model = String(process.env.GEMINI_TECHNICAL_MODEL || process.env.GEMINI_AUDIO_MODEL || 'gemini-2.5-flash');
@@ -777,7 +772,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       await ensureTechnicalFieldRows(sheet.id);
       const inputs = await sheetRead(() => sheets.spreadsheets.values.batchGet({
         spreadsheetId:sheet.id,
-        ranges:["'Munkalap1'!A1:J20","'Tervezési program'!A2:B17",`'${FIELD_SHEET}'!A2:B`],
+        ranges:["'Munkalap1'!A1:M20","'Tervezési program'!A2:B17",`'${FIELD_SHEET}'!A2:B`],
         valueRenderOption:'FORMATTED_VALUE'
       }));
       parts = inputs.data.valueRanges || [];
@@ -1023,19 +1018,26 @@ function googleClient(config, refreshToken = '', authOverride = null) {
                   valueInputOption:'RAW',requestBody:{values:rows}}));
               }
               const rows = parts[0]?.values || [];
-              const current = String(rows[6]?.[7] || '').replace(/\s/g,'').replace(',','.');
-              if (dataSheet && Number(current) !== roomData.totalCents/100) {
+              // A helyiséglista összege a tervezett nettó lakóterület (J7) cellába
+              // kerül. A kézzel beírt értéket nem írjuk felül: eltérés esetén
+              // csak figyelmeztetünk, hogy a döntés a tervezőé maradjon.
+              const current = String(rows[6]?.[9] || '').replace(/\s/g,'').replace(',','.');
+              const total = roomData.totalCents/100;
+              if (dataSheet && !current) {
                 await sheetWrite(() => sheets.spreadsheets.values.update({
-                  spreadsheetId:dataSheet.id,range:"'Munkalap1'!H7",valueInputOption:'RAW',
-                  requestBody:{values:[[roomData.totalCents/100]]}}));
+                  spreadsheetId:dataSheet.id,range:"'Munkalap1'!J7",valueInputOption:'RAW',
+                  requestBody:{values:[[total]]}}));
                 if (!rows[6]) rows[6]=[];
-                rows[6][7]=areaText(roomData.totalCents);
-              }
+                rows[6][9]=areaText(roomData.totalCents);
+              } else if (dataSheet && Number(current) !== total)
+                warn('A helyiséglista összege ('+areaText(roomData.totalCents)+
+                  ') eltér a Munkalap1!J7 cella értékétől ('+String(rows[6]?.[9]||'')+
+                  '). A cellát nem írtuk át; ellenőrizd, melyik a helyes nettó alapterület.');
             } catch (error) {
               if (error.status === 429) throw error;
               warn('A helyiséglista nem írható vissza a tervezési adatlapra ('+
                 (error.message||String(error))+'). A dokumentum a beolvasott listával készül el, '+
-                'de a Munkalap2 és a H7 cella kézi ellenőrzést igényelhet.');
+                'de a Munkalap2 és a J7 cella kézi ellenőrzést igényelhet.');
             }
           }
         } catch (error) {
@@ -1109,16 +1111,26 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     let document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
       documentId,includeTabsContent:false
     }))).data;
-    if (type === 'muszakiLeiras' && !created) {
-      const additions = technicalSupplementRequests(document);
-      if (additions.length) {
-        await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
-          requestBody:{requests:additions,
-            ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}
-        }));
-        document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
-          documentId,includeTabsContent:false
-        }))).data;
+    // A sablonból hiányzó, de az AI által kitöltött fejezetek (helyszín,
+    // koncepció, iratjegyzék, mérleg, tervlapok) helyét minden példányban
+    // biztosítani kell – az első generáláskor is. Ha egy horgony hiányzik,
+    // az csak figyelmeztetés, a dokumentum elkészül.
+    if (type === 'muszakiLeiras') {
+      try {
+        const additions = technicalSupplementRequests(document);
+        if (additions.length) {
+          await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+            requestBody:{requests:additions,
+              ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}
+          }));
+          document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+            documentId,includeTabsContent:false
+          }))).data;
+        }
+      } catch (error) {
+        if (error.status === 429) throw error;
+        warn('A helyszín- és koncepciófejezetek helye nem illeszthető be automatikusan ('+
+          (error.message||String(error))+'). A dokumentum a sablon szerinti fejezetekkel készül el.');
       }
     }
     const conditional = conditionalRequests(source,document,mergeValues);
@@ -1130,6 +1142,26 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
         documentId,includeTabsContent:false
       }))).data;
+    }
+    // A „Meglévő” oszlop és a „Szintterületi mutató” sor csak akkor marad a
+    // generált példányban, ha van mögötte tényszerű adat. A táblázat szerkezetét
+    // a sablon adja, ezért ezt a másolatban kell igazítani.
+    if (type === 'muszakiLeiras') {
+      try {
+        const shaping = technicalTableRequests(document, mergeValues);
+        if (shaping.length) {
+          await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+            requestBody:{requests:shaping,
+              ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+          document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+            documentId,includeTabsContent:false
+          }))).data;
+        }
+      } catch (error) {
+        if (error.status === 429) throw error;
+        warn('A tervezési adatok táblázatának igazítása nem sikerült ('+
+          (error.message||String(error))+'). A táblázat a sablon szerinti marad.');
+      }
     }
     const requests = mergeRequests(document,mergeValues,
       {allowUnknown:type === 'muszakiLeiras',restoreMissing:type === 'muszakiLeiras',
@@ -2050,7 +2082,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         try {
           const inputs = await sheetRead(() => sheets.spreadsheets.values.batchGet({
             spreadsheetId:candidates[0].id,
-            ranges:["'Munkalap1'!A1:J20","'Tervezési program'!A2:B17"],
+            ranges:["'Munkalap1'!A1:M20","'Tervezési program'!A2:B17"],
             valueRenderOption:'FORMATTED_VALUE'
           }));
           const parts = inputs.data.valueRanges || [];

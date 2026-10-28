@@ -41,13 +41,20 @@ const AUTO_CHAPTERS = Object.entries(TITLES).map(([key,title]) => ({key,title}))
 const AUTO_KEYS = new Set(AUTO_CHAPTERS.map(item => item.key));
 const GAP = '[KIEGÉSZÍTENDŐ:';
 
+// A Munkalap1 valódi értékcellái. A H2/H3/H5/H7 cellák szöveges címkék, ezért
+// nem szerepelhetnek mérési adatként.
 const SHEET_MEASURES = {
-  E2:'Telekterület (m²)', H2:'Beépített terület (m²)', J2:'Beépítési százalék (%)',
-  H5:'Zöldfelület (m²)', J5:'Zöldfelületi arány (%)',
-  B3:'Megengedett legnagyobb beépítettség (%)', B5:'Előírt legkisebb zöldfelületi arány (%)',
-  B6:'Előírt legnagyobb épületmagasság (m)', E6:'Tervezett épületmagasság (m)',
-  B9:'Előírt parkolóhelyek száma (db)', E9:'Tervezett parkolóhelyek száma (db)',
-  B7:'Tervezési adat B7', H3:'Tervezési adat H3', H7:'Tervezési adat H7', E8:'Tervezési adat E8'
+  E2:'Telek területe (m²)', F2:'Tervezett telekterület (m²)',
+  B2:'Övezeti besorolás',
+  B3:'Megengedett legnagyobb beépítettség (%)', M2:'Tervezett beépítési arány (%)',
+  B5:'Előírt legkisebb zöldfelületi arány (%)', M5:'Tervezett zöldfelületi arány (%)',
+  B6:'Előírt legnagyobb építménymagasság (m)',
+  E6:'Meglévő építménymagasság (m)', F6:'Tervezett építménymagasság (m)',
+  B7:'Előírt szintterületi mutató (m²/m²)', M7:'Tervezett szintterületi mutató (m²/m²)',
+  J7:'Tervezett nettó lakóterület összesen (m²)',
+  E8:'Meglévő lakásszám (db)', F8:'Tervezett lakásszám (db)',
+  B9:'Előírt parkolóhelyek száma (db)',
+  E9:'Meglévő parkolóhelyek száma (db)', F9:'Tervezett parkolóhelyek száma (db)'
 };
 
 function cleanText(value, limit = 2000) {

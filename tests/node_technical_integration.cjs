@@ -23,7 +23,7 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
       !options.range.includes('AO1')?[row]:[]}}),
       batchGet:async()=>({data:{valueRanges:[{values:sheetRows},{values:program},
         {values:[['TERV_TARGYA','Lakóépület bővítése']]},{values:[['Helyiség','Terület (m²)']]}]}}),
-      update:async options=>{if(options.range.includes('H7'))areaWritten=options;return {data:{}};},
+      update:async options=>{if(options.range.includes('J7'))areaWritten=options;return {data:{}};},
       append:async options=>{appended=options;return {data:{}};}}
   }});
   google.drive=()=>({files:{
@@ -42,10 +42,25 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
       return {data:{files}};},
     copy:async()=>({data:{id:'generated-technical-doc'}})
   }});
+  const tableCell = (text,startIndex) => ({content:[{paragraph:{
+    elements:[{startIndex,textRun:{content:text}}]}}]});
+  const dataTable = (startIndex) => ({startIndex,table:{tableRows:[
+    {tableCells:[tableCell('',startIndex+1),tableCell('Megengedett:',startIndex+5),
+      tableCell('Meglévő',startIndex+20),tableCell('Tervezett:',startIndex+30)]},
+    {tableCells:[tableCell('Szintterületi mutató',startIndex+45),
+      tableCell('{{TERVEZESI_ADATOK:Munkalap1!B7}}',startIndex+70),
+      tableCell('{{TERVEZESI_ADATOK:Munkalap1!L7}}',startIndex+110),
+      tableCell('{{TERVEZESI_ADATOK:Munkalap1!M7}}',startIndex+150)]}
+  ]}});
   const body={content:[{paragraph:{elements:[{startIndex:1,textRun:{
-    content:'{{TERV_TARGYA}} {{HELYISEGLISTA}} {{TERVEZESI_ADATOK:Munkalap1!B2}}\n'}}]}}]};
+    content:'{{TERV_TARGYA}} {{HELYISEGLISTA}} {{TERVEZESI_ADATOK:Munkalap1!B2}}\n'}}]}},
+    ...['Tartalomjegyzék','Adatok','Beépítési paraméterek','Épület adatai','Tűzvédelem']
+      .map((text,index)=>({startIndex:20+index*20,paragraph:{elements:[
+        {startIndex:20+index*20,textRun:{content:text+'\n'}}]}})),
+    dataTable(200)]};
+  const docWrites=[];
   google.docs=()=>({documents:{get:async()=>({data:{revisionId:'r1',body,namedRanges:{}}}),
-    batchUpdate:async options=>{docWrite=options;return {data:{}};}}});
+    batchUpdate:async options=>{docWrites.push(options);docWrite=options;return {data:{}};}}});
   try{
     const client=googleClient({clientId:'test',clientSecret:'test',baseUrl:'https://node.example',
       sheetId:'technical-main',sheetName:'Adatok'});
@@ -56,6 +71,13 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
       .map(item=>item.replaceNamedRangeContent.text);
     assert.ok(texts.includes('Lakóépület bővítése'));
     assert.ok(texts.some(text=>text.includes('nappali\t30,00 m²')));
+    const shaping=docWrites.flatMap(write=>write.requestBody.requests||[]);
+    assert.ok(shaping.some(request=>request.insertText?.text.includes('{{HELYSZIN:elozmenyek}}')),
+      'Az első generáláskor is bekerülnek a helyszín- és koncepciófejezetek.');
+    assert.ok(shaping.some(request=>request.deleteTableColumn?.tableCellLocation.columnIndex===2),
+      'Meglévő adat nélkül a teljes oszlop törlődik.');
+    assert.ok(shaping.some(request=>request.deleteTableRow?.tableCellLocation.rowIndex===1),
+      'B7 követelmény nélkül a szintterületi sor törlődik.');
     assert.deepEqual(appended.requestBody.values[0].slice(0,4),
       ['ABC123','muszakiLeiras','generated-technical-doc','DRAFT']);
   }finally{[google.sheets,google.drive,google.docs]=originals;}

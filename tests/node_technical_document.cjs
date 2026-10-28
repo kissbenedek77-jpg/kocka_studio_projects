@@ -6,9 +6,9 @@ const {mergeRequests,unresolvedMarkers} = require('../server/doc_merge.cjs');
 const {technicalSupplementRequests} = require('../server/technical_upgrade.cjs');
 
 test('Műszaki sablon csak ismert projektadatot ír be, az ellenőrizetlen mezőt láthatóan hagyja', () => {
-  const sheetRows = Array.from({length:20},() => Array(10).fill(''));
-  sheetRows[1][1] = 'Lke-8'; sheetRows[1][4] = '1000'; sheetRows[1][7] = '220,99';
-  sheetRows[1][9] = '21,9%'; sheetRows[8][1] = '2'; sheetRows[8][4] = '1';
+  const sheetRows = Array.from({length:20},() => Array(13).fill(''));
+  sheetRows[1][1] = 'Lke-8'; sheetRows[1][4] = '1000'; sheetRows[1][9] = '220,99';
+  sheetRows[1][12] = '21,9%'; sheetRows[8][1] = '2'; sheetRows[8][5] = '1';
   const programRows = Array.from({length:16},(_,i) => {
     const letter = String.fromCharCode(97+i);
     return [letter,`${letter}) Projektadat: {{TERVEZESI_ADATOK:Munkalap1!B2}}.`];
@@ -65,18 +65,54 @@ test('Övezeti jóváhagyás csak ellenőrzött állapot és visszakereshető fo
 
 test('Az övezeti mérleg ellenőrzi a számokat és csak jóváhagyott forrásból készül', () => {
   const key = cell => `TERVEZESI_ADATOK:Munkalap1!${cell}`;
-  const sheet = Object.fromEntries(Object.entries({E2:'1000',H2:'250',J2:'25%',
-    H5:'600',J5:'60%',B3:'30%',B6:'6,0',E6:'5,5',B5:'50%'}).map(([cell,value])=>[key(cell),value]));
+  const sheet = Object.fromEntries(Object.entries({E2:'1000',J2:'250',M2:'25%',
+    J5:'600',M5:'60%',B3:'30%',B6:'6,0',F6:'5,5',B5:'50%'}).map(([cell,value])=>[key(cell),value]));
   assert.equal(technicalReview(sheet,{}).comparison,'');
   const approved=technicalReview(sheet,{'OVEZET:ellenorzes_allapota':'Ellenőrizve'});
   assert.equal(approved.issues.length,0);
   assert.match(approved.comparison,/Földszinti beépítettség: előírt max\. 30 %; tervezett 25 %; megfelel/);
-  sheet[key('J2')]='35%';
+  sheet[key('M2')]='35%';
   const invalid=technicalReview(sheet,{'OVEZET:ellenorzes_allapota':'Ellenőrizve'});
   assert.match(invalid.issues.join(' '),/beépítési százalék eltér/);
   assert.match(invalid.comparison,/nem felel meg/);
-  sheet[key('J2')]='25%';sheet[key('H5')]='1200';
+  sheet[key('M2')]='25%';sheet[key('J5')]='1200';
   assert.match(technicalReview(sheet,{}).issues.join(' '),/nagyobb a telekterületnél/);
+});
+
+test('A szintterületi mutató csak akkor kerül a mérlegbe, ha van rá előírás', () => {
+  const key = cell => `TERVEZESI_ADATOK:Munkalap1!${cell}`;
+  const sheet = Object.fromEntries(Object.entries({E2:'1000',J2:'250',M2:'25%',J5:'600',
+    M5:'60%',B3:'30%',B6:'6,0',F6:'5,5',B5:'50%',M7:'1,2'}).map(([cell,value])=>[key(cell),value]));
+  assert.doesNotMatch(technicalReview(sheet,{'OVEZET:ellenorzes_allapota':'Ellenőrizve'}).comparison,
+    /Szintterületi mutató/);
+  sheet[key('B7')]='0,8';
+  const reviewed=technicalReview(sheet,{'OVEZET:ellenorzes_allapota':'Ellenőrizve'});
+  assert.match(reviewed.comparison,/Szintterületi mutató: előírt max\. 0,8 m²\/m²; tervezett 1,2 m²\/m²; nem felel meg/);
+  assert.match(reviewed.issues.join(' '),/Szintterületi mutató/);
+});
+
+test('A sablon cellahivatkozásai üres adatnál sem hagynak nyers jelölőt', () => {
+  const sheetRows = Array.from({length:20},() => Array(13).fill(''));
+  const programRows = Array.from({length:16},(_,index) => {
+    const letter = String.fromCharCode(97+index);
+    return [letter,`${letter}) Kitöltött program.`];
+  });
+  const values = technicalReplacements({project:{uid:'ABC123'},sheetRows,programRows,fieldRows:[]});
+  for (const address of ['E2','F2','B3','M2','L2','E6','F6','E8','F8','B9','E9','F9','B7','M7','M5','J7'])
+    assert.equal(values['TERVEZESI_ADATOK:Munkalap1!'+address],'',address);
+  for (const key of ['TERVEZESI_ADATOK:megengedett_lakasszam_db',
+    'TERVEZESI_ADATOK:tervezett_foldszinti_beepites_szazalek',
+    'TERVEZESI_ADATOK:tervezett_foldszinti_beepites_m2',
+    'PARKOLOEGYENLEG_ERTEKELES','BEEPITESI_MERLEG','TERVJEGYZEK'])
+    assert.equal(values[key],'',key);
+  assert.equal(values.IRATJEGYZEK,'Építészeti műszaki leírás (jelen dokumentum)');
+  const doc = {body:{content:[{paragraph:{elements:[{startIndex:1,textRun:{
+    content:'{{TERVEZESI_ADATOK:Munkalap1!F8}} {{PARKOLOEGYENLEG_ERTEKELES}}\n'}}]}}]},
+  namedRanges:{}};
+  const requests = mergeRequests(doc,values,{allowUnknown:true});
+  assert.equal(requests.filter(item=>item.createNamedRange).length,2);
+  assert.ok(requests.filter(item=>item.replaceNamedRangeContent)
+    .every(item=>item.replaceNamedRangeContent.text==='\u200B'));
 });
 
 test('A tervfázis és kiadási dátum hibás értékeit mentés előtt elutasítja', () => {
