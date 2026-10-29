@@ -917,7 +917,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       }))).data;
       const computed = await technicalReplacements({project:data,sheetRows:parts[0]?.values || [],
         programRows:parts[1]?.values || [],fieldRows:parts[2]?.values || [],pdfFiles:plans,
-        roomData,plans,textTemplates:textTemplates(templateDoc),
+        roomData: roomData || null,plans,textTemplates:textTemplates(templateDoc),
         extraValues:{...retegrendValues(retegrend),
           RETEGRENDEK_JOVAHAGYOTT_SZOVEG:(retegrend?.lines || []).join('\n')}},warnings);
       const defaults = {};
@@ -1181,8 +1181,8 @@ function googleClient(config, refreshToken = '', authOverride = null) {
           'A helyén [KIEGÉSZÍTENDŐ: …] jelölés marad.');
       try {
         mergeValues = await technicalReplacements({project:data,sheetRows:parts[0]?.values || [],
-          programRows:parts[1]?.values || [],fieldRows:parts[2]?.values || [],pdfFiles,writtenFiles,
-          roomData,plans:pdfFiles,textTemplates:textTemplates(source),
+          programRows:parts[1]?.values || [],fieldRows:parts[2]?.values || [],pdfFiles,
+          roomData: roomData || null,textTemplates:textTemplates(source),
           extraValues:{...retegrendValues(retegrend),
           RETEGRENDEK_JOVAHAGYOTT_SZOVEG:(retegrend?.lines || []).join('\n')}},warnings);
       } catch (error) {
