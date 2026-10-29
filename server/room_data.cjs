@@ -112,20 +112,21 @@ function parseRoomText(content,sourceName='helyiségek.txt') {
   const hasNumber=columns.number>=0,hasCovering=columns.covering>=0;
   const title=hasNumber?'Helyiség száma és neve':'Helyiség';
   const tableRows=[[title,'Terület (m²)']];
+  output.push(title+'\tTerület (m²)');
   for (const [floor,group] of floors) {
     output.push(floor);
     tableRows.push([floor,'']);
     for (const room of group.rooms) {
       const label=[room.number,room.name].filter(Boolean).join(' ');
       const finish=hasCovering && room.covering ? `; burkolat: ${room.covering}` : '';
-      output.push(`${label}\t${areaText(room.area)} m²${finish}`);
+      output.push(`    ${label}\t${areaText(room.area)} m²${finish}`);
       tableRows.push([label,areaText(room.area)]);
     }
     output.push(`${floor} összesen\t${areaText(group.total)} m²`);
     tableRows.push([floor+' összesen',areaText(group.total)]);
   }
-  output.push(`Teljes összesen\t${areaText(total)} m²`);
-  tableRows.push(['Teljes összesen',areaText(total)]);
+  output.push(`Mindösszesen\t${areaText(total)} m²`);
+  tableRows.push(['Mindösszesen',areaText(total)]);
   if (external) {
     output.push(`Terasz nélkül\t${areaText(total-external)} m²`);
     tableRows.push(['Terasz nélkül',areaText(total-external)]);

@@ -11,11 +11,17 @@ const {planScale} = require('./plans.cjs');
 const {restartPostfix,appendPostfix,copiedName,expectedPath} = require('./restart.cjs');
 const {technicalSheetValues, technicalProgramLines} = require('./technical_sheet.cjs');
 const {parseRoomText,areaText} = require('./room_data.cjs');
-const {FIELD_SHEET,MANUAL_FIELDS,fieldSheetRows,validateTechnicalField,manualValues,technicalReplacements} = require('./technical_document.cjs');
+const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,fieldSheetRows,validateTechnicalField,manualValues,technicalReplacements} = require('./technical_document.cjs');
 const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs');
 const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
 const {technicalSupplementRequests} = require('./technical_upgrade.cjs');
 const {technicalTableRequests} = require('./technical_table.cjs');
+const {textTemplates,appendixRequests} = require('./technical_texts.cjs');
+const {findMarker,insertRequests,findEmptyTable,fillRequests} = require('./room_table.cjs');
+const {retegrendFacts,retegrendValues} = require('./retegrend.cjs');
+const {pdfToText} = require('./pdf_text.cjs');
+const {floorCount,bedroomCount,hasOffice} = require('./technical_program.cjs');
+const {chatInput,chatPrompt,parseChatResult} = require('./technical_chat.cjs');
 const {latestRenderCoverFile,coverImageObject,publicImageUrl,coverImageRequest} = require('./cover_image.cjs');
 const {PHASE_COUNT,projectPhases,phaseChange} = require('./phases.cjs');
 const {googleQuota} = require('./quota.cjs');
@@ -747,6 +753,40 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     return {sections:result,model};
   }
 
+  // Egyszerű AI-chat a műszaki adatlap felett: a beírt megjegyzés alapján a
+  // meglévő fejezetszövegek fogalmazódnak újra. A válasz nem mentődik el; a
+  // felület tölti a mezőkbe, és a megszokott mentés rögzíti.
+  async function technicalChat(uid,input) {
+    const apiKey = String(process.env.GEMINI_API_KEY || '').trim();
+    if (!apiKey) throw new Error('A chat nem használható: a GEMINI_API_KEY nincs beállítva a Railway Variables között.');
+    const fields = await getTechnicalFields(uid);
+    const current = Object.fromEntries(fields.fields.map(field => [field.key,field.value]));
+    const {message,notes} = chatInput(input,current);
+    const {data} = await project(uid);
+    const model = String(process.env.GEMINI_TECHNICAL_MODEL || process.env.GEMINI_AUDIO_MODEL || 'gemini-2.5-flash');
+    if (!/^[A-Za-z0-9._-]{3,80}$/.test(model)) throw new Error('Érvénytelen Gemini modellnév.');
+    let answer;
+    try {
+      answer = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
+        method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
+        signal:AbortSignal.timeout(60000),
+        body:JSON.stringify({contents:[{parts:[{text:chatPrompt({message,notes,
+          projectType:data.projektTipus})}]}],generationConfig:{temperature:0.3,maxOutputTokens:8192,
+          responseMimeType:'application/json',responseSchema:{type:'OBJECT',properties:{
+            reply:{type:'STRING'},sections:{type:'ARRAY',items:{type:'OBJECT',properties:{
+              key:{type:'STRING'},text:{type:'STRING'}},required:['key','text']}}
+          },required:['reply','sections']}}})
+      });
+    } catch (error) {
+      if (error.name === 'TimeoutError' || error.name === 'AbortError')
+        throw new Error('A chat válasza időtúllépés miatt nem készült el.');
+      throw new Error('A chat szolgáltatása nem érhető el.');
+    }
+    if (!answer.ok) throw new Error('A chat nem készült el (HTTP '+answer.status+').');
+    const result = parseChatResult(await answer.json(),notes);
+    return {reply:result.reply,sections:result.sections,model};
+  }
+
   // MARK: A teljes műszaki leírás automatikus előállítása
   // A rendelkezésre álló tényszerű projektadatokból fejezetszövegek készülnek,
   // azok a műszaki adatlapra mentődnek, majd ebből létrejön a DRAFT dokumentum.
@@ -772,7 +812,8 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       await ensureTechnicalFieldRows(sheet.id);
       const inputs = await sheetRead(() => sheets.spreadsheets.values.batchGet({
         spreadsheetId:sheet.id,
-        ranges:["'Munkalap1'!A1:M20","'Tervezési program'!A2:B17",`'${FIELD_SHEET}'!A2:B`],
+        ranges:["'Munkalap1'!A1:M20","'Tervezési program'!A2:B17",`'${FIELD_SHEET}'!A2:B`,
+          "'Rétegrend sablonok'!A1:C400"],
         valueRenderOption:'FORMATTED_VALUE'
       }));
       parts = inputs.data.valueRanges || [];
@@ -788,10 +829,14 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     let manual = {};
     try { manual = manualValues(parts[2]?.values || []); }
     catch (error) { warn('A műszaki adatlap szövegei nem olvashatók: '+error.message); }
-    let plans = [], roomData = null, roomText = '';
+    let plans = [], roomData = null, roomText = '', retegrend = null, projectChildren = [];
     try {
       const projectFolder = await ensureProjectFolder(data.uid);
-      const children = await listChildren(projectFolder.id);
+      projectChildren = await listChildren(projectFolder.id);
+      const children = projectChildren;
+      // Első lépés: a Metszetek tervlap rétegrendjei. Innen származik a fal,
+      // a födém és a fedélszerkezet anyaga és vastagsága.
+      retegrend = await metszetFacts(children,parts[3]?.values || [],warn);
       const folderNamed = name => children.find(item =>
         item.mimeType === 'application/vnd.google-apps.folder' &&
         String(item.name || '').trim().toLowerCase() === name);
@@ -823,7 +868,16 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       if (error.status === 429) throw error;
       warn('A projektmappa tartalma nem olvasható: '+error.message);
     }
-    const facts = autoFacts({data,sheetValues,program,roomData,roomText,plans,manual});
+    const planFacts = {};
+    const floors = floorCount(roomData,plans);
+    if (floors) planFacts['Alaprajz tervlapok száma'] = String(floors);
+    const bedrooms = bedroomCount(roomData);
+    if (bedrooms) planFacts['Hálószobák száma'] = String(bedrooms);
+    if (roomData) planFacts['Iroda a bejárat közelében'] = hasOffice(roomData) ?
+      'igen – a helyiséglistában iroda/dolgozó szerepel' :
+      'nem – a helyiséglistában nincs iroda/dolgozó';
+    const facts = autoFacts({data,sheetValues,program,roomData,roomText,plans,manual,
+      retegrend,planFacts});
     let sections = {};
     try {
       const answer = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
@@ -853,6 +907,28 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         if (error.status === 429) throw error;
         warn('A fejezetszövegek mentése nem sikerült: '+error.message);
       }
+    }
+    // A hosszú fejezetszövegek (tűzvédelem, szerkezetek, rétegrendek, tervezői
+    // nyilatkozat) alapértéke a sablonból, a projekt adataival kitöltve kerül a
+    // felületre – csak akkor, ha a mező még üres.
+    try {
+      const templateDoc = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+        documentId:DOCUMENT_TEMPLATES.muszakiLeiras.templateId,includeTabsContent:false
+      }))).data;
+      const computed = technicalReplacements({project:data,sheetRows:parts[0]?.values || [],
+        programRows:parts[1]?.values || [],fieldRows:parts[2]?.values || [],pdfFiles:plans,
+        roomData,plans,textTemplates:textTemplates(templateDoc),
+        extraValues:{...retegrendValues(retegrend),
+          RETEGRENDEK_JOVAHAGYOTT_SZOVEG:(retegrend?.lines || []).join('\n')}},warnings);
+      const defaults = {};
+      for (const key of CHAPTER_KEYS)
+        if (!String(manual[key] || '').trim() && String(computed[key] || '').trim())
+          defaults[key] = computed[key];
+      if (Object.keys(defaults).length) await saveTechnicalFields(data.uid,defaults);
+    } catch (error) {
+      if (error.status === 429) throw error;
+      warn('A fejezetszövegek alapértékének előállítása nem sikerült: '+
+        (error.message||String(error)));
     }
     let document;
     try { document = await ensureDocument(data.uid,'muszakiLeiras'); }
@@ -911,6 +987,60 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     return true;
   }
 
+  // A rétegrendek forrása a Metszetek tervlap. Ez a generálás első lépése: a
+  // szöveget itt olvassuk ki, és a fal/födém/fedélszerkezet adatait minden
+  // későbbi fejezet innen kapja. Ha a PDF nem olvasható, figyelmeztetés és
+  // hiányjelölés lesz – adatot nem találunk ki.
+  async function metszetTexts(children, warn = () => {}) {
+    const pdfa = (children || []).find(item =>
+      item.mimeType === 'application/vnd.google-apps.folder' && /^pdfa$/i.test(item.name));
+    if (!pdfa) {
+      warn('A PDFA mappa hiányzik, ezért a rétegrendek a Metszetek tervlap nélkül, '+
+        'a „Rétegrend sablonok” munkalapról készülnek.');
+      return [];
+    }
+    let files = [];
+    try {
+      files = (await listChildren(pdfa.id)).filter(item =>
+        /\.pdf$/i.test(item.name) && /metszet/i.test(item.name));
+    } catch (error) {
+      if (error.status === 429) throw error;
+      warn('A Metszetek tervlap nem kereshető ki: '+(error.message||String(error)));
+      return [];
+    }
+    if (!files.length) {
+      warn('A PDFA mappában nincs Metszetek tervlap, ezért a rétegrendek a '+
+        '„Rétegrend sablonok” munkalapról készülnek.');
+      return [];
+    }
+    const texts = [];
+    for (const item of files.slice(0,2)) {
+      if (Number(item.size || 0) > 25*1024*1024) {
+        warn('A Metszetek tervlap 25 MB-nál nagyobb ('+item.name+'), ezért a szövege '+
+          'nem olvasható ki.');
+        continue;
+      }
+      try {
+        const response = await googleQuota.run('drive',100,() => drive.files.get({
+          fileId:item.id,alt:'media',supportsAllDrives:true},{responseType:'arraybuffer'}));
+        const text = await pdfToText(Buffer.from(response.data));
+        if (text.trim()) texts.push({name:item.name,text});
+        else warn('A Metszetek tervlapból ('+item.name+') nem olvasható szöveg; a '+
+          'rétegrendek a munkalapról készülnek.');
+      } catch (error) {
+        if (error.status === 429) throw error;
+        warn('A Metszetek tervlap szövege nem olvasható ('+(error.message||String(error))+
+          '); a rétegrendek a „Rétegrend sablonok” munkalapról készülnek.');
+      }
+    }
+    return texts;
+  }
+
+  async function metszetFacts(children, sheetRows, warn) {
+    const planTexts = await metszetTexts(children, warn);
+    return retegrendFacts({sheetRows,planTexts});
+  }
+
   async function ensureDocument(uid, type) {
     const template = DOCUMENT_TEMPLATES[type];
     if (!template) throw new Error('Ismeretlen vagy még nem átültetett dokumentumtípus.');
@@ -922,6 +1052,9 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       if (name && !(name in extras)) extras[name] = String(row[40+index] || '');
     });
     let mergeValues = documentValues(data,extras);
+    const source = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+      documentId:template.templateId,includeTabsContent:false
+    }))).data;
     // A dokumentum összeállítása nem állhat meg egy részadat hibájától: a hiba
     // figyelmeztetés lesz, a hiányzó helyen pedig [KIEGÉSZÍTENDŐ: ...] jelölés marad.
     const warnings = [];
@@ -938,7 +1071,8 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         const inputs = await sheetRead(() => sheets.spreadsheets.values.batchGet({
           spreadsheetId:dataSheet.id,
           ranges:["'Munkalap1'!A1:J20","'Tervezési program'!A2:B17",
-            `'${FIELD_SHEET}'!A2:B`,"'Munkalap2'!A1:B500"],
+            `'${FIELD_SHEET}'!A2:B`,"'Munkalap2'!A1:B500",
+            "'Rétegrend sablonok'!A1:C400"],
           valueRenderOption:'FORMATTED_VALUE'
         }));
         parts = inputs.data.valueRanges || [];
@@ -971,16 +1105,13 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         warn('A PDFA vagy az Írásos mappa tartalma nem olvasható ('+(error.message||String(error))+
           '). A tervjegyzék és az iratjegyzék hiányos lehet.');
       }
-      const checkRows = await values("'_ProjektEllenőrzés'!A2:C").catch(error => {
-        if (error.status === 429) throw error;
-        return [];
-      });
-      const scaleAnswers = {};
-      for (const row of checkRows) if (String(row[0]).trim().toUpperCase() === data.uid &&
-          String(row[1]).startsWith('scale:')) scaleAnswers[String(row[1]).slice(6)] = String(row[2] || '');
+      let roomData = null;
+      // A rétegrendek a generálás első lépése: a Metszetek tervlap szövege és a
+      // „Rétegrend sablonok” munkalap együtt adja a fal/födém/fedélszerkezet
+      // anyagát és vastagságát.
+      const retegrend = await metszetFacts(projectChildren,parts[4]?.values || [],warn);
       const plnFolder = projectChildren.find(item =>
         item.mimeType === 'application/vnd.google-apps.folder' && /^pln$/i.test(item.name));
-      let roomData = null;
       if (plnFolder) {
         try {
           const matches = (await listChildren(plnFolder.id)).filter(item =>
@@ -1051,7 +1182,9 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       try {
         mergeValues = technicalReplacements({project:data,sheetRows:parts[0]?.values || [],
           programRows:parts[1]?.values || [],fieldRows:parts[2]?.values || [],pdfFiles,writtenFiles,
-          scaleAnswers,roomData});
+          roomData,plans:pdfFiles,textTemplates:textTemplates(source),
+          extraValues:{...retegrendValues(retegrend),
+          RETEGRENDEK_JOVAHAGYOTT_SZOVEG:(retegrend?.lines || []).join('\n')}},warnings);
       } catch (error) {
         if (error.status === 429) throw error;
         warn('A műszaki leírás adatainak összeállítása nem sikerült ('+(error.message||String(error))+
@@ -1068,9 +1201,6 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         mergeValues.HELYISEGLISTA = '[KIEGÉSZÍTENDŐ: helyiséglista – töltsd fel a PLN/helyiségek.txt '+
           'fájlt, vagy írd be a Műszaki leírás lap HELYISEGLISTA mezőjét.]';
     }
-    const source = (await googleQuota.run('docsRead',1,() => docs.documents.get({
-      documentId:template.templateId,includeTabsContent:false
-    }))).data;
     conditionalBlocks(source);
     findMarkers(source,mergeValues,{allowUnknown:type === 'muszakiLeiras',allowConditional:true});
     const folder = await ensureProjectFolder(uid);
@@ -1111,6 +1241,25 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     let document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
       documentId,includeTabsContent:false
     }))).data;
+    // A sablonszövegek appendixe csak a sablonban marad meg: a kész példányból
+    // a fejlécétől a dokumentum végéig töröljük.
+    if (type === 'muszakiLeiras') {
+      try {
+        const appendix = appendixRequests(document);
+        if (appendix.length) {
+          await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+            requestBody:{requests:appendix,
+              ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+          document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+            documentId,includeTabsContent:false
+          }))).data;
+        }
+      } catch (error) {
+        if (error.status === 429) throw error;
+        warn('A sablonszövegek appendixe nem távolítható el automatikusan ('+
+          (error.message||String(error))+'). A dokumentum végén ellenőrizd a függeléket.');
+      }
+    }
     // A sablonból hiányzó, de az AI által kitöltött fejezetek (helyszín,
     // koncepció, iratjegyzék, mérleg, tervlapok) helyét minden példányban
     // biztosítani kell – az első generáláskor is. Ha egy horgony hiányzik,
@@ -1161,6 +1310,41 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         if (error.status === 429) throw error;
         warn('A tervezési adatok táblázatának igazítása nem sikerült ('+
           (error.message||String(error))+'). A táblázat a sablon szerinti marad.');
+      }
+    }
+    // A helyiséglista táblázatként, szintfejekkel, alszummákkal és teljes
+    // összeggel jelenik meg. A jelölő helyére táblázat kerül, ezért a szöveges
+    // helyettesítés előtt kell beszúrni.
+    if (type === 'muszakiLeiras' && roomData?.tableRows?.length > 1) {
+      try {
+        const marker = findMarker(document);
+        const inserts = insertRequests(marker, roomData.tableRows);
+        if (inserts.length) {
+          await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+            requestBody:{requests:inserts,
+              ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+          document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+            documentId,includeTabsContent:false
+          }))).data;
+          const table = findEmptyTable(document, roomData.tableRows);
+          if (table) {
+            const fill = fillRequests(table, roomData.tableRows);
+            if (fill.length) {
+              await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+                requestBody:{requests:fill,
+                  ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+              document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+                documentId,includeTabsContent:false
+              }))).data;
+            }
+          } else
+            warn('A helyiséglista beszúrt táblázata nem található, ezért a lista szövegként '+
+              'jelenik meg a dokumentumban.');
+        }
+      } catch (error) {
+        if (error.status === 429) throw error;
+        warn('A helyiséglista táblázatként nem jeleníthető meg ('+
+          (error.message||String(error))+'); ellenőrizd a dokumentumot.');
       }
     }
     const requests = mergeRequests(document,mergeValues,
@@ -2114,6 +2298,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       .map(item => [String(item[1]),String(item[2] || '')]));
     const postfix = String(restartRows.find(item => item[0] === data.uid)?.[2] || '').trim();
     const issues = [];
+    let hasUnknownScale = false;
     const addIssue = (code,text,blocking,answerable=false) => issues.push({code,text,blocking,answerable});
     if (!folder) addIssue('folder','A projektmappa hiányzik vagy nem érhető el.',true);
     if (dataSheetConflict) addIssue('data_sheet_conflict','Több Tervezési adatok Sheet található a projektmappában.',true);
@@ -2128,10 +2313,13 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       if (!planCount) addIssue('plans','Nincs PDF tervlap a PDFA mappában.',true);
       for (const pdf of pdfFiles) {
         const title = String(pdf.name || '').replace(/\.pdf$/i,'').replace(/[\r\n\t]+/g,' ').trim();
-        if (title && !planScale(title) && !answers.get('scale:'+title))
-          addIssue('scale:'+title,'A tervlap méretaránya nem ismert: '+title+
-            '. Mi a helyes méretarány?',false,true);
+        // Ha a fájlnévből nem állapítható meg a méretarány, nem kérdezünk rá:
+        // a tervjegyzékben csak a tervlap neve szerepel.
+        if (title && !planScale(title)) hasUnknownScale = true;
       }
+      if (hasUnknownScale)
+        addIssue('scale','Egy vagy több tervlap méretaránya nem állapítható meg a fájlnévből; '+
+          'a tervjegyzékben csak a tervlap neve szerepel.',false,false);
       const expectedName = [data.projekt_varos,data.projekt_kozterulet,
         data.projekt_tipus,data.projekt_hazszam].map(item => String(item || '').trim())
         .filter(Boolean).join(' ').replace(/\s+/g,' ').trim() + (postfix ? ' - '+postfix : '');
@@ -2188,7 +2376,8 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     createClientRecord, createInquiry, getClientData, saveClientData, ensureProjectFolder, ensureProjectDataSheet,
     listClientSubmissions, markClientSubmissionRead,
     saveMemo, saveExpectedFiles, pdfaExpectedFiles, answerCheck, saveOffer, setStartDate, ensureDocument,
-    uploadAudio, summarizeAudio, draftTechnicalText, generateTechnicalDocument, syncProject, startProject, closeProject,
+    uploadAudio, summarizeAudio, draftTechnicalText, generateTechnicalDocument, technicalChat,
+    syncProject, startProject, closeProject,
     archiveProject,deleteProject,prepareEmail,
     restartProject, getTechnicalFields, saveTechnicalFields, setPhase,auditProjectPdfs};
 }

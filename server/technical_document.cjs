@@ -2,6 +2,8 @@
 
 const {documentValues} = require('./doc_merge.cjs');
 const {ADDRESSES, SHEET_PREFIX, technicalSheetValues, technicalProgramLines} = require('./technical_sheet.cjs');
+const {programReplacements,exitCount} = require('./technical_program.cjs');
+const {renderTemplate} = require('./technical_texts.cjs');
 const {planScale} = require('./plans.cjs');
 
 const FIELD_SHEET = 'Műszaki leírás';
@@ -30,10 +32,7 @@ const MANUAL_FIELDS = [
   ['VILLAMOS:teljesitmeny','Elektromos teljesítmény'],
   ['RETEGRENDEK_JOVAHAGYOTT_SZOVEG','Jóváhagyott rétegrendek: azonosító, rétegek kívülről befelé, vastagság és érintett tervlap'],
   ['TERVEZOI_NYILATKOZAT_JOVAHAGYOTT_SZOVEG','Tervező által jóváhagyott nyilatkozat'],
-  ['DOKUMENTUM:tervfazis','Tervfázis: egyszerű bejelentési / építési engedélyezési / kivitelezési'],
-  ['DOKUMENTUM:tervszam','Tervszám vagy dokumentumazonosító'],
-  ['DOKUMENTUM:revizio','Revízió jele'],
-  ['DOKUMENTUM:kiadas_datuma','Kiadás dátuma (ÉÉÉÉ-HH-NN)'],
+  ['DOKUMENTUM:kiadas_datuma','Kiadás dátuma (ÉÉÉÉ.HH.NN.)'],
   ['HELYSZIN:elozmenyek','Tervezési előzmények; ha nincsenek, ezt egyértelműen írd le'],
   ['HELYSZIN:meglevo_allapot','Telek és meglévő építmények tényszerű állapota'],
   ['HELYSZIN:terep_es_viz','Terepviszonyok és felszíni vízelvezetés tervezett módja'],
@@ -48,18 +47,34 @@ const MANUAL_FIELDS = [
   ['TERV_HIVATKOZAS','A leíráshoz tartozó helyszínrajz, alaprajz, metszet és homlokzat tervlapjele']
 ];
 const FIELD_KEYS = new Set(MANUAL_FIELDS.map(([key]) => key));
-const PLAN_PHASES = ['Egyszerű bejelentési','Építési engedélyezési','Kivitelezési'];
+// A felületen a hosszú fejezetszövegek alapértéke a sablon dokumentumból jön.
+const CHAPTER_KEYS = ['TUZVEDELMI_LEIRAS_JOVAHAGYOTT_SZOVEG','SZERKEZETEK LEÍRÁSA',
+  'RETEGRENDEK_JOVAHAGYOTT_SZOVEG','TERVEZOI_NYILATKOZAT_JOVAHAGYOTT_SZOVEG'];
 function validIsoDate(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) &&
     new Date(value).toISOString().slice(0,10) === value;
 }
+function validHungarianDate(value) {
+  const match = /^(\d{4})\.(\d{2})\.(\d{2})\.?$/.exec(String(value || '').trim());
+  if (!match) return false;
+  const iso = `${match[1]}-${match[2]}-${match[3]}`;
+  return validIsoDate(iso);
+}
+// A dokumentumban a kiadás dátuma ÉÉÉÉ.HH.NN. alakban jelenik meg.
+function displayDate(value) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  if (validIsoDate(text)) return text.replace(/-/g,'.')+'.';
+  return text;
+}
 
 function validateTechnicalField(key,value) {
-  if (key === 'DOKUMENTUM:tervfazis' && value && !PLAN_PHASES.includes(value))
-    throw new Error('A tervfázist a megadott lehetőségek közül válaszd.');
-  if (['DOKUMENTUM:kiadas_datuma','OVEZET:ellenorzes_datuma'].includes(key) &&
-      value && !validIsoDate(value))
-    throw new Error('A dátum ÉÉÉÉ-HH-NN formátumú és valós naptári nap legyen.');
+  if (key === 'DOKUMENTUM:kiadas_datuma' && value &&
+      !validIsoDate(value) && !validHungarianDate(value))
+    throw new Error('A kiadás dátuma ÉÉÉÉ.HH.NN. formátumú és valós naptári nap legyen.');
+  if (key === 'OVEZET:ellenorzes_datuma' && value && !validIsoDate(value) &&
+      !validHungarianDate(value))
+    throw new Error('A dátum ÉÉÉÉ.HH.NN. formátumú és valós naptári nap legyen.');
 }
 
 function fieldSheetRows() {
@@ -138,8 +153,12 @@ function technicalReview(sheet, manual) {
 }
 
 function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfFiles = [],
-  writtenFiles = [],
-  scaleAnswers = {}, roomData = null}) {
+  writtenFiles = [], roomData = null, plans = [], textTemplates = {}, extraValues = {}},
+  warnings = []) {
+  const warn = message => {
+    const text = String(message || '').trim().slice(0,500);
+    if (text && !warnings.includes(text)) warnings.push(text);
+  };
   const sheet = technicalSheetValues(sheetRows);
   const manual = manualValues(fieldRows);
   const review = String(manual['OVEZET:ellenorzes_allapota'] || '').trim();
@@ -149,9 +168,38 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
       !validIsoDate(date))
     delete manual['OVEZET:ellenorzes_allapota'];
   const values = {...documentValues(project),...manual};
-  if (manual['DOKUMENTUM:kiadas_datuma']) values['Mai dátum'] = manual['DOKUMENTUM:kiadas_datuma'];
+  // A számított rétegrend-értékek a forrásadatokból jönnek; a kézzel mentett
+  // fejezetszöveg viszont mindig elsőbbséget élvez.
+  for (const [key,value] of Object.entries(extraValues || {})) {
+    if (!String(value ?? '').trim()) continue;
+    if (String(manual[key] || '').trim()) continue;
+    values[key] = String(value);
+  }
+  if (manual['DOKUMENTUM:kiadas_datuma'])
+    values['Mai dátum'] = displayDate(manual['DOKUMENTUM:kiadas_datuma']);
+  if (manual['OVEZET:ellenorzes_datuma'])
+    values['OVEZET:ellenorzes_datuma'] = displayDate(manual['OVEZET:ellenorzes_datuma']);
   if (roomData?.listing && !values.HELYISEGLISTA) values.HELYISEGLISTA = roomData.listing;
   for (const [key,value] of Object.entries(sheet)) if (String(value).trim()) values[key] = value;
+  // A hosszú fejezetszövegek alapértéke a sablon dokumentum appendixéből jön; a
+  // benne lévő jelölőket a projekt adatai töltik ki. A mentett vagy jóváhagyott
+  // szöveg mindig elsőbbséget élvez.
+  // A tűzszakasz a helyiségek területeinek összege; a kijáratok száma a
+  // földszinti bejárati/előtér helyiségekből becsülhető.
+  const exits = exitCount(roomData);
+  values['tuzszakasz_m2'] = roomData ? (roomData.totalCents/100).toFixed(2).replace('.',',') : '';
+  values['kijarat_db'] = exits ? String(exits) : '';
+  if (roomData && !exits)
+    warn('A kijáratok száma nem állapítható meg a helyiséglistából; a tűzvédelmi '+
+      'leírásban [KIEGÉSZÍTENDŐ: …] jelölés marad. Ellenőrizd az alaprajzokon.');
+  if (roomData && exits)
+    warn('A kijáratok számát a földszinti bejárati/előtér helyiségek alapján becsültük ('+
+      exits+' db); ellenőrizd az alaprajzokon.');
+  const context = {...values,...sheet};
+  for (const [key,text] of Object.entries(textTemplates || {})) {
+    if (String(values[key] || '').trim()) continue;
+    values[key] = renderTemplate(text,context);
+  }
   const reviewResult = technicalReview(sheet,manual);
   if (reviewResult.comparison) values.BEEPITESI_MERLEG = reviewResult.comparison;
   values.ADAT_EGYEZTETES = reviewResult.issues.length ?
@@ -167,15 +215,25 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
   if (required !== null && planned !== null)
     values.PARKOLOEGYENLEG_ERTEKELES =
       `Előírt: ${required} db; tervezett: ${planned} db; különbség: ${planned-required} db.`;
-  const program = technicalProgramLines(programRows, values);
+  // A tervezési program dinamikus értékei: település, övezet, szintek,
+  // hálószobák, helyiségcsoportok, iroda és parkoló.
+  const programData = programReplacements({project,sheetValues:sheet,roomData,plans});
+  for (const warning of programData.warnings) warn(warning);
+  const program = technicalProgramLines(programRows, {...values,...programData.values});
   program.forEach((lines,index) => {
     const letter = String.fromCharCode(97+index);
     values[`TERVEZESI_PROGRAM:${letter}`] = lines.join('\n').replace(new RegExp(`^${letter}\\)\\s*`),'');
   });
   if (pdfFiles.length) values.TERVJEGYZEK = pdfFiles.map(file => {
     const title = String(file.name || '').replace(/\.pdf$/i,'').replace(/[\r\n\t]/g,' ').trim();
-    return `${title}\t${scaleAnswers[title] || planScale(title) || '[méretarány ellenőrzendő]'}`;
+    // Ha nincs lépték, nem kérdezünk és nem írunk helyőrzőt: a tervjegyzékben
+    // csak a tervlap neve marad. Egyetlen figyelmeztetést adunk.
+    const scale = planScale(title);
+    return scale ? `${title}\t${scale}` : title;
   }).filter(Boolean).sort((a,b) => a.localeCompare(b,'hu')).join('\n');
+  if (pdfFiles.length && !pdfFiles.some(file => planScale(String(file.name || ''))))
+    warn('A tervjegyzékben egyetlen tervlaphoz sem ismert a méretarány; a lista csak a '+
+      'tervlapok nevét tartalmazza. Szükség esetén egészítsd ki a fájlnevet (például „alaprajz”).');
   values.IRATJEGYZEK = ['Építészeti műszaki leírás (jelen dokumentum)',
     ...writtenFiles.filter(file => file.mimeType === 'application/vnd.google-apps.document' ||
       file.mimeType === 'application/pdf').map(file => String(file.name || '').trim())
@@ -190,11 +248,20 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     'TERVEZESI_ADATOK:megengedett_lakasszam_db',
     'TERVEZESI_ADATOK:tervezett_foldszinti_beepites_szazalek',
     'TERVEZESI_ADATOK:tervezett_foldszinti_beepites_m2',
-    'PARKOLOEGYENLEG_ERTEKELES','BEEPITESI_MERLEG','TERVJEGYZEK','IRATJEGYZEK']);
+    'PARKOLOEGYENLEG_ERTEKELES','BEEPITESI_MERLEG','TERVJEGYZEK','IRATJEGYZEK',
+    // A tűzvédelmi és szerkezeti leírás adat-helyőrzői: ha a forrásadat hiányzik,
+    // a mező létezik, de üres – a szövegben hiányjelölés lesz, nem nyers jelölő.
+    'tuzszakasz_m2','kijarat_db','retegrend:fal_anyag','retegrend:fal_vastagsag',
+    'retegrend:fal_hoszigeteles','retegrend:fodem','retegrend:fedelszek','retegrend:teto',
+    ...CHAPTER_KEYS]);
   for (const key of optionalKeys) if (!(key in values)) values[key] = '';
+  for (const key of CHAPTER_KEYS) if (!String(values[key] || '').trim())
+    values[key] = '[KIEGÉSZÍTENDŐ: '+key+' – a sablon dokumentum appendixében vagy a '+
+      'műszaki adatlapon add meg a szöveget.]';
   return Object.fromEntries(Object.entries(values).filter(([key,value]) =>
     optionalKeys.has(key) || String(value ?? '').trim()));
 }
 
-module.exports = {FIELD_SHEET,MANUAL_FIELDS,PLAN_PHASES,validateTechnicalField,fieldSheetRows,manualValues,
-  numberFromSheet,technicalReview,technicalReplacements};
+module.exports = {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,validateTechnicalField,fieldSheetRows,
+  manualValues,numberFromSheet,technicalReview,technicalReplacements,displayDate,validIsoDate,
+  validHungarianDate};

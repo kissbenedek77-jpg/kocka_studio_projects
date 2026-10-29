@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {technicalSheetValues,technicalProgramLines} = require('../server/technical_sheet.cjs');
 
-test('Műszaki adatlap a sablon valódi celláit olvassa, hiányzó programot és hibás képletet elutasít', () => {
+test('Műszaki adatlap a sablon valódi celláit olvassa, a hiányzó programot alapértékkel tölti ki', () => {
   const rows = Array.from({length:20},() => Array(13).fill(''));
   rows[1][1] = 'Lke-8'; rows[1][4] = '1000'; rows[1][9] = '200';
   rows[1][12] = '0,2'; rows[4][9] = '700'; rows[4][12] = '0,7';
@@ -18,7 +18,8 @@ test('Műszaki adatlap a sablon valódi celláit olvassa, hiányzó programot é
   });
   assert.equal(technicalProgramLines(program,fields)[0][0],'a) Lke-8');
   program[1][1] = '';
-  assert.throws(() => technicalProgramLines(program,fields),/b\) pontja hiányzik/);
+  const fallback = technicalProgramLines(program,fields);
+  assert.match(fallback[1][0],/^A telekről részletes tervezési felmérési térkép készült\.$/);
   rows[4][12] = '#ERROR!';
   assert.throws(() => technicalSheetValues(rows),/Munkalap1!M5/);
 });

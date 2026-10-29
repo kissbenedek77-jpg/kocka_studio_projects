@@ -66,7 +66,7 @@ function cleanText(value, limit = 2000) {
 // Csak projekt- és tervadatok kerülnek az AI elé; az ügyfél neve, e-mail-címe,
 // telefonszáma és egyéb személyes adata nem.
 function autoFacts({data = {}, sheetValues = {}, program = [], roomData = null,
-  roomText = '', plans = [], manual = {}} = {}) {
+  roomText = '', plans = [], manual = {}, retegrend = null, planFacts = null} = {}) {
   const facts = {};
   const project = {};
   const put = (target,key,value,limit = 2000) => {
@@ -79,9 +79,6 @@ function autoFacts({data = {}, sheetValues = {}, program = [], roomData = null,
   put(project,'Közterület',data.projekt_kozterulet);
   put(project,'Házszám',data.projekt_hazszam);
   put(project,'Helyrajzi szám',data.hrsz);
-  put(project,'Tervfázis',manual['DOKUMENTUM:tervfazis']);
-  put(project,'Tervszám',manual['DOKUMENTUM:tervszam']);
-  put(project,'Revízió',manual['DOKUMENTUM:revizio']);
   put(project,'Kiadás dátuma',manual['DOKUMENTUM:kiadas_datuma']);
   if (Object.keys(project).length) facts.projekt = project;
 
@@ -109,6 +106,22 @@ function autoFacts({data = {}, sheetValues = {}, program = [], roomData = null,
     return scale ? name+' ('+scale+')' : name;
   }).filter(Boolean).slice(0,150);
   if (planLines.length) facts.tervlapok = planLines;
+
+  // Az alaprajzokból/tervlapokból és a helyiséglistából származó tények. Ezek
+  // forrása mindig megnevezett, ezért az AI hivatkozhat rájuk.
+  if (planFacts && Object.keys(planFacts).length) facts.alaprajz_adatok = planFacts;
+  if (retegrend?.lines?.length) {
+    facts.retegrendek = retegrend.lines.map(line => cleanText(line,1200)).filter(Boolean);
+    const summary = {};
+    for (const [kind,label] of [['wall','Határoló fal'],['slab','Födém'],['roof','Fedélszék']]) {
+      const item = retegrend[kind];
+      if (!item) continue;
+      const text = cleanText([item.thickness,item.material,item.insulation]
+        .filter(Boolean).join(', '),300);
+      if (text) summary[label] = text;
+    }
+    if (Object.keys(summary).length) facts.retegrend_osszefoglalo = summary;
+  }
 
   const notes = {};
   for (const [key,value] of Object.entries(manual)) {

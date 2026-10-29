@@ -12,7 +12,7 @@ const DRAFTABLE_KEYS = new Set([
   'GEPESZET:szellozes','GEPESZET:energiaellatas',
   'KORNYEZET:kitermelt_asvanyi_nyersanyag','VILLAMOS:teljesitmeny'
 ]);
-const CONTEXT_ADDRESSES = new Set(['E2','H2','J2','H3','H5','H7','E6','E8','E9','J5']);
+const CONTEXT_ADDRESSES = new Set(['E2','J2','J3','J5','J7','E6','F6','E8','F8','E9','F9','B2','B3','B5','B6','B7','B9']);
 
 function draftInputs(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input))
@@ -28,7 +28,8 @@ function draftInputs(input) {
 
 function draftPrompt({notes, sheetValues, projectType}) {
   const numeric = Object.fromEntries(Object.entries(sheetValues || {}).filter(([key,value]) =>
-    CONTEXT_ADDRESSES.has(key.split('!').at(-1)) && String(value ?? '').trim())
+    CONTEXT_ADDRESSES.has(key.split('!').at(-1)) &&
+    /^-?\d+(?:[.,]\d+)?\s*(?:%|m²|m2|m|db|m²\/m²)?$/i.test(String(value ?? '').trim()))
     .map(([key,value]) => [key,String(value).slice(0,80)]));
   return `Építészeti műszaki leírás magyar nyelvű, szerkeszthető FEJEZETTERVEZETÉT készítsd el.
 Csak a jegyzetekben kifejezetten szereplő tényeket fogalmazd át szakszerű, világos prózává.

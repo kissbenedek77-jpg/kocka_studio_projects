@@ -1,5 +1,7 @@
 'use strict';
 
+const {programLines} = require('./technical_program.cjs');
+
 // A Tervezési adatok Template → Munkalap1 értékcellái. A címkecellák (H2, H3,
 // H5, H7) szándékosan nincsenek köztük: azok szöveget tartalmaznak.
 //   B-oszlop: hatósági/övezeti követelmény
@@ -30,23 +32,11 @@ function technicalSheetValues(rows) {
   return out;
 }
 
+// A tervezési program a)–p) sorai a „Tervezési program” lapról jönnek. Ha egy
+// sor üres, a kanonikus alapértelmezett szöveg lép a helyére; a {{...}}
+// jelölőket a projektadatok töltik ki.
 function technicalProgramLines(rows, replacements) {
-  if (!Array.isArray(rows) || rows.length < 16)
-    throw new Error('A tervezési program a–p pontjai hiányoznak.');
-  return Array.from({length:16},(_,index) => {
-    const letter = String.fromCharCode(97+index);
-    const row = rows[index] || [];
-    const raw = String(row[1] ?? '').trim();
-    if (String(row[0] ?? '').trim() !== letter || !raw.startsWith(letter+')'))
-      throw new Error('A tervezési program '+letter+') pontja hiányzik vagy hibás.');
-    const text = raw.replace(/\{\{([^{}]+)\}\}/g,(marker,key) => {
-      if (!Object.prototype.hasOwnProperty.call(replacements,key) ||
-          !String(replacements[key] ?? '').trim())
-        throw new Error('Hiányzó projektadat a tervezési programban: '+key);
-      return String(replacements[key]);
-    });
-    return text.split(/\r?\n/).filter(line => line.trim());
-  });
+  return programLines(Array.isArray(rows) ? rows : [],replacements);
 }
 
 module.exports = {ADDRESSES, SHEET_PREFIX, technicalSheetValues, technicalProgramLines};

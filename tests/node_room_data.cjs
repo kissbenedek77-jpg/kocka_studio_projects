@@ -58,8 +58,9 @@ test('A saját generált helyiséglista (szintfejekkel) is visszaolvasható', ()
     'Terasz nélkül\t30,00 m²'
   ].join('\n'),'PLN/Helyiségek.txt');
   assert.equal(data.totalCents,3000);
+  assert.match(data.listing,/^Helyiség\tTerület \(m²\)\nFöldszint\n {4}01 előtér\t8,25 m²/);
   assert.match(data.listing,/Földszint összesen\t30,00 m²/);
-  assert.match(data.listing,/Teljes összesen\t30,00 m²/);
+  assert.match(data.listing,/Mindösszesen\t30,00 m²/);
   assert.equal(data.tableRows.filter(row=>/összesen/.test(row[0])).length,2);
 });
 
@@ -75,9 +76,9 @@ test('A valós PLN formátum (címsor, „Honszint neve”, szintfejes sorok) fe
     '\t\t72,06\t'
   ].join('\r\n'),'PLN/helyiségek.txt');
   assert.equal(data.totalCents,4906);
-  assert.match(data.listing,/^Földszint\nnappali\t26,07 m²\nszoba\t16,79 m²\nFöldszint összesen\t42,86 m²/);
+  assert.match(data.listing,/^Helyiség\tTerület \(m²\)\nFöldszint\n {4}nappali\t26,07 m²\n {4}szoba\t16,79 m²\nFöldszint összesen\t42,86 m²/);
   assert.match(data.listing,/Emelet összesen\t6,20 m²/);
-  assert.match(data.listing,/Teljes összesen\t49,06 m²/);
+  assert.match(data.listing,/Mindösszesen\t49,06 m²/);
   assert.match(data.listing,/ELLENŐRIZENDŐ.*72,06 m²/);
   assert.deepEqual(data.tableRows[1],['Földszint','']);
   assert.deepEqual(data.tableRows[2],['nappali','26,07']);

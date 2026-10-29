@@ -22,6 +22,10 @@
     .secondary{background:#e2edf0;color:#163746}.draft-row{border-top:1px solid #d8e1e4;padding:1rem 0}.draft-row:first-child{border-top:0}
     .draft-row label{display:flex;align-items:center;gap:.6rem}.draft-row input[type=checkbox]{width:1.15rem;height:1.15rem}
     .draft-row textarea{min-height:7rem}.draft-note{color:#526873;margin:.5rem 0}
+    .chat-log{display:grid;gap:.6rem;margin:.4rem 0 .9rem}.chat-log:empty{display:none}
+    .chat-log p{margin:0;padding:.7rem .9rem;border-radius:10px;background:#eef4f5;white-space:pre-wrap}
+    .chat-log p.me{background:#e2edf0;border-left:4px solid #287b82}
+    .chat-actions{display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;margin-top:.6rem}
     @media(max-width:700px){.grid{grid-template-columns:1fr}section{padding:1rem}header{padding:1rem}.actions{padding:.8rem 0 max(.8rem,env(safe-area-inset-bottom))}}
     @media(max-width:480px){main{padding:.75rem}.actions{display:grid;grid-template-columns:minmax(0,1fr);gap:.6rem}.actions button{width:100%;min-height:44px}.notice,section{overflow-wrap:anywhere}}
   </style>
@@ -32,6 +36,14 @@
     <div class="links"><a id="dashboardLink" href="/dashboard">Vissza a dashboardra</a><a id="sheetLink" hidden>Tervezési adatlap megnyitása</a></div>
     <p class="notice">A numerikus területeket, az övezeti alapértékeket és az a–p tervezési programot a tervezési adatlapon add meg. A szöveges mezőkbe rövid, tényszerű pontokat is írhatsz. Az „AI-val kitöltés projektadatból” gomb a rendelkezésre álló tényadatokból megírja valamennyi fejezetet, elmenti őket, majd létrehozza a DRAFT dokumentumot; a hiányzó adat helyén [KIEGÉSZÍTENDŐ: …] jelölés marad. A szövegeket a mentés előtt itt is szerkesztheted. A gomb megnyomásakor a projekt tényadatai a Gemini API-hoz kerülnek.</p>
     <div id="status" role="status" aria-live="polite"></div>
+    <section id="chat" hidden aria-labelledby="chatTitle">
+      <h2 id="chatTitle">Beszélgetés az AI-val</h2>
+      <p class="draft-note">Írd le, min változtasson a szövegeken (például „a tűzvédelmi leírást fogalmazd rövidebbre”). Az AI a meglévő fejezetszövegeket alakítja át; a javaslatot előbb átnézheted, és csak a „Beillesztés” után kerül az űrlapba. Számot, anyagot és megfelelőséget nem talál ki.</p>
+      <div id="chatLog" class="chat-log" aria-live="polite"></div>
+      <label for="chatMessage">Üzenet az AI-nak</label>
+      <textarea id="chatMessage" rows="3" maxlength="2000" placeholder="Például: a helyiségek leírásában emeld ki a kertkapcsolatot."></textarea>
+      <div class="chat-actions"><button id="chatSend" type="button">Küldés</button></div>
+    </section>
     <form id="form" hidden><div id="groups"></div><div class="actions"><button id="save" type="submit">Műszaki adatok mentése</button><button id="draft" type="button" class="secondary">AI-szövegtervezet készítése</button><button id="autoDraft" type="button" class="secondary">AI-val kitöltés projektadatból</button><span>Mentés után a dashboardon frissítsd a DRAFT műszaki leírást.</span></div></form>
     <section id="draftPreview" hidden aria-labelledby="draftTitle"><h2 id="draftTitle">AI-tervezet – ellenőrzésre</h2><p class="draft-note">A kijelölt fejezeteket szerkesztheted. A „Beillesztés” csak az űrlap mezőit módosítja; utána mentsd őket. A számokat, anyagokat és műszaki állításokat ellenőrizd.</p><div id="draftRows"></div><button id="applyDraft" type="button">Kijelölt fejezetek beillesztése</button></section>
   </main>
@@ -49,7 +61,7 @@
     async function rpc(name,...args){const response=await fetch('/api/rpc',{method:'POST',credentials:'same-origin',
       headers:{'Content-Type':'application/json','X-Kocka-RPC':'1'},body:JSON.stringify({name,args})});
       const body=await response.json();if(response.status===401){location.replace('/auth/login?return='+encodeURIComponent(location.pathname+location.search)+'&reason=expired');throw new Error('A munkamenet lejárt. Átirányítás a belépéshez…')}if(!response.ok)throw new Error(body.error||'A kérés nem sikerült.');return body.result}
-    function groupFor(key){if(key.startsWith('DOKUMENTUM:'))return 'Dokumentum és tervfázis';
+    function groupFor(key){if(key.startsWith('DOKUMENTUM:'))return 'Dokumentum';
       if(key.startsWith('HELYSZIN:'))return 'Helyszín és előzmények';
       if(key.startsWith('KONCEPCIO:'))return 'Építészeti koncepció';
       if(key.startsWith('SZAKAG:')||key==='TERV_HIVATKOZAS')return 'Tervlapok és szakági egyeztetés';
@@ -64,7 +76,7 @@
       message('Adatok betöltése…');try{const data=await rpc('dashboardGetTechnicalFields',uid);
         const link=document.getElementById('sheetLink');link.href=data.sheetUrl;link.hidden=false;
         const groups=new Map(),root=document.getElementById('groups');root.replaceChildren();
-        const order=['Dokumentum és tervfázis','Projekt és helyiségek','Helyszín és előzmények',
+        const order=['Dokumentum','Projekt és helyiségek','Helyszín és előzmények',
           'Építészeti koncepció','Övezeti előírások','Területek és lakásszám','Építményérték',
           'Épületszerkezetek','Szakági adatok','Tervlapok és szakági egyeztetés','Jóváhagyott szövegek'];
         data.fields.slice().sort((a,b)=>order.indexOf(groupFor(a.key))-order.indexOf(groupFor(b.key)))
@@ -73,11 +85,7 @@
             title.textContent=name;grid=document.createElement('div');grid.className='grid';
             section.append(title,grid);root.append(section);groups.set(name,grid)}
           const wrapper=document.createElement('div'),label=document.createElement('label');let input;
-          if(field.key==='DOKUMENTUM:tervfazis'){
-            input=document.createElement('select');
-            for(const value of ['','Egyszerű bejelentési','Építési engedélyezési','Kivitelezési'])
-              input.add(new Option(value||'Válassz tervfázist…',value));
-          }else if(field.key==='DOKUMENTUM:kiadas_datuma'){
+          if(field.key==='DOKUMENTUM:kiadas_datuma'){
             input=document.createElement('input');input.type='date';
           }else{
             input=document.createElement('textarea');
@@ -89,8 +97,21 @@
         draftButton.disabled=!data.aiConfigured;draftButton.title=data.aiConfigured?'':'A GEMINI_API_KEY nincs beállítva.';
         autoDraftButton.disabled=!data.aiConfigured;autoDraftButton.title=data.aiConfigured?'A projekt tényadataiból minden fejezetet megír, elment, majd létrehozza a DRAFT dokumentumot.':'A GEMINI_API_KEY nincs beállítva.';
         aiReady=Boolean(data.aiConfigured);
-        form.hidden=false;message('A mezők betöltve.','success')
+        form.hidden=false;chat.hidden=!aiReady;message('A mezők betöltve.','success')
       }catch(error){message(error.message||String(error),'error')}}
+    function showDraft(sections){
+      const host=document.getElementById('draftRows');host.replaceChildren();let shown=0;
+      for(const [key,text] of Object.entries(sections||{})){
+        const input=[...form.querySelectorAll('[data-key]')].find(item=>item.dataset.key===key);
+        if(!input||!text)continue;
+        const row=document.createElement('div');row.className='draft-row';row.dataset.key=key;row.dataset.original=input.value;
+        const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=true;
+        label.append(check,document.createTextNode(input.closest('div').querySelector('label')?.textContent||key));
+        const field=document.createElement('textarea');field.value=text;field.setAttribute('aria-label',key+' AI-tervezet');
+        row.append(label,field);host.append(row);shown++}
+      if(!shown){message('Az AI nem adott beilleszthető módosítást.','error');return false}
+      preview.hidden=false;preview.scrollIntoView({behavior:'smooth',block:'start'});return true;
+    }
     draftButton.addEventListener('click',async()=>{
       const inputs=[...form.querySelectorAll('[data-key]')].filter(input=>draftable(input.dataset.key)&&input.value.trim());
       if(!inputs.length){message('Előbb írj tényszerű pontokat legalább egy szöveges fejezethez.','error');return}
@@ -98,17 +119,30 @@
       draftButton.disabled=true;message('AI-tervezet készül…');
       try{
         const result=await rpc('dashboardDraftTechnicalText',uid,notes);
-        const host=document.getElementById('draftRows');host.replaceChildren();
-        for(const input of inputs){const key=input.dataset.key,text=result.sections[key];if(!text)continue;
-          const row=document.createElement('div');row.className='draft-row';row.dataset.key=key;row.dataset.original=input.value;
-          const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=true;
-          label.append(check,document.createTextNode(input.closest('div').querySelector('label')?.textContent||key));
-          const field=document.createElement('textarea');field.value=text;field.setAttribute('aria-label',key+' AI-tervezet');
-          row.append(label,field);host.append(row)}
-        preview.hidden=false;preview.scrollIntoView({behavior:'smooth',block:'start'});
-        message('A tervezet elkészült. Ellenőrizd és szerkeszd beillesztés előtt.','success')
+        if(showDraft(result.sections))
+          message('A tervezet elkészült. Ellenőrizd és szerkeszd beillesztés előtt.','success')
       }catch(error){message(error.message||String(error),'error')}
       finally{draftButton.disabled=false}
+    });
+    const chat=document.getElementById('chat'),chatSend=document.getElementById('chatSend'),
+      chatMessage=document.getElementById('chatMessage'),chatLog=document.getElementById('chatLog');
+    function logChat(text,me){const line=document.createElement('p');if(me)line.className='me';
+      line.textContent=text;chatLog.append(line)}
+    chatSend.addEventListener('click',async()=>{
+      const text=chatMessage.value.trim();
+      if(!text){message('Írj be egy mondatot az AI-nak.','error');return}
+      if(!aiReady){message('Az AI nincs beállítva, ezért a chat nem használható.','error');return}
+      logChat(text,true);chatMessage.value='';chatSend.disabled=true;message('Az AI válaszol…');
+      try{
+        const result=await rpc('dashboardTechnicalChat',uid,{message:text});
+        logChat(result.reply||'A javaslat elkészült.');
+        if(showDraft(result.sections))
+          message('Az AI javaslata elkészült. Ellenőrizd, majd illeszd be és mentsd.','success')
+      }catch(error){message(error.message||String(error),'error')}
+      finally{chatSend.disabled=false}
+    });
+    chatMessage.addEventListener('keydown',event=>{
+      if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();chatSend.click()}
     });
     autoDraftButton.addEventListener('click',async()=>{
       if(!confirm('A rendszer a projekt tényszerű adataiból megírja a fejezetszövegeket, elmenti a műszaki adatlapra, majd létrehozza vagy frissíti a DRAFT dokumentumot. A hiányzó adat helyén [KIEGÉSZÍTENDŐ: …] jelölés marad. Folytatod?'))return;

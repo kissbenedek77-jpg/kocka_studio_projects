@@ -115,11 +115,12 @@ test('A sablon cellahivatkozásai üres adatnál sem hagynak nyers jelölőt', (
     .every(item=>item.replaceNamedRangeContent.text==='\u200B'));
 });
 
-test('A tervfázis és kiadási dátum hibás értékeit mentés előtt elutasítja', () => {
+test('A kiadási dátum hibás értékét mentés előtt elutasítja, a magyar és az ISO alakot elfogadja', () => {
   assert.doesNotThrow(()=>validateTechnicalField('DOKUMENTUM:kiadas_datuma','2026-10-07'));
+  assert.doesNotThrow(()=>validateTechnicalField('DOKUMENTUM:kiadas_datuma','2026.10.07.'));
   assert.throws(()=>validateTechnicalField('DOKUMENTUM:kiadas_datuma','2026-02-30'),/dátum/);
+  assert.throws(()=>validateTechnicalField('DOKUMENTUM:kiadas_datuma','2026.02.30.'),/dátum/);
   assert.throws(()=>validateTechnicalField('OVEZET:ellenorzes_datuma','2026-02-30'),/dátum/);
-  assert.throws(()=>validateTechnicalField('DOKUMENTUM:tervfazis','Vázlat'),/tervfázist/);
 });
 
 test('A régi DRAFT bővítése megőrzi az eredeti tartalmat és ismételhető', () => {
@@ -128,7 +129,7 @@ test('A régi DRAFT bővítése megőrzi az eredeti tartalmat és ismételhető'
   const doc={body:{content:lines.map((line,index)=>({startIndex:1+index*50,
     paragraph:{elements:[{textRun:{content:line+'\n'}}]}}))}};
   const additions=technicalSupplementRequests(doc);
-  assert.equal(additions.length,5);
+  assert.equal(additions.length,4);
   assert.ok(additions.every(item=>item.insertText.location.index>0));
   assert.deepEqual(lines[5],'Meglévő, kézzel jóváhagyott szöveg');
   const upgraded={body:{content:[...doc.body.content,{startIndex:500,paragraph:{elements:[{
