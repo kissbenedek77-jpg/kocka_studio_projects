@@ -4,7 +4,7 @@ const {documentValues} = require('./doc_merge.cjs');
 const {ADDRESSES, SHEET_PREFIX, technicalSheetValues, technicalProgramLines} = require('./technical_sheet.cjs');
 const {programReplacements,exitCount} = require('./technical_program.cjs');
 const {renderTemplate} = require('./technical_texts.cjs');
-const {planScale} = require('./plans.cjs');
+const {planScale, extractPdfScale} = require('./plans.cjs');
 
 const FIELD_SHEET = 'Műszaki leírás';
 const MANUAL_FIELDS = [
@@ -226,9 +226,11 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
   });
   if (pdfFiles.length) values.TERVJEGYZEK = pdfFiles.map(file => {
     const title = String(file.name || '').replace(/\.pdf$/i,'').replace(/[\r\n\t]/g,' ').trim();
-    // Ha nincs lépték, nem kérdezünk és nem írunk helyőrzőt: a tervjegyzékben
-    // csak a tervlap neve marad. Egyetlen figyelmeztetést adunk.
-    const scale = planScale(title);
+    // Kötelező: a PDF tartalmól történő lépték-olvasás mindig megpróbálható.
+    // Ha benne vannak a bájtok → kiolvashatjuk a tévéből.
+    // Ha nincs bájt (teszt/kivételek) → a fájlnév alapszerűen a fallback.
+    const pdfBytes = file.bytes ? Buffer.from(file.bytes) : undefined;
+    const scale = planScale(title, pdfBytes);
     return scale ? `${title}\t${scale}` : title;
   }).filter(Boolean).sort((a,b) => a.localeCompare(b,'hu')).join('\n');
   if (pdfFiles.length && !pdfFiles.some(file => planScale(String(file.name || ''))))
