@@ -915,7 +915,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       const templateDoc = (await googleQuota.run('docsRead',1,() => docs.documents.get({
         documentId:DOCUMENT_TEMPLATES.muszakiLeiras.templateId,includeTabsContent:false
       }))).data;
-      const computed = technicalReplacements({project:data,sheetRows:parts[0]?.values || [],
+      const computed = await technicalReplacements({project:data,sheetRows:parts[0]?.values || [],
         programRows:parts[1]?.values || [],fieldRows:parts[2]?.values || [],pdfFiles:plans,
         roomData,plans,textTemplates:textTemplates(templateDoc),
         extraValues:{...retegrendValues(retegrend),
@@ -1180,7 +1180,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         warn('A projektmappában nincs PLN mappa, ezért a helyiséglista nem kerül a szövegbe. '+
           'A helyén [KIEGÉSZÍTENDŐ: …] jelölés marad.');
       try {
-        mergeValues = technicalReplacements({project:data,sheetRows:parts[0]?.values || [],
+        mergeValues = await technicalReplacements({project:data,sheetRows:parts[0]?.values || [],
           programRows:parts[1]?.values || [],fieldRows:parts[2]?.values || [],pdfFiles,writtenFiles,
           roomData,plans:pdfFiles,textTemplates:textTemplates(source),
           extraValues:{...retegrendValues(retegrend),

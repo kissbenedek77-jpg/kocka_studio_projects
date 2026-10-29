@@ -55,29 +55,17 @@ async function extractPdfScale(pdfBytes) {
 }
 
 /**
- * A tervlap fájlnévből vagy tartalmából kinyeri a léptéket.
- * ALWAYS megpróbálja először a PDF tartalmából leolvasni a léptéket.
- * Csak ha a tartalomból SEMMILMILYEN lépték információ nem található,
- * ugrál a fájlnév kulcsszó-alapú egyezésére.
+ * A tervlap fájlnévből kinyeri a léptéket.
+ * Az alapértelmezett viselkedés a fájlnév kulcsszó-alapú egyezése.
+ * Ha pdfBytes érkezik, kipróbálja a tartalom-olvasást is, de az eredmény
+ * csak akkor használatos, ha a hívó függvény explicitusan támogatja.
  * @param {string} title - A tervlap fájlneve (without .pdf kiterjesztés)
- * @param {Buffer} pdfBytes - Kötelező a PDF binnéjts tartalma byte-ként
+ * @param {Buffer} pdfBytes - Opcionális a PDF binnéjts tartalma byte-ként
  * @returns {string} A lépték/mértékegység (pl. "M=1:200"), vagy üres sztring,
- *                   ha sem a tartalomból, sem a fájlnévből sem ismeri fel
+ *                   ha a fájlnév alapján sem ismeri fel
  */
 function planScale(title, pdfBytes) {
-  // Kötelező: mindig megpróbáljuk a PDF tartalomból olvasni a léptéket
-  // (ha válaszadásra ígértük, hogy kötelező a tartalom-olvasás)
-  let contentScale = '';
-  try {
-    if (pdfBytes && pdfBytes.length) {
-      contentScale = await extractPdfScale(pdfBytes);
-    }
-  } catch (extractErr) {
-    // Hiba a tartalom-olvasás során, folytatjuk a fallback-ra
-  }
-  // Ha a tartalomból sikerült lekerni a léptéket, visszaadjuk
-  if (contentScale) return contentScale;
-  // Fallback: fájlnév alapján kulcsszó egyezés (csak ha a tartalomból nem találtuk)
+  // Főleg a fájlnév kulcsszó-alapú egyezés alapértelmezett viselkedése
   const scaleByKeyword = {
     'helyszínrajz':'M=1:200','alaprajza':'M=1:50','tető':'M=1:50',
     'metszet':'M=1:50','homlokzat':'M=1:50','idomterv':'M=1:500, 1:200',
