@@ -6,8 +6,10 @@
 // címlapkép-objektumot cseréljük le (replaceImage), így a méret és az elrendezés
 // változatlan marad.
 
-const IMAGE_MIME = /^image\/(?:jpeg|png|gif)$/i;
-const NAME_PATTERN = /^([a-z]+)[_\s-]+(\d+)(?=\D|$)/i;
+const IMAGE_MIME = /^image\/(?:jpeg|png|gif|webp)$/i;
+// A rendercsomag fájlneve: betűjel + sorszám, tetszőleges elválasztóval
+// („b_1 - Photo.jpg”, „b1.jpg”, „b-01.png”, „B 12 – Photo.jpg”).
+const NAME_PATTERN = /^([a-z]+)[\s_.#-]*(\d+)\b/i;
 
 // A rendercsomag nevéből (pl. „d”) képzett rendezési érték, a betűk 1..26 helyiértékével.
 function renderPackageOrder(label) {
@@ -20,8 +22,8 @@ function timeOf(value) {
   return Number.isFinite(time) ? time : 0;
 }
 
-// A legfrissebb rendercsomag 1. számú képe a Render mappa fájljai közül.
-// Kép nélkül null; ha a legfrissebb csomagból hiányzik az 1. kép, hibát jelez.
+// A legutolsó rendercsomag legkisebb sorszámú képe a Render mappa fájljai közül
+// (a,b,c → c; a csoporton belül c_1). Kép nélkül null.
 function latestRenderCoverFile(files) {
   const images = [];
   for (const file of files || []) {
@@ -32,11 +34,9 @@ function latestRenderCoverFile(files) {
   }
   if (!images.length) return null;
   const latestOrder = Math.max(...images.map(item => item.packageOrder));
-  const covers = images.filter(item =>
-    item.packageOrder === latestOrder && item.number === 1);
-  if (!covers.length)
-    throw new Error('A legfrissebb Render képcsomagból hiányzik az 1. számú kép.');
-  covers.sort((a, b) => (timeOf(b.file.modifiedTime) - timeOf(a.file.modifiedTime)) ||
+  const covers = images.filter(item => item.packageOrder === latestOrder);
+  covers.sort((a, b) => (a.number - b.number) ||
+    (timeOf(b.file.modifiedTime) - timeOf(a.file.modifiedTime)) ||
     String(a.file.name).localeCompare(String(b.file.name), 'hu'));
   return covers[0].file;
 }

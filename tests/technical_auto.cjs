@@ -8,7 +8,13 @@ const {AUTO_CHAPTERS,AUTO_KEYS,GAP,autoFacts,autoPrompt,parseAutoResult,gapText}
   require('../server/technical_auto.cjs');
 
 test('Az AI-fejezetek a műszaki adatlap ismert mezői közül kerülnek ki',()=>{
-  assert.equal(AUTO_CHAPTERS.length,32);
+  // Csak a narratív fejezetek: a szerkezet- és gépészetszöveget a sablon és a
+  // rétegrendek adják, ezért azok nincsenek az AI feladatában.
+  assert.equal(AUTO_CHAPTERS.length,11);
+  for(const chapter of AUTO_CHAPTERS){
+    assert.equal(/^(SZERKEZET|GEPESZET|KORNYEZET|VILLAMOS):/.test(chapter.key),false,
+      'Adatvezérelt fejezet nem kerülhet az AI-hoz: '+chapter.key);
+  }
   const manual=new Set(MANUAL_FIELDS.map(([key])=>key));
   for(const chapter of AUTO_CHAPTERS){
     assert.ok(manual.has(chapter.key),'Ismeretlen műszaki mező: '+chapter.key);

@@ -134,7 +134,10 @@ function parseRoomText(content,sourceName='helyiségek.txt') {
   if (sourceTotal !== null && sourceTotal !== total)
     output.push(`[ELLENŐRIZENDŐ: a helyiségsorok összege ${areaText(total)} m², `+
       `a forrásban megadott összesen ${areaText(sourceTotal)} m².]`);
-  return {rooms,totalCents:total,sourceTotal,listing:output.join('\n'),tableRows};
+  // A tűzszakasz számításához a külső, nem zárt térként számított teraszok
+  // (terasz, erkély, tornác) nélküli összeg kell.
+  return {rooms,totalCents:total,externalCents:external,sourceTotal,
+    listing:output.join('\n'),tableRows};
 }
 
 module.exports={areaCents,areaText,parseRoomText};

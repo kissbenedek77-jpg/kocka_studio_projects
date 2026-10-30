@@ -5,7 +5,7 @@ const {google} = require('googleapis');
 const {FIELDS,rowToData, projectFromRow, extractDriveId} = require('./domain.cjs');
 const {inquiryText,photoType} = require('./inquiry.cjs');
 const {buildClientRow, clientFormUrl} = require('./client_data.cjs');
-const {documentValues, findMarkers, mergeRequests, unresolvedMarkers} = require('./doc_merge.cjs');
+const {documentValues, templateMarkers, findMarkers, mergeRequests, unresolvedMarkers} = require('./doc_merge.cjs');
 const {conditionalBlocks,conditionalRequests} = require('./conditional_docs.cjs');
 const {planScale} = require('./plans.cjs');
 const {restartPostfix,appendPostfix,copiedName,expectedPath} = require('./restart.cjs');
@@ -14,8 +14,6 @@ const {parseRoomText,areaText} = require('./room_data.cjs');
 const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,fieldSheetRows,validateTechnicalField,manualValues,technicalReplacements} = require('./technical_document.cjs');
 const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs');
 const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
-const {technicalSupplementRequests} = require('./technical_upgrade.cjs');
-const {technicalTableRequests} = require('./technical_table.cjs');
 const {textTemplates,appendixRequests} = require('./technical_texts.cjs');
 const {findMarker,insertRequests,findEmptyTable,fillRequests} = require('./room_table.cjs');
 const {retegrendFacts,retegrendValues} = require('./retegrend.cjs');
@@ -908,6 +906,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       const computed = await technicalReplacements({project:data,sheetRows:parts[0]?.values || [],
         programRows:parts[1]?.values || [],fieldRows:parts[2]?.values || [],pdfFiles:plans,
         roomData,plans,textTemplates:textTemplates(templateDoc),
+        templateMarkers:templateMarkers(templateDoc),
         extraValues:{...retegrendValues(retegrend),
           RETEGRENDEK_JOVAHAGYOTT_SZOVEG:(retegrend?.lines || []).join('\n')}},warnings);
       const defaults = {};
@@ -1063,7 +1062,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         await ensureTechnicalFieldRows(dataSheet.id);
         const inputs = await sheetRead(() => sheets.spreadsheets.values.batchGet({
           spreadsheetId:dataSheet.id,
-          ranges:["'Munkalap1'!A1:J20","'Tervezési program'!A2:B17",
+          ranges:["'Munkalap1'!A1:M20","'Tervezési program'!A2:B17",
             `'${FIELD_SHEET}'!A2:B`,"'Munkalap2'!A1:B500",
             "'Rétegrend sablonok'!A1:C400"],
           valueRenderOption:'FORMATTED_VALUE'
@@ -1174,6 +1173,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         mergeValues = await technicalReplacements({project:data,sheetRows:parts[0]?.values || [],
           programRows:parts[1]?.values || [],fieldRows:parts[2]?.values || [],pdfFiles,writtenFiles,
           roomData,plans:pdfFiles,textTemplates:textTemplates(source),
+          templateMarkers:templateMarkers(source),
           extraValues:{...retegrendValues(retegrend),
           RETEGRENDEK_JOVAHAGYOTT_SZOVEG:(retegrend?.lines || []).join('\n')}},warnings);
       } catch (error) {
@@ -1205,15 +1205,36 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       await sheetWrite(() => sheets.spreadsheets.batchUpdate({spreadsheetId:book,
         requestBody:{requests:[{addSheet:{properties:{title:indexName,hidden:true}}}]}}));
       await sheetWrite(() => sheets.spreadsheets.values.update({spreadsheetId:book,
-        range:`'${indexName}'!A1:E1`,valueInputOption:'RAW',requestBody:{values:[
-          ['UID','Típus','Dokumentum ID','Állapot','Utolsó szinkron']]}}));
+        range:`'${indexName}'!A1:F1`,valueInputOption:'RAW',requestBody:{values:[
+          ['UID','Típus','Dokumentum ID','Állapot','Utolsó szinkron','Sablon revízió']]}}));
     }
-    const records = await values(`'${indexName}'!A2:E`);
+    const records = await values(`'${indexName}'!A2:F`);
     const recordIndex = records.findIndex(item => String(item[0]).trim().toUpperCase() === data.uid && item[1] === type);
     const record = recordIndex < 0 ? null : records[recordIndex];
     if (record?.[3] === 'FINAL') throw new Error('A véglegesített dokumentum nem módosítható.');
     let documentId = String(record?.[2] || '');
     let created = false;
+    // A sablon revíziója az indexben követve van. Ha a sablon azóta változott,
+    // a régi másolat elavult (a táblázatcellák és a szövegek is eltérnek), ezért
+    // a DRAFT a kukába kerül, és a friss sablonból új példány készül. A
+    // véglegesített példányt ez nem érinti (fentebb már megálltunk).
+    const storedRevision = String(record?.[5] || '').trim();
+    const templateRevision = String(source.revisionId || '').trim();
+    if (documentId && type === 'muszakiLeiras' && templateRevision &&
+        storedRevision !== templateRevision) {
+      try {
+        await googleQuota.run('drive',100,() => drive.files.update({fileId:documentId,
+          requestBody:{trashed:true},supportsAllDrives:true}));
+        googleCache.clear(`file:${documentId}`);
+        warn('A korábbi műszaki leírás a régi sablonból készült, ezért a kukába került, és '+
+          'a dokumentum a friss sablonból újra elkészül.');
+        documentId = '';
+      } catch (error) {
+        if (error.status === 429) throw error;
+        warn('A régi sablonból készült műszaki leírást nem sikerült a kukába tenni ('+
+          (error.message||String(error))+'); a dokumentum a meglévő példányban frissül.');
+      }
+    }
     if (!documentId) {
       const name = [template.title,[data.projekt_varos,data.projekt_kozterulet,
         data.projekt_tipus,data.projekt_hazszam].filter(Boolean).join(' ')].filter(Boolean).join(' - ');
@@ -1251,28 +1272,10 @@ function googleClient(config, refreshToken = '', authOverride = null) {
           (error.message||String(error))+'). A dokumentum végén ellenőrizd a függeléket.');
       }
     }
-    // A sablonból hiányzó, de az AI által kitöltött fejezetek (helyszín,
-    // koncepció, iratjegyzék, mérleg, tervlapok) helyét minden példányban
-    // biztosítani kell – az első generáláskor is. Ha egy horgony hiányzik,
-    // az csak figyelmeztetés, a dokumentum elkészül.
-    if (type === 'muszakiLeiras') {
-      try {
-        const additions = technicalSupplementRequests(document);
-        if (additions.length) {
-          await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
-            requestBody:{requests:additions,
-              ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}
-          }));
-          document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
-            documentId,includeTabsContent:false
-          }))).data;
-        }
-      } catch (error) {
-        if (error.status === 429) throw error;
-        warn('A helyszín- és koncepciófejezetek helye nem illeszthető be automatikusan ('+
-          (error.message||String(error))+'). A dokumentum a sablon szerinti fejezetekkel készül el.');
-      }
-    }
+    // A friss sablon már tartalmazza a helyszín- és koncepciófejezetek helyét,
+    // ezért a régi sablonhoz készült kiegészítő beszúrás nem kell. A táblázat
+    // szerkezetét is a sablon adja: hiányzó adatnál üres cella marad, a sor nem
+    // törlődik és nem kerül bele {{...}} jelölő.
     const conditional = conditionalRequests(source,document,mergeValues);
     if (conditional.length) {
       await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({
@@ -1283,29 +1286,10 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         documentId,includeTabsContent:false
       }))).data;
     }
-    // A „Meglévő” oszlop és a „Szintterületi mutató” sor csak akkor marad a
-    // generált példányban, ha van mögötte tényszerű adat. A táblázat szerkezetét
-    // a sablon adja, ezért ezt a másolatban kell igazítani.
-    if (type === 'muszakiLeiras') {
-      try {
-        const shaping = technicalTableRequests(document, mergeValues);
-        if (shaping.length) {
-          await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
-            requestBody:{requests:shaping,
-              ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
-          document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
-            documentId,includeTabsContent:false
-          }))).data;
-        }
-      } catch (error) {
-        if (error.status === 429) throw error;
-        warn('A tervezési adatok táblázatának igazítása nem sikerült ('+
-          (error.message||String(error))+'). A táblázat a sablon szerinti marad.');
-      }
-    }
     // A helyiséglista táblázatként, szintfejekkel, alszummákkal és teljes
     // összeggel jelenik meg. A jelölő helyére táblázat kerül, ezért a szöveges
     // helyettesítés előtt kell beszúrni.
+    let roomTableInserted = false;
     if (type === 'muszakiLeiras' && roomData?.tableRows?.length > 1) {
       try {
         const marker = findMarker(document);
@@ -1319,6 +1303,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
           }))).data;
           const table = findEmptyTable(document, roomData.tableRows);
           if (table) {
+            roomTableInserted = true;
             const fill = fillRequests(table, roomData.tableRows);
             if (fill.length) {
               await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
@@ -1338,6 +1323,9 @@ function googleClient(config, refreshToken = '', authOverride = null) {
           (error.message||String(error))+'); ellenőrizd a dokumentumot.');
       }
     }
+    // Sikeres táblázatbeszúrás után a {{HELYISEGLISTA}} jelölő üresen marad,
+    // különben a szöveges lista is bekerülne a táblázat mellé.
+    if (type === 'muszakiLeiras' && roomTableInserted) mergeValues.HELYISEGLISTA = '';
     const requests = mergeRequests(document,mergeValues,
       {allowUnknown:type === 'muszakiLeiras',restoreMissing:type === 'muszakiLeiras',
         allowConditional:true});
@@ -1347,12 +1335,13 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     }));
     if (type === 'muszakiLeiras') await refreshTechnicalCoverImage(uid, documentId);
     const stamp = new Date().toISOString();
+    const revision = String(source.revisionId || '').trim();
     if (!record) await sheetWrite(() => sheets.spreadsheets.values.append({spreadsheetId:book,
-      range:`'${indexName}'!A:E`,valueInputOption:'RAW',insertDataOption:'INSERT_ROWS',
-      requestBody:{values:[[data.uid,type,documentId,'DRAFT',stamp]]}}));
+      range:`'${indexName}'!A:F`,valueInputOption:'RAW',insertDataOption:'INSERT_ROWS',
+      requestBody:{values:[[data.uid,type,documentId,'DRAFT',stamp,revision]]}}));
     else await sheetWrite(() => sheets.spreadsheets.values.update({spreadsheetId:book,
-      range:`'${indexName}'!C${recordIndex+2}:E${recordIndex+2}`,valueInputOption:'RAW',
-      requestBody:{values:[[documentId,'DRAFT',stamp]]}}));
+      range:`'${indexName}'!C${recordIndex+2}:F${recordIndex+2}`,valueInputOption:'RAW',
+      requestBody:{values:[[documentId,'DRAFT',stamp,revision]]}}));
     return {created,url:`https://docs.google.com/document/d/${documentId}/edit`,warnings};
   }
 

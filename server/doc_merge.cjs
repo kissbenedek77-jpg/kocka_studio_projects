@@ -30,6 +30,28 @@ function documentValues(data, extras = {}) {
   return values;
 }
 
+// A sablonban előforduló összes {{...}} jelölő, táblázatcellán belüli jelöléssel.
+// A műszaki leírás összeállítása ebből tudja, mely mezőket kell mindenképpen
+// kitöltenie (üresen vagy hiányjelöléssel), hogy a kész példányban ne maradjon
+// nyers {{...}}.
+function templateMarkers(document) {
+  const markers = [];
+  function scan(contents, inTable) {
+    for (const item of contents || []) {
+      const text = (item.paragraph?.elements || []).map(part => part.textRun?.content || '').join('');
+      for (const match of text.matchAll(/\{\{([^{}]+)\}\}/g))
+        markers.push({key:match[1],inTable});
+      if (item.table) for (const row of item.table.tableRows || [])
+        for (const cell of row.tableCells || []) scan(cell.content,true);
+      if (item.tableOfContents) scan(item.tableOfContents.content,inTable);
+    }
+  }
+  scan(document.body?.content,false);
+  for (const segment of Object.values(document.headers || {})) scan(segment.content,false);
+  for (const segment of Object.values(document.footers || {})) scan(segment.content,false);
+  return markers;
+}
+
 function findMarkers(document, values, {allowUnknown = false,allowConditional = false} = {}) {
   if (document.tabs?.length > 1)
     throw new Error('A többfüles Google Docs sablon Node-os szinkronja még nem támogatott.');
@@ -105,4 +127,4 @@ function unresolvedMarkers(document) {
   return [...result];
 }
 
-module.exports = {PREFIX, documentValues, findMarkers, mergeRequests, unresolvedMarkers};
+module.exports = {PREFIX, documentValues, templateMarkers, findMarkers, mergeRequests, unresolvedMarkers};

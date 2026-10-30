@@ -22,13 +22,18 @@ test('A legfrissebb rendercsomag 1. számú képe kiválasztódik', () => {
   assert.equal(renderPackageOrder('d'), 4);
 });
 
-test('Kép nélkül nincs címlap, a legfrissebb csomag 1. képe nélkül hibát jelez', () => {
+test('Kép nélkül nincs címlap, a legfrissebb csomag legkisebb sorszámú képe nyer', () => {
   assert.equal(latestRenderCoverFile([{id:'n', name:'notes.txt', mimeType:'text/plain'}]), null);
   assert.equal(latestRenderCoverFile([]), null);
-  assert.throws(() => latestRenderCoverFile([
+  // A csoporton belül a legkisebb sorszám a címlapkép, akkor is, ha az 1-es
+  // hiányzik; ilyenkor nem hibázik el a generálás.
+  assert.equal(latestRenderCoverFile([
     {id:'a', name:'a_1 - Photo.jpg', mimeType:'image/jpeg'},
-    {id:'b', name:'b_2 - Photo.jpg', mimeType:'image/jpeg'}
-  ]), /hiányzik az 1\. számú kép/);
+    {id:'b2', name:'b_2 - Photo.jpg', mimeType:'image/jpeg'},
+    {id:'b3', name:'b_3 - Photo.jpg', mimeType:'image/jpeg'}
+  ]).id, 'b2');
+  // A betűjel nélküli vagy más típusú fájl nem címlapkép.
+  assert.equal(latestRenderCoverFile([{id:'v', name:'b1.lsf', mimeType:'video/x-la-asf'}]), null);
 });
 
 test('A címlap a legnagyobb elhelyezett képobjektum', () => {

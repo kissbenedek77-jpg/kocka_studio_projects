@@ -14,29 +14,11 @@ const TITLES = {
   'KONCEPCIO:tajolas':'Tájolás és benapozás',
   'KONCEPCIO:homlokzat':'Homlokzati megjelenés',
   'KONCEPCIO:funkcio':'Funkcionális kapcsolatok',
-  EPITES_JELLEGE:'Az építés jellege',
-  'SZERKEZET:alapozas':'Alapozás',
-  'SZERKEZET:teherhordo':'Teherhordó szerkezetek',
-  'SZERKEZET:kemenyek':'Kémények',
-  'SZERKEZET:valaszfalak':'Válaszfalak',
-  'SZERKEZET:aljzatok':'Aljzatok',
-  'SZERKEZET:teto':'Tetőszerkezet',
-  'SZERKEZET:badogozas':'Bádogozás',
-  'SZERKEZET:vizszigeteles':'Vízszigetelés',
-  'SZERKEZET:hoszigeteles':'Hőszigetelés',
-  'SZERKEZET:vakolatok':'Vakolatok',
-  'SZERKEZET:homlokzat':'Homlokzatképzés',
-  'SZERKEZET:nyilaszarok':'Nyílászárók',
-  'SZERKEZET:gipszkarton':'Gipszkarton szerkezetek',
-  'SZERKEZET:feluletkepzes':'Felületképzés',
-  'SZERKEZET:padloburkolatok':'Padlóburkolatok',
-  'SZERKEZET:asztalos':'Asztalos szerkezetek',
-  'SZERKEZET:lakatos':'Lakatos szerkezetek',
-  'GEPESZET:szellozes':'Szellőzés',
-  'GEPESZET:energiaellatas':'Energiaellátás',
-  'VILLAMOS:teljesitmeny':'Elektromos teljesítmény',
-  'KORNYEZET:kitermelt_asvanyi_nyersanyag':'Kitermelt ásványi nyersanyag'
+  EPITES_JELLEGE:'Az építés jellege'
 };
+// A szerkezet-, gépészet-, környezet- és villamos-fejezetek szövege a sablonból
+// és a rétegrendekből származik (determinisztikus), ezért azokat az AI nem
+// fogalmazza újra: itt csak a narratív fejezetek szerepelnek.
 const AUTO_CHAPTERS = Object.entries(TITLES).map(([key,title]) => ({key,title}));
 const AUTO_KEYS = new Set(AUTO_CHAPTERS.map(item => item.key));
 const GAP = '[KIEGÉSZÍTENDŐ:';

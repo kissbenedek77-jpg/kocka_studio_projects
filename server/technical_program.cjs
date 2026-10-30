@@ -9,18 +9,20 @@ const PROGRAM_TEXTS = {
     'építése. Fontos szempont a települési arculat figyelembe vétele úgy, hogy a megbízó '+
     'igényei maradéktalanul megvalósuljanak.',
   b: 'A telekről részletes tervezési felmérési térkép készült.',
-  c: 'Az ingatlan {{telepules}} belterületi részén helyezkedik el. A telek az {{ovezet}} '+
-    'övezetben található, mely lehetővé teszi lakóingatlan építését.',
+  c: 'Az ingatlan {{telepules}} belterületi részén helyezkedik el. A telek az '+
+    '{{tervadatok_munkalap:ovezet}} övezetben található, mely lehetővé teszi lakóingatlan '+
+    'építését.',
   d: 'A környéken kialakult építészeti arculat nincs. A szomszédos telkeken álló épületek '+
     'egytől egyig magastetősek, változatos tetőidomokkal, méretekkel. A terv igyekszik a '+
     'meglévő településszövetnek megfelelő léptékű, korszerű épületeket létrehozni. A terv '+
     'figyelembe veszi a HÉSZ által támasztott követelményeket.',
   e: 'A beruházás költségkerete nincs meghatározva.',
-  f: 'Az ingatlan Balatonfűzfő belterületi részén helyezkedik el. A telek az Lke-8 '+
-    'övezetben található, mely lehetővé teszi lakóingatlan építését.',
+  f: 'Az ingatlan {{telepules}} belterületi részén helyezkedik el. A telek az '+
+    '{{tervadatok_munkalap:ovezet}} övezetben található, mely lehetővé teszi lakóingatlan '+
+    'építését.',
   g: 'Külső:\n'+
     'Modern, {{szintek}}, közepes méretű családi ház az elképzelés. A ház leendő bruttó '+
-    'alapterülete cca. 200–230 m². A ház építésénél az elsődleges szempont a modernség és a '+
+    'alapterülete {{brutto_alapterulet}}. A ház építésénél az elsődleges szempont a modernség és a '+
     'költséghatékonyság közti egyensúly megtalálása: legyen modern, környezetbarát, de '+
     'mindenképpen a környék építészeti arculatát figyelembe vevő. A modern kinézetű legyen, '+
     'változatos, finom anyaghasználattal (kő, fa, egyéb) – figyelembe véve a rendelkezésre '+
@@ -64,12 +66,13 @@ const GAP = '[KIEGÉSZÍTENDŐ:';
 const ROOM_GROUPS = [
   {bullet:'előszoba/szélfogó', match:/eloszoba|szelfogo|eloter/i},
   {bullet:'nappali-konyha-étkező', match:/nappali|konyha|etkezo/i},
-  {bullet:'szülői hálószoba blokk (fürdő/gardrób)', match:/haloszoba|gardrob/i},
-  {bullet:null, match:/gyerek/i},
+  {bullet:null, parent:true, match:/szuloi|haloszoba/},
+  {bullet:null, match:/gyerek/},
   {bullet:'iroda/vendégszoba', match:/iroda|dolgozo|vendegszoba/i},
   {bullet:'közlekedő funkcionális', match:/kozlekedo|folyos[oó]|hall/i},
-  {bullet:'mosókonyha/gépészeti helyiség', match:/mosokonyha|gepeszet|kazanhaz/i}
+  {bullet:'háztartási helyiség/mosókonyha', match:/haztartasi|mosokonyha|gepeszeti|kazanhaz/i}
 ];
+const NON_BEDROOM = /eloszoba|eloter|szelfogo|nappali|etkezo|konyha|vendeg|iroda|dolgozo|gardrob|furdo|wc|haztartasi|mosokonyha|kozlekedo|terasz/;
 
 function normalize(value) {
   return String(value || '').toLowerCase().normalize('NFD')
@@ -80,11 +83,16 @@ function roomNames(roomData) {
   return (roomData?.rooms || []).map(room => String(room?.name || '')).filter(Boolean);
 }
 
+// A szintek száma elsődlegesen az alaprajzi tervlapokból (a felhasználói
+// előírás szerint): egy alaprajz → földszintes, több → többszintes. Csak ha a
+// tervjegyzékből nem derül ki, esünk vissza a helyiséglista szintjeire.
 function floorCount(roomData, plans = []) {
+  const planFloors = (plans || []).filter(plan =>
+    /alaprajz/i.test(String(plan?.name || ''))).length;
+  if (planFloors) return planFloors;
   const floors = new Set((roomData?.rooms || []).map(room => normalize(room.floor))
     .filter(name => name && !/osszesen|helyisegek/.test(name)));
-  if (floors.size) return floors.size;
-  return (plans || []).filter(plan => /alaprajz/i.test(String(plan?.name || ''))).length;
+  return floors.size;
 }
 
 // A hálószobák száma a helyiséglistából. A nappali, a vendégszoba és az iroda
@@ -135,9 +143,18 @@ function roomBullets(roomData) {
   for (const group of ROOM_GROUPS) {
     const hits = names.filter(name => group.match.test(name));
     if (!hits.length) continue;
-    const bedrooms = group.bullet ? 0 : hits.filter(name => /haloszoba|gyerekszoba|szoba/.test(name)).length;
-    const label = group.bullet || (bedrooms ? numberWord(bedrooms)+' hálószoba gyerekek részére külön vizesblokkal'
-      : 'gyerekszoba');
+    let label = group.bullet;
+    if (group.parent) {
+      // A szülői blokk csak akkor jelenik meg, ha van hálószoba a listában.
+      const bedrooms = hits.filter(name => !NON_BEDROOM.test(name)).length;
+      if (!bedrooms) continue;
+      const bathrooms = names.some(name => /furdo|gardrob/.test(name));
+      label = 'szülői hálószoba'+(bathrooms ? ' blokk (fürdő/gardrób)' : '');
+    } else if (!label) {
+      const bedrooms = hits.filter(name => !NON_BEDROOM.test(name)).length;
+      if (!bedrooms) continue;
+      label = numberWord(bedrooms)+' hálószoba gyerekek részére külön vizesblokkal';
+    }
     if (!lines.some(line => line.endsWith(label))) lines.push('•\t'+label);
   }
   return lines.length ? lines.join('\n') : GAP+' helyiségcsoportok – a PLN/helyiségek.txt alapján.]';
@@ -169,17 +186,24 @@ function programReplacements({project = {}, sheetValues = {}, roomData = null, p
   if (!bedrooms) warnings.push('A hálószobák száma nem olvasható ki a helyiséglistából, ezért '+
     'a tervezési program g) pontjában hiányjelölés marad.');
   const office = hasOffice(roomData);
+  const gross = read('J2');
+  if (!gross) warnings.push('A bruttó alapterület (Munkalap1!J2) hiányzik, ezért a tervezési '+
+    'program g) pontjában hiányjelölés marad.');
+  const zoneText = zone || GAP+' övezeti besorolás a hatályos szabályozási tervből.]';
   return {
     values: {
       telepules: town || GAP+' település neve.]',
-      ovezet: zone || GAP+' övezeti besorolás a hatályos szabályozási tervből.]',
+      ovezet: zoneText,
+      'tervadatok_munkalap:ovezet': zoneText,
+      brutto_alapterulet: gross ? gross.replace(/\s*m2\s*$/i,'')+' m²' :
+        GAP+' bruttó alapterület a tervezési adatlapról.]',
       szintek: levels || GAP+' földszintes vagy többszintes – az alaprajzok száma alapján.]',
       haloszobak: bedroomText(roomData),
       helyisegek: roomBullets(roomData),
       iroda: office ? 'Legyen egy iroda/dolgozó közel a bejárathoz.' : '',
       parkolo: parking || GAP+' tervezett parkolószám a tervezési adatlapról.]'
     },
-    facts: {floors, bedrooms, office, parking, town, zone},
+    facts: {floors, bedrooms, office, parking, town, zone, gross},
     warnings
   };
 }

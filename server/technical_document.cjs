@@ -68,6 +68,52 @@ function displayDate(value) {
   return text;
 }
 
+// A kiadás dátuma a generálás napja, ha a műszaki adatlapon nincs megadva.
+// A formátum mindig ÉÉÉÉ.HH.NN. (a felhasználói előírás szerint).
+function hungarianToday(now = new Date()) {
+  const parts = new Intl.DateTimeFormat('hu-HU',{timeZone:'Europe/Budapest',
+    year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);
+  const part = type => String(parts.find(item => item.type === type)?.value || '');
+  return `${part('year')}.${part('month')}.${part('day')}.`;
+}
+
+// A sablonban maradó, adattal nem kitölthető mezők helyére kerülő szöveg.
+// A táblázatcellákban üres érték marad (a felhasználói döntés szerint), a
+// folyószövegben viszont egyértelmű hiányjelölés, hogy a véglegesítés
+// elutasítsa a piszkozatot.
+const DATA_MARKER = /^(?:TERVEZESI_ADATOK:|EPITMENYERTEK:|SZAMITOTT_EPITMENYERTEK$|PARKOLOEGYENLEG_ERTEKELES$|BEEPITESI_MERLEG$|ADAT_EGYEZTETES$|TERVJEGYZEK$|IRATJEGYZEK$)/;
+const GAP_LABELS = {
+  'TERV_TARGYA':'a terv tárgya és az engedélyezési eljárás megnevezése',
+  'EPITES_JELLEGE':'az építés jellege',
+  'OVEZET:max_pinceszinti_beepites':'az igazolt pinceszinti beépíthetőség az övezeti előírásból',
+  'OVEZET:forras_url':'a hatályos HÉSZ vagy szabályozási terv forrásának URL-je',
+  'OVEZET:ellenorzes_datuma':'az övezeti adat ellenőrzésének dátuma',
+  'OVEZET:ellenorzes_allapota':'a helyrajzi szám és az övezet kézi ellenőrzésének állapota',
+  'EPITMENYERTEK:rendeltetesi_kategoria':'az építményérték rendeltetési kategóriája',
+  'EPITMENYERTEK:egysegar_eFt_m2':'a jogszabály alapján igazolt egységár (E Ft/m²)',
+  'EPITMENYERTEK:jogszabaly_es_modszer':'az építményérték számításának jogszabályi alapja és módszere',
+  'TERV_HIVATKOZAS':'a leíráshoz tartozó tervlapok jele',
+  'SZAKAG:egyeztetes':'a szakági munkarészek és a felelős tervezők egyeztetése',
+  'HELYSZIN:elozmenyek':'a tervezési előzmények',
+  'HELYSZIN:meglevo_allapot':'a telek és a meglévő építmények állapota',
+  'HELYSZIN:terep_es_viz':'a terepviszonyok és a felszíni vízelvezetés',
+  'HELYSZIN:megkozelites':'a megközelítés és a parkolás',
+  'KONCEPCIO:rendeltetes':'a rendeltetés és az önálló rendeltetési egységek',
+  'KONCEPCIO:elhelyezes':'az épület elhelyezése a telken',
+  'KONCEPCIO:tomeg_es_szintek':'a tömegformálás, a szintek és a tetőforma',
+  'KONCEPCIO:tajolas':'a tájolás és a benapozás',
+  'KONCEPCIO:homlokzat':'a homlokzati megjelenés',
+  'KONCEPCIO:funkcio':'a helyiségek kapcsolata és használati rendje',
+  'GEPESZET:szellozes':'a szellőzés módja',
+  'GEPESZET:energiaellatas':'az energiaellátás módja',
+  'KORNYEZET:kitermelt_asvanyi_nyersanyag':'a kitermelt ásványi nyersanyag mennyisége',
+  'VILLAMOS:teljesitmeny':'az elektromos csatlakozási teljesítmény'
+};
+function gapText(key) {
+  const label = GAP_LABELS[key] || ('a(z) „'+key+'” adat');
+  return '[KIEGÉSZÍTENDŐ: '+label+'.]';
+}
+
 function validateTechnicalField(key,value) {
   if (key === 'DOKUMENTUM:kiadas_datuma' && value &&
       !validIsoDate(value) && !validHungarianDate(value))
@@ -153,8 +199,8 @@ function technicalReview(sheet, manual) {
 }
 
 function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfFiles = [],
-  writtenFiles = [], roomData = null, plans = [], textTemplates = {}, extraValues = {}},
-  warnings = []) {
+  writtenFiles = [], roomData = null, plans = [], textTemplates = {}, extraValues = {},
+  templateMarkers = [], now = new Date()}, warnings = []) {
   const warn = message => {
     const text = String(message || '').trim().slice(0,500);
     if (text && !warnings.includes(text)) warnings.push(text);
@@ -175,8 +221,19 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     if (String(manual[key] || '').trim()) continue;
     values[key] = String(value);
   }
-  if (manual['DOKUMENTUM:kiadas_datuma'])
-    values['Mai dátum'] = displayDate(manual['DOKUMENTUM:kiadas_datuma']);
+  if (manual['DOKUMENTUM:kiadas_datuma']) {
+    values['DOKUMENTUM:kiadas_datuma'] =
+      displayDate(manual['DOKUMENTUM:kiadas_datuma']);
+    values['Mai dátum'] = values['DOKUMENTUM:kiadas_datuma'];
+  } else {
+    // Ha a műszaki adatlapon nincs kiadási dátum, a generálás napja kerül a
+    // dokumentumba, ÉÉÉÉ.HH.NN. alakban, egy figyelmeztetéssel.
+    const today = hungarianToday(now);
+    values['DOKUMENTUM:kiadas_datuma'] = today;
+    values['Mai dátum'] = today;
+    warn('A kiadás dátuma nem volt megadva a műszaki adatlapon, ezért a generálás '+
+      'napja került a dokumentumba ('+today+'). Ellenőrizd, hogy ez a kiadás tényleges dátuma.');
+  }
   if (manual['OVEZET:ellenorzes_datuma'])
     values['OVEZET:ellenorzes_datuma'] = displayDate(manual['OVEZET:ellenorzes_datuma']);
   if (roomData?.listing && !values.HELYISEGLISTA) values.HELYISEGLISTA = roomData.listing;
@@ -187,7 +244,14 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
   // A tűzszakasz a helyiségek területeinek összege; a kijáratok száma a
   // földszinti bejárati/előtér helyiségekből becsülhető.
   const exits = exitCount(roomData);
-  values['tuzszakasz_m2'] = roomData ? (roomData.totalCents/100).toFixed(2).replace('.',',') : '';
+  // A tűzszakasz a helyiségek területeinek összege, a nem zárt térként kezelt
+  // teraszok/erkélyek nélkül. Ha nincs külső terület, a teljes összeg.
+  const enclosed = roomData
+    ? (roomData.externalCents ? roomData.totalCents - roomData.externalCents
+      : roomData.totalCents)
+    : null;
+  values['tuzszakasz_m2'] = enclosed === null ? '' :
+    (enclosed/100).toFixed(2).replace('.',',');
   values['kijarat_db'] = exits ? String(exits) : '';
   if (roomData && !exits)
     warn('A kijáratok száma nem állapítható meg a helyiséglistából; a tűzvédelmi '+
@@ -224,18 +288,20 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     const letter = String.fromCharCode(97+index);
     values[`TERVEZESI_PROGRAM:${letter}`] = lines.join('\n').replace(new RegExp(`^${letter}\\)\\s*`),'');
   });
-  if (pdfFiles.length) values.TERVJEGYZEK = pdfFiles.map(file => {
-    const title = String(file.name || '').replace(/\.pdf$/i,'').replace(/[\r\n\t]/g,' ').trim();
-    // Kötelező: a PDF tartalmól történő lépték-olvasás mindig megpróbálható.
-    // Ha benne vannak a bájtok → kiolvashatjuk a tévéből.
-    // Ha nincs bájt (teszt/kivételek) → a fájlnév alapszerűen a fallback.
+  // A tervjegyzék csak olyan tervlapot tartalmaz, amelyhez ismert a méretarány.
+  // Lépték nélkül a lista üres marad, legfeljebb egy figyelmeztetéssel.
+  const plansWithScale = pdfFiles.map(file => {
+    const title = String(file.name || '').replace(/\.pdf$/i,'')
+      .replace(/[\r\n\t]/g,' ').trim();
     const pdfBytes = file.bytes ? Buffer.from(file.bytes) : undefined;
-    const scale = planScale(title, pdfBytes);
-    return scale ? `${title}\t${scale}` : title;
-  }).filter(Boolean).sort((a,b) => a.localeCompare(b,'hu')).join('\n');
-  if (pdfFiles.length && !pdfFiles.some(file => planScale(String(file.name || ''))))
-    warn('A tervjegyzékben egyetlen tervlaphoz sem ismert a méretarány; a lista csak a '+
-      'tervlapok nevét tartalmazza. Szükség esetén egészítsd ki a fájlnevet (például „alaprajz”).');
+    return {title, scale:planScale(title, pdfBytes)};
+  }).filter(item => item.title && item.scale);
+  values.TERVJEGYZEK = plansWithScale
+    .map(item => `${item.title}\t${item.scale}`)
+    .sort((a,b) => a.localeCompare(b,'hu')).join('\n');
+  if (pdfFiles.length && !plansWithScale.length)
+    warn('A tervjegyzék üres: egyetlen tervlaphoz sem ismert a méretarány. Egészítsd ki '+
+      'a fájlnevet (például „alaprajz”), vagy a „Tervjegyzék szabályok” munkalapot.');
   values.IRATJEGYZEK = ['Építészeti műszaki leírás (jelen dokumentum)',
     ...writtenFiles.filter(file => file.mimeType === 'application/vnd.google-apps.document' ||
       file.mimeType === 'application/pdf').map(file => String(file.name || '').trim())
@@ -256,14 +322,23 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     'tuzszakasz_m2','kijarat_db','retegrend:fal_anyag','retegrend:fal_vastagsag',
     'retegrend:fal_hoszigeteles','retegrend:fodem','retegrend:fedelszek','retegrend:teto',
     ...CHAPTER_KEYS]);
+  // A sablon minden jelölőjét kitöltjük, hogy a kész példányban ne maradjon
+  // nyers {{...}}. A táblázatcellában és az adatjelölőknél üres érték marad (a
+  // felhasználói döntés szerint), a folyószövegben viszont hiányjelölés.
+  const keep = new Set([...optionalKeys, ...templateMarkers.map(marker => marker.key)]);
+  for (const marker of templateMarkers) {
+    const key = marker.key;
+    if (String(values[key] ?? '').trim()) continue;
+    values[key] = marker.inTable || DATA_MARKER.test(key) ? '' : gapText(key);
+  }
   for (const key of optionalKeys) if (!(key in values)) values[key] = '';
   for (const key of CHAPTER_KEYS) if (!String(values[key] || '').trim())
     values[key] = '[KIEGÉSZÍTENDŐ: '+key+' – a sablon dokumentum appendixében vagy a '+
       'műszaki adatlapon add meg a szöveget.]';
   return Object.fromEntries(Object.entries(values).filter(([key,value]) =>
-    optionalKeys.has(key) || String(value ?? '').trim()));
+    keep.has(key) || String(value ?? '').trim()));
 }
 
 module.exports = {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,validateTechnicalField,fieldSheetRows,
   manualValues,numberFromSheet,technicalReview,technicalReplacements,displayDate,validIsoDate,
-  validHungarianDate};
+  validHungarianDate,hungarianToday,gapText,DATA_MARKER};

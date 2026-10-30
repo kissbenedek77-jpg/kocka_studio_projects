@@ -72,12 +72,14 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
     assert.ok(texts.includes('Lakóépület bővítése'));
     assert.ok(texts.some(text=>text.includes('nappali\t30,00 m²')));
     const shaping=docWrites.flatMap(write=>write.requestBody.requests||[]);
-    assert.ok(shaping.some(request=>request.insertText?.text.includes('{{HELYSZIN:elozmenyek}}')),
-      'Az első generáláskor is bekerülnek a helyszín- és koncepciófejezetek.');
-    assert.ok(shaping.some(request=>request.deleteTableColumn?.tableCellLocation.columnIndex===2),
-      'Meglévő adat nélkül a teljes oszlop törlődik.');
-    assert.ok(shaping.some(request=>request.deleteTableRow?.tableCellLocation.rowIndex===1),
-      'B7 követelmény nélkül a szintterületi sor törlődik.');
+    // A friss sablon már tartalmazza a helyszín- és koncepciófejezetek helyét, a
+    // táblázat szerkezetét pedig nem igazítjuk: hiányzó adatnál üres cella marad.
+    assert.equal(shaping.some(request=>request.insertText),false,
+      'A friss sablonhoz nem kell kiegészítő szöveget beszúrni.');
+    assert.equal(shaping.some(request=>request.deleteTableColumn||request.deleteTableRow),false,
+      'A táblázat sorai és oszlopai a sablon szerint maradnak.');
+    assert.equal(texts.some(text=>/\{\{[^{}]+\}\}/.test(String(text))),false,
+      'A kész példányban nem maradhat nyers {{...}} jelölő.');
     assert.deepEqual(appended.requestBody.values[0].slice(0,4),
       ['ABC123','muszakiLeiras','generated-technical-doc','DRAFT']);
   }finally{[google.sheets,google.drive,google.docs]=originals;}

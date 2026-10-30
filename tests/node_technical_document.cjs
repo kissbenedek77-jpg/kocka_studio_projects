@@ -123,6 +123,79 @@ test('A kiadási dátum hibás értékét mentés előtt elutasítja, a magyar �
   assert.throws(()=>validateTechnicalField('OVEZET:ellenorzes_datuma','2026-02-30'),/dátum/);
 });
 
+test('A sablon minden jelölője kitöltődik: cellában üres, folyószövegben hiányjelölés', () => {
+  const programRows = Array.from({length:16},(_,index) => {
+    const letter = String.fromCharCode(97+index);
+    return [letter,`${letter}) Kitöltött program.`];
+  });
+  const templateMarkers = [
+    {key:'TERV_TARGYA',inTable:false},
+    {key:'TERVEZESI_ADATOK:Munkalap1!J2',inTable:true},
+    {key:'EPITMENYERTEK:egysegar_eFt_m2',inTable:false},
+    {key:'SZAKAG:egyeztetes',inTable:false},
+    {key:'ismeretlen_mezo',inTable:false}
+  ];
+  const warnings = [];
+  const values = technicalReplacements({project:{uid:'ABC123'},sheetRows:[],programRows,
+    fieldRows:[],templateMarkers,now:new Date('2026-10-30T09:00:00Z')},warnings);
+  // Táblázatcella és adatjelölő: üres, hogy ne maradjon nyers {{...}}.
+  assert.equal(values['TERVEZESI_ADATOK:Munkalap1!J2'],'');
+  assert.equal(values['EPITMENYERTEK:egysegar_eFt_m2'],'');
+  // Folyószöveg: egyértelmű hiányjelölés, a véglegesítés ezt elutasítja.
+  assert.match(values.TERV_TARGYA,/^\[KIEGÉSZÍTENDŐ: a terv tárgya/);
+  assert.match(values['SZAKAG:egyeztetes'],/^\[KIEGÉSZÍTENDŐ: /);
+  assert.match(values.ismeretlen_mezo,/^\[KIEGÉSZÍTENDŐ: /);
+  const doc = {body:{content:[{paragraph:{elements:[{startIndex:1,textRun:{content:
+    '{{TERV_TARGYA}} {{TERVEZESI_ADATOK:Munkalap1!J2}} {{ismeretlen_mezo}}\n'}}]}}]},
+  namedRanges:{}};
+  const requests = mergeRequests(doc,values,{allowUnknown:true,restoreMissing:true});
+  const replacement = key => requests.find(item =>
+    item.replaceNamedRangeContent?.namedRangeName === 'KOCKA_MERGE_'+key)
+    ?.replaceNamedRangeContent.text;
+  assert.match(replacement('TERV_TARGYA'),/KIEGÉSZÍTENDŐ/);
+  assert.equal(replacement('TERVEZESI_ADATOK:Munkalap1!J2'),'\u200B');
+  assert.match(replacement('ismeretlen_mezo'),/KIEGÉSZÍTENDŐ/);
+  for (const item of requests.filter(entry => entry.replaceNamedRangeContent))
+    assert.doesNotMatch(String(item.replaceNamedRangeContent.text),/\{\{[^{}]+\}\}/,
+      'Nem maradhat nyers jelölő: '+item.replaceNamedRangeContent.namedRangeName);
+});
+
+test('Kiadás dátuma megadás nélkül a generálás napja, ÉÉÉÉ.HH.NN. alakban', () => {
+  const programRows = Array.from({length:16},(_,index) => {
+    const letter = String.fromCharCode(97+index);
+    return [letter,`${letter}) Kitöltött program.`];
+  });
+  const warnings = [];
+  const values = technicalReplacements({project:{uid:'ABC123'},sheetRows:[],programRows,
+    fieldRows:[],now:new Date('2026-10-30T09:00:00Z')},warnings);
+  assert.equal(values['DOKUMENTUM:kiadas_datuma'],'2026.10.30.');
+  assert.equal(values['Mai dátum'],'2026.10.30.');
+  assert.ok(warnings.some(text => text.includes('kiadás dátuma')),
+    'A néma dátumhelyettesítés helyett figyelmeztetni kell: '+warnings);
+  const manualWarnings = [];
+  const fields = fieldSheetRows();
+  fields.find(row => row[0] === 'DOKUMENTUM:kiadas_datuma')[1] = '2026-10-07';
+  const manualValuesResult = technicalReplacements({project:{uid:'ABC123'},sheetRows:[],
+    programRows,fieldRows:fields.slice(1),now:new Date('2026-10-30T09:00:00Z')},manualWarnings);
+  assert.equal(manualValuesResult['DOKUMENTUM:kiadas_datuma'],'2026.10.07.');
+  assert.equal(manualWarnings.some(text => text.includes('kiadás dátuma')),false);
+});
+
+test('A tűzszakasz a terasz nélküli helyiségösszeg, a tervjegyzék lépték nélkül üres', () => {
+  const programRows = Array.from({length:16},(_,index) => {
+    const letter = String.fromCharCode(97+index);
+    return [letter,`${letter}) Kitöltött program.`];
+  });
+  const warnings = [];
+  const values = technicalReplacements({project:{uid:'ABC123'},sheetRows:[],programRows,
+    fieldRows:[],pdfFiles:[{name:'scan_0012.pdf'},{name:'valami.pdf'}],
+    roomData:{totalCents:16425,externalCents:3112,rooms:[]}},warnings);
+  assert.equal(values.tuzszakasz_m2,'133,13');
+  assert.equal(values.TERVJEGYZEK,'');
+  assert.equal(warnings.filter(text => text.includes('tervjegyzék')).length,1,
+    'Legfeljebb egy figyelmeztetés szólhat a hiányzó méretarányról: '+warnings);
+});
+
 test('A régi DRAFT bővítése megőrzi az eredeti tartalmat és ismételhető', () => {
   const lines=['Tartalomjegyzék','Adatok','Beépítési paraméterek','Épület adatai',
     'Tűzvédelem','Meglévő, kézzel jóváhagyott szöveg'];
