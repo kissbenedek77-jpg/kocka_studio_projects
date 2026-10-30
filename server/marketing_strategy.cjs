@@ -1,5 +1,7 @@
 'use strict';
 
+const {generateContent:generateGeminiContent}=require('./gemini_model.cjs');
+
 const CHANNELS=new Set(['facebook','instagram','google','tiktok']);
 const FORMATS=new Set(['video','carousel','static']);
 const bad=message=>Object.assign(new Error(message),{status:400});
@@ -116,18 +118,18 @@ async function generateStrategy(value,{apiKey,model='gemini-3.5-flash-lite',fetc
     schedule:{type:'ARRAY',items:{type:'OBJECT',properties:{title:{type:'STRING'},tasks:{type:'ARRAY',items:{type:'STRING'}}},required:['title','tasks']}},
     assumptions:{type:'ARRAY',items:{type:'STRING'}}
   },required:['positioning','landing','ads','schedule','assumptions']};
-  let response;
-  try{response=await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
-    method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},signal:AbortSignal.timeout(90000),
-    body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{
-      maxOutputTokens:8192,responseMimeType:'application/json',responseSchema:schema}})
-  });}catch(error){if(error.name==='TimeoutError'||error.name==='AbortError')
-    throw Object.assign(new Error('Az AI-kérés időtúllépés miatt megszakadt.'),{status:504});
-    throw Object.assign(new Error('Az AI-szolgáltatás nem érhető el.'),{status:502});}
-  if(!response.ok){let detail='';try{detail=clean((await response.json())?.error?.message,300)}catch(_){/* nem JSON */}
-    throw Object.assign(new Error(`A kampányterv nem készült el (Gemini HTTP ${response.status}). ${detail}`.trim()),
-      {status:response.status===429?429:502});}
-  const plan=parseStrategy(await response.json());
+  let answer;
+  try{answer=await generateGeminiContent({apiKey,model,setting:'GEMINI_MARKETING_MODEL',
+    fetchImpl,timeoutMs:90000,
+    payload:{contents:[{parts:[{text:prompt}]}],generationConfig:{
+      maxOutputTokens:8192,responseMimeType:'application/json',responseSchema:schema}}});
+  }catch(error){
+    if(error.name==='TimeoutError'||error.name==='AbortError')
+      throw Object.assign(new Error('Az AI-kérés időtúllépés miatt megszakadt.'),{status:504});
+    if(!error.status)throw Object.assign(new Error('Az AI-szolgáltatás nem érhető el.'),{status:502});
+    throw Object.assign(new Error('A kampányterv nem készült el: '+error.message),{status:error.status});
+  }
+  const plan=parseStrategy(answer.data);
   for(const ad of plan.ads)if(!input.channels.includes(ad.channel))ad.channel=input.channels[0];
   return {markdown:strategyMarkdown(plan,input),ads:plan.ads,plan,model};
 }

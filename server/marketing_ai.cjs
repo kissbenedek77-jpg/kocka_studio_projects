@@ -1,5 +1,7 @@
 'use strict';
 
+const {generateContent:generateGeminiContent}=require('./gemini_model.cjs');
+
 const ROLES=['logo','background','element'];
 const FONTS=['Source Sans Pro','Arial','Georgia','Verdana','Trebuchet MS','Tahoma',
   'Times New Roman','Courier New','Segoe UI'];
@@ -68,32 +70,24 @@ async function generateCreativePlan(input,{apiKey,model='gemini-3.5-flash-lite',
   A címsor legyen legfeljebb 70 karakter, a kísérőszöveg legfeljebb 100, a posztszöveg legfeljebb 450, a gomb legfeljebb 28.`;
   const parts=[{text:prompt}];
   for(const image of data.images)parts.push({text:'Kép szerepe: '+roles[image.role]},{inlineData:{mimeType:image.mimeType,data:image.data}});
-  let response;
-  try{response=await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
-    method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},signal:AbortSignal.timeout(60000),
-    body:JSON.stringify({contents:[{parts}],generationConfig:{maxOutputTokens:2048,
+  let answer;
+  try{answer=await generateGeminiContent({apiKey,model,setting:'GEMINI_MARKETING_MODEL',
+    fetchImpl,timeoutMs:60000,
+    payload:{contents:[{parts}],generationConfig:{maxOutputTokens:2048,
       responseMimeType:'application/json',responseSchema:{type:'OBJECT',properties:{
         headline:{type:'STRING'},subtitle:{type:'STRING'},body:{type:'STRING'},cta:{type:'STRING'},
         background:{type:'STRING'},accent:{type:'STRING'},style:{type:'STRING'},layout:{type:'STRING'}
-      },required:['headline','subtitle','body','cta','background','accent','style','layout']}}})
-  });}catch(error){if(error.name==='TimeoutError'||error.name==='AbortError')
-    throw Object.assign(new Error('Az AI-kérés időtúllépés miatt megszakadt.'),{status:504});
-    throw Object.assign(new Error('Az AI-szolgáltatás nem érhető el.'),{status:502});}
-  if(!response.ok){
-    let providerMessage='';
-    try{providerMessage=String((await response.json())?.error?.message||'').slice(0,300)}catch(_){/* nem JSON válasz */}
-    const detail=providerMessage?' Google: '+providerMessage:'';
-    let message='Az AI-kreatív nem készült el (Gemini HTTP '+response.status+').';
-    if(response.status===404)message+=' A beállított '+model+' modell nem érhető el ehhez az API-kulcshoz vagy API-verzióhoz. '+
-      (model==='gemini-3.5-flash-lite'?'Ellenőrizd a kulcs projektjében elérhető modelleket a Google AI Studio felületén, majd állítsd be a megfelelő GEMINI_MARKETING_MODEL értéket.':
-        'A Railway GEMINI_MARKETING_MODEL változóját állítsd gemini-3.5-flash-lite értékre, vagy válassz a Google AI Studio projektedben elérhető, képbemenetet és JSON-kimenetet támogató modellt.');
-    else if(response.status===401||response.status===403)message+=' Ellenőrizd a Railway GEMINI_API_KEY értékét és a kulcs projektjének Gemini API-hozzáférését.';
-    else if(response.status===402)message+=' Ellenőrizd a Google AI Studio projekt számlázását és egyenlegét.';
-    else if(response.status===429)message+=' A Gemini kvótája vagy sebességkorlátja betelt.';
-    throw Object.assign(new Error(message+detail),{status:response.status===429?429:502});
+      },required:['headline','subtitle','body','cta','background','accent','style','layout']}}}});
+  }catch(error){
+    if(error.name==='TimeoutError'||error.name==='AbortError')
+      throw Object.assign(new Error('Az AI-kérés időtúllépés miatt megszakadt.'),{status:504});
+    if(!error.status)
+      throw Object.assign(new Error('Az AI-szolgáltatás nem érhető el.'),{status:502});
+    throw Object.assign(new Error('Az AI-kreatív nem készült el: '+error.message),
+      {status:error.status});
   }
-  const plan=parseCreativePlan(await response.json());
-  return {plan,model};
+  const plan=parseCreativePlan(answer.data);
+  return {plan,model:answer.model};
 }
 
 module.exports={validateCreativeInput,parseCreativePlan,generateCreativePlan};

@@ -25,6 +25,7 @@ const {chatInput,chatPrompt,parseChatResult} = require('./technical_chat.cjs');
 const {latestRenderCoverFile,coverImageObject,publicImageUrl,coverImageRequest} = require('./cover_image.cjs');
 const {PHASE_COUNT,projectPhases,phaseChange} = require('./phases.cjs');
 const {googleQuota} = require('./quota.cjs');
+const {modelName,generateContent:generateGeminiContent} = require('./gemini_model.cjs');
 const {convertPdfA,inspectPdf} = require('./pdf_quality.cjs');
 const {googleCache} = require('./cache.cjs');
 const {loadEmailTemplate,fillEmailTemplate} = require('./email_templates.cjs');
@@ -729,28 +730,25 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       spreadsheetId:sheet.id,range:"'Munkalap1'!A1:M20",valueRenderOption:'FORMATTED_VALUE'
     }));
     const sheetValues = technicalSheetValues(response.data.values || []);
-    const model = String(process.env.GEMINI_TECHNICAL_MODEL || process.env.GEMINI_AUDIO_MODEL || 'gemini-2.5-flash');
-    if (!/^[A-Za-z0-9._-]{3,80}$/.test(model)) throw new Error('Érvénytelen Gemini modellnév.');
+    const model = modelName(process.env.GEMINI_TECHNICAL_MODEL || process.env.GEMINI_AUDIO_MODEL);
     let answer;
     try {
-      answer = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
-        method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
-        signal:AbortSignal.timeout(60000),
-        body:JSON.stringify({contents:[{parts:[{text:draftPrompt({notes,sheetValues,
+      answer = await generateGeminiContent({apiKey,model,setting:'GEMINI_TECHNICAL_MODEL',
+        timeoutMs:60000,
+        payload:{contents:[{parts:[{text:draftPrompt({notes,sheetValues,
           projectType:data.projektTipus})}]}],generationConfig:{temperature:0.2,maxOutputTokens:8192,
           responseMimeType:'application/json',responseSchema:{type:'OBJECT',properties:{
             sections:{type:'ARRAY',items:{type:'OBJECT',properties:{
               key:{type:'STRING'},text:{type:'STRING'}},required:['key','text']}}
-          },required:['sections']}}})
-      });
+          },required:['sections']}}}});
     } catch (error) {
       if (error.name === 'TimeoutError' || error.name === 'AbortError')
         throw new Error('Az AI-tervezet időtúllépés miatt nem készült el.');
-      throw new Error('Az AI-tervezet szolgáltatása nem érhető el.');
+      if (!error.status) throw new Error('Az AI-tervezet szolgáltatása nem érhető el.');
+      throw new Error('Az AI-tervezet nem készült el: '+error.message);
     }
-    if (!answer.ok) throw new Error('Az AI-tervezet nem készült el (HTTP '+answer.status+').');
-    const result = parseDraftResult(await answer.json(),notes);
-    return {sections:result,model};
+    const result = parseDraftResult(answer.data,notes);
+    return {sections:result,model:answer.model};
   }
 
   // Egyszerű AI-chat a műszaki adatlap felett: a beírt megjegyzés alapján a
@@ -763,28 +761,25 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     const current = Object.fromEntries(fields.fields.map(field => [field.key,field.value]));
     const {message,notes} = chatInput(input,current);
     const {data} = await project(uid);
-    const model = String(process.env.GEMINI_TECHNICAL_MODEL || process.env.GEMINI_AUDIO_MODEL || 'gemini-2.5-flash');
-    if (!/^[A-Za-z0-9._-]{3,80}$/.test(model)) throw new Error('Érvénytelen Gemini modellnév.');
+    const model = modelName(process.env.GEMINI_TECHNICAL_MODEL || process.env.GEMINI_AUDIO_MODEL);
     let answer;
     try {
-      answer = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
-        method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
-        signal:AbortSignal.timeout(60000),
-        body:JSON.stringify({contents:[{parts:[{text:chatPrompt({message,notes,
+      answer = await generateGeminiContent({apiKey,model,setting:'GEMINI_TECHNICAL_MODEL',
+        timeoutMs:60000,
+        payload:{contents:[{parts:[{text:chatPrompt({message,notes,
           projectType:data.projektTipus})}]}],generationConfig:{temperature:0.3,maxOutputTokens:8192,
           responseMimeType:'application/json',responseSchema:{type:'OBJECT',properties:{
             reply:{type:'STRING'},sections:{type:'ARRAY',items:{type:'OBJECT',properties:{
               key:{type:'STRING'},text:{type:'STRING'}},required:['key','text']}}
-          },required:['reply','sections']}}})
-      });
+          },required:['reply','sections']}}}});
     } catch (error) {
       if (error.name === 'TimeoutError' || error.name === 'AbortError')
         throw new Error('A chat válasza időtúllépés miatt nem készült el.');
-      throw new Error('A chat szolgáltatása nem érhető el.');
+      if (!error.status) throw new Error('A chat szolgáltatása nem érhető el.');
+      throw new Error('A chat nem készült el: '+error.message);
     }
-    if (!answer.ok) throw new Error('A chat nem készült el (HTTP '+answer.status+').');
-    const result = parseChatResult(await answer.json(),notes);
-    return {reply:result.reply,sections:result.sections,model};
+    const result = parseChatResult(answer.data,notes);
+    return {reply:result.reply,sections:result.sections,model:answer.model};
   }
 
   // MARK: A teljes műszaki leírás automatikus előállítása
@@ -795,9 +790,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
   async function generateTechnicalDocument(uid) {
     const apiKey = String(process.env.GEMINI_API_KEY || '').trim();
     if (!apiKey) throw new Error('Az AI-szöveg nem készíthető el: a GEMINI_API_KEY nincs beállítva a Railway Variables között. Állítsd be a kulcsot, majd indítsd újra a szolgáltatást.');
-    const model = String(process.env.GEMINI_TECHNICAL_MODEL || process.env.GEMINI_AUDIO_MODEL || 'gemini-2.5-flash');
-    if (!/^[A-Za-z0-9._-]{3,80}$/.test(model))
-      throw new Error('Az AI-szöveg nem készíthető el: a GEMINI_TECHNICAL_MODEL beállítás érvénytelen. Csak betű, szám, pont, kötőjel és aláhúzás használható, 3–80 karakter között (például gemini-2.5-flash).');
+    const model = modelName(process.env.GEMINI_TECHNICAL_MODEL || process.env.GEMINI_AUDIO_MODEL);
     const {data} = await project(uid);
     if (!extractDriveId(data.projectFolderUrl))
       throw new Error('A műszaki leírás nem készíthető el: a projektmappa még nem jött létre. Nyisd meg az 1. lépést, hozd létre a projektmappát, majd indítsd újra a szövegezést.');
@@ -878,21 +871,18 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       'nem – a helyiséglistában nincs iroda/dolgozó';
     const facts = autoFacts({data,sheetValues,program,roomData,roomText,plans,manual,
       retegrend,planFacts});
-    let sections = {};
+    let sections = {}, usedModel = model;
     try {
-      const answer = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
-        method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
-        signal:AbortSignal.timeout(90000),
-        body:JSON.stringify({contents:[{parts:[{text:autoPrompt({facts,chapters:AUTO_CHAPTERS,
+      const answer = await generateGeminiContent({apiKey,model,setting:'GEMINI_TECHNICAL_MODEL',
+        timeoutMs:90000,
+        payload:{contents:[{parts:[{text:autoPrompt({facts,chapters:AUTO_CHAPTERS,
           projectType:data.projektTipus})}]}],generationConfig:{temperature:0.2,maxOutputTokens:16384,
           responseMimeType:'application/json',responseSchema:{type:'OBJECT',properties:{
             sections:{type:'ARRAY',items:{type:'OBJECT',properties:{
               key:{type:'STRING'},text:{type:'STRING'}},required:['key','text']}}
-          },required:['sections']}}})
-      });
-      if (!answer.ok) throw new Error('a szolgáltatás HTTP '+answer.status+' hibát adott'+
-        (answer.status===429?' (átmeneti túlterhelés)':''));
-      sections = parseAutoResult(await answer.json(),AUTO_CHAPTERS);
+          },required:['sections']}}}});
+      usedModel = answer.model;
+      sections = parseAutoResult(answer.data,AUTO_CHAPTERS);
     } catch (error) {
       if (error.name === 'TimeoutError' || error.name === 'AbortError')
         warn('Az AI-szöveg 90 másodpercen belül nem készült el. A dokumentum a hiányjelölésekkel most is elkészül; később újraszövegezhető.');
@@ -947,7 +937,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       ? sections[key]
       : (saved?.fields.find(field => field.key === key)?.value || '');
     return {message:base+(warnings.length?' Figyelem: '+warnings.join(' '):''),
-      url:document.url,created:document.created,model,sections,warnings,
+      url:document.url,created:document.created,model:usedModel,sections,warnings,
       chapters:AUTO_CHAPTERS.map(item => ({key:item.key,title:item.title,
         value:storedValue(item.key)})),
       project:await dashboardProject(data.uid)};
@@ -2027,18 +2017,21 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       supportsAllDrives:true},{responseType:'arraybuffer'}));
     const bytes = Buffer.from(media.data);
     if (bytes.length > 8*1024*1024) throw new Error('A hangfájl túl nagy az AI-kivonathoz.');
-    const model = String(process.env.GEMINI_AUDIO_MODEL || 'gemini-2.5-flash');
-    if (!/^[A-Za-z0-9._-]{3,80}$/.test(model)) throw new Error('Érvénytelen Gemini modellnév.');
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
-      method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey},
-      signal:AbortSignal.timeout(60000),
-      body:JSON.stringify({contents:[{parts:[
-        {text:'Készíts magyar nyelvű, tömör projektjegyzetet a hangfelvételből. Csak az elhangzott tényeket és döntéseket írd le. A bizonytalan részeket jelöld kérdésként. Ne találj ki adatokat. Szerkezet: tények, döntések, nyitott kérdések.'},
-        {inline_data:{mime_type:item.mimeType,data:bytes.toString('base64')}}
-      ]}]})
-    });
-    if (!response.ok) throw new Error('Az AI-kivonat nem készült el (HTTP '+response.status+').');
-    const result = await response.json();
+    const model = modelName(process.env.GEMINI_AUDIO_MODEL);
+    let result;
+    try {
+      result = (await generateGeminiContent({apiKey,model,setting:'GEMINI_AUDIO_MODEL',
+        timeoutMs:60000,
+        payload:{contents:[{parts:[
+          {text:'Készíts magyar nyelvű, tömör projektjegyzetet a hangfelvételből. Csak az elhangzott tényeket és döntéseket írd le. A bizonytalan részeket jelöld kérdésként. Ne találj ki adatokat. Szerkezet: tények, döntések, nyitott kérdések.'},
+          {inline_data:{mime_type:item.mimeType,data:bytes.toString('base64')}}
+        ]}]}})).data;
+    } catch (error) {
+      if (error.name === 'TimeoutError' || error.name === 'AbortError')
+        throw new Error('Az AI-kivonat időtúllépés miatt nem készült el.');
+      if (!error.status) throw new Error('Az AI-kivonat szolgáltatása nem érhető el.');
+      throw new Error('Az AI-kivonat nem készült el: '+error.message);
+    }
     const summary = (result.candidates?.[0]?.content?.parts || []).map(part => part.text || '').join('\n').trim();
     if (!summary || summary.length > 9000) throw new Error('Az AI nem adott használható szöveges kivonatot.');
     return {summary:'[AI-kivonat – '+item.name+']\n'+summary};
