@@ -917,7 +917,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       }))).data;
       const computed = await technicalReplacements({project:data,sheetRows:parts[0]?.values || [],
         programRows:parts[1]?.values || [],fieldRows:parts[2]?.values || [],pdfFiles:plans,
-        roomData: roomData || null,plans,textTemplates:textTemplates(templateDoc),
+        roomData,plans,textTemplates:textTemplates(templateDoc),
         extraValues:{...retegrendValues(retegrend),
           RETEGRENDEK_JOVAHAGYOTT_SZOVEG:(retegrend?.lines || []).join('\n')}},warnings);
       const defaults = {};
@@ -1062,6 +1062,9 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       const text = String(message || '').trim().slice(0,500);
       if (text && !warnings.includes(text)) warnings.push(text);
     };
+    // A helyiséglista a dokumentum elkészítése után, a táblázat beszúrásakor is
+    // kell, ezért a blokkon kívül, a függvény szintjén tartjuk.
+    let roomData = null, pdfFiles = [], writtenFiles = [];
     if (type === 'muszakiLeiras') {
       let dataSheet = null;
       let parts = [];
@@ -1091,7 +1094,6 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         warn('A projektmappa tartalma nem olvasható ('+(error.message||String(error))+
           '). A tervjegyzék és az iratjegyzék a korábbi adatokból készül.');
       }
-      let pdfFiles = [], writtenFiles = [];
       try {
         const pdfFolder = projectChildren.find(item =>
           item.mimeType === 'application/vnd.google-apps.folder' && item.name === 'PDFA');
@@ -1105,7 +1107,6 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         warn('A PDFA vagy az Írásos mappa tartalma nem olvasható ('+(error.message||String(error))+
           '). A tervjegyzék és az iratjegyzék hiányos lehet.');
       }
-      let roomData = null;
       // A rétegrendek a generálás első lépése: a Metszetek tervlap szövege és a
       // „Rétegrend sablonok” munkalap együtt adja a fal/födém/fedélszerkezet
       // anyagát és vastagságát.
@@ -1181,8 +1182,8 @@ function googleClient(config, refreshToken = '', authOverride = null) {
           'A helyén [KIEGÉSZÍTENDŐ: …] jelölés marad.');
       try {
         mergeValues = await technicalReplacements({project:data,sheetRows:parts[0]?.values || [],
-          programRows:parts[1]?.values || [],fieldRows:parts[2]?.values || [],pdfFiles,
-          roomData: roomData || null,textTemplates:textTemplates(source),
+          programRows:parts[1]?.values || [],fieldRows:parts[2]?.values || [],pdfFiles,writtenFiles,
+          roomData,plans:pdfFiles,textTemplates:textTemplates(source),
           extraValues:{...retegrendValues(retegrend),
           RETEGRENDEK_JOVAHAGYOTT_SZOVEG:(retegrend?.lines || []).join('\n')}},warnings);
       } catch (error) {
@@ -2282,7 +2283,8 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       if (pdfa) pdfFiles = (await listChildren(pdfa.id)).filter(item =>
         item.mimeType === 'application/pdf' || /\.pdf$/i.test(item.name));
       planCount = pdfFiles.length;
-      if (pln) roomsReady = (await listChildren(pln.id)).some(item => item.name.toLowerCase() === 'helyiségek.txt');
+      if (pln) roomsReady = (await listChildren(pln.id)).some(item =>
+        /^(?:helyiségek|helyiséglista)\.txt$/i.test(String(item.name || '').trim()));
     }
     const offer = Object.fromEntries(OFFER_NAMES.map((name, index) => [name, String(row[index + 40] || '')]));
     const all = await allRows();
