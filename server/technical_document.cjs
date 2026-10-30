@@ -296,9 +296,11 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     const pdfBytes = file.bytes ? Buffer.from(file.bytes) : undefined;
     return {title, scale:planScale(title, pdfBytes)};
   }).filter(item => item.title && item.scale);
-  values.TERVJEGYZEK = plansWithScale
-    .map(item => `${item.title}\t${item.scale}`)
-    .sort((a,b) => a.localeCompare(b,'hu')).join('\n');
+  if (plansWithScale.length) {
+    values.TERVJEGYZEK = plansWithScale
+      .map(item => `${item.title}\t${item.scale}`)
+      .sort((a,b) => a.localeCompare(b,'hu')).join('\n');
+  }
   if (pdfFiles.length && !plansWithScale.length)
     warn('A tervjegyzék üres: egyetlen tervlaphoz sem ismert a méretarány. Egészítsd ki '+
       'a fájlnevet (például „alaprajz”), vagy a „Tervjegyzék szabályok” munkalapot.');
