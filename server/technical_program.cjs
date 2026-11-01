@@ -22,11 +22,11 @@ const PROGRAM_TEXTS = {
     'építését.',
   g: 'Külső:\n'+
     'Modern, {{szintek}}, közepes méretű családi ház az elképzelés. A ház leendő bruttó '+
-    'alapterülete {{brutto_alapterulet}}. A ház építésénél az elsődleges szempont a modernség és a '+
-    'költséghatékonyság közti egyensúly megtalálása: legyen modern, környezetbarát, de '+
-    'mindenképpen a környék építészeti arculatát figyelembe vevő. A modern kinézetű legyen, '+
-    'változatos, finom anyaghasználattal (kő, fa, egyéb) – figyelembe véve a rendelkezésre '+
-    'álló pénzügyi keretet.\n\n'+
+    'alapterülete cca. {{alapterulet_sav}} m2-t. A ház építésénél az elsődleges szempont a modernség és a '+
+    'költséghatékonyság közti egyensúly megtalálása, legyen modern, környezetbarát, de '+
+    'mindenképpen a környék építészeti arculatát figyelembe véve,\n\n'+
+    'A modern kinézetű legyen, változatos, finom anyaghasználattal (kő, fa, egyéb) – '+
+    'figyelembe véve a rendelkezésre álló pénzügyi keretet.\n\n'+
     'A belső:\n'+
     'A ház belseje is legyen modern, világos, nagy ablakokkal és teraszajtókkal oldjuk meg, '+
     'hogy minél több fény jusson a lakótérbe. A megrendelő egyik legfontosabb igénye a '+
@@ -34,13 +34,13 @@ const PROGRAM_TEXTS = {
     'Helyiségek:\n{{helyisegek}}'+
     '\n\nA nappali, a konyha és az étkező legyen egy légtérben, mindkettőből lehessen '+
     'kimenni a kertbe vagy a teraszra. A konyha legyen nagyon nagy, sok szekrénnyel, '+
-    'kamraszekrényekkel. Az étkező 6–12 személy fogadására, vendéglátására kell, hogy '+
+    'kamraszekrényekkel. Az étkező 6-12 személy fogadására, vendéglátására kell, hogy '+
     'elegendő helyet biztosítson. Ha megoldható, az étkező kapjon erkélyajtót, hogy ki '+
     'lehessen nyitni, legyen kertkapcsolat.\n\n'+
     'A nappali legyen funkcionális, tévézős, beszélgetős, játszóhelyiség, kertkapcsolattal, '+
     'nagy terasszal, ahová ki lehet ülni pihenni, beszélgetni, enni.\n\n'+
-    'Emellett legyen {{haloszobak}}, méretük legalább 10–15 m². A gyerekszobákban lehet kis '+
-    '„dolgozó sarok”, ahol leckét írhatnak, rajzolgathat a megrendelő gyermekei.\n\n'+
+    'Emellett legyen egy {{haloszobak}}, méretük legalább 10-15 m². A gyerekszobákban lehet '+
+    'kis „dolgozó sarok”, ahol leckét írhatnak, rajzolgathat a megrendelő gyermekei.\n\n'+
     'Fürdőszoba blokkok külön az egyes hálószoba zónákhoz, lehetőség szerint külön wc-vel. '+
     'Lehetőleg külön mosókonyha is szükséges, itt elhelyezhetők a szükséges gépészeti '+
     'berendezések.\n\n{{iroda}}',
@@ -136,6 +136,16 @@ function bedroomText(roomData) {
   return 'szülői és '+numberWord(children)+' gyerek hálószoba';
 }
 
+// A program g) pontjában a bruttó alapterület helyett a nettó, terasz nélküli
+// alapterülethez illeszkedő, 5 m²-re kerekített sávot írjuk (pl. 125-140 m2).
+// A sáv a tényleges érték ±5%-a, hogy a szöveg ne ígérjen nagyobb házat.
+function areaInterval(area) {
+  if (!Number.isFinite(area) || area <= 0) return '';
+  const lower = Math.max(5,Math.floor(area*0.95/5)*5);
+  const upper = Math.max(lower+5,Math.ceil(area*1.05/5)*5);
+  return lower+'-'+upper;
+}
+
 function roomBullets(roomData) {
   const names = roomNames(roomData).map(normalize);
   if (!names.length) return GAP+' helyiségcsoportok – a PLN/helyiségek.txt alapján.]';
@@ -189,6 +199,12 @@ function programReplacements({project = {}, sheetValues = {}, roomData = null, p
   const gross = read('J2');
   if (!gross) warnings.push('A bruttó alapterület (Munkalap1!J2) hiányzik, ezért a tervezési '+
     'program g) pontjában hiányjelölés marad.');
+  // A g) pont a nettó, terasz nélküli alapterülethez illeszkedő sávot mutatja.
+  const netArea = roomData && Number.isFinite(roomData.totalCents)
+    ? (roomData.totalCents-(Number(roomData.externalCents) || 0))/100 : 0;
+  const areaRange = areaInterval(netArea);
+  if (!areaRange) warnings.push('A nettó alapterület (Munkalap2, terasz nélkül) nem '+
+    'állapítható meg, ezért a tervezési program g) pontjában hiányjelölés marad.');
   const zoneText = zone || GAP+' övezeti besorolás a hatályos szabályozási tervből.]';
   return {
     values: {
@@ -197,13 +213,14 @@ function programReplacements({project = {}, sheetValues = {}, roomData = null, p
       'tervadatok_munkalap:ovezet': zoneText,
       brutto_alapterulet: gross ? gross.replace(/\s*m2\s*$/i,'')+' m²' :
         GAP+' bruttó alapterület a tervezési adatlapról.]',
+      alapterulet_sav: areaRange || GAP+' nettó alapterület a helyiséglistából, terasz nélkül.]',
       szintek: levels || GAP+' földszintes vagy többszintes – az alaprajzok száma alapján.]',
       haloszobak: bedroomText(roomData),
       helyisegek: roomBullets(roomData),
       iroda: office ? 'Legyen egy iroda/dolgozó közel a bejárathoz.' : '',
       parkolo: parking || GAP+' tervezett parkolószám a tervezési adatlapról.]'
     },
-    facts: {floors, bedrooms, office, parking, town, zone, gross},
+    facts: {floors, bedrooms, office, parking, town, zone, gross, netArea, areaRange},
     warnings
   };
 }

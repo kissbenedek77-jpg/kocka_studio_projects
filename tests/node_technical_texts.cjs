@@ -68,6 +68,7 @@ test('A rétegrend a munkalapról és a Metszetek szövegéből is felismerhető
 test('A tervezési program a projekt adatait és a helyiséglistát használja', () => {
   const roomData = {
     totalCents:20005,
+    externalCents:3112,
     rooms:[
       {floor:'Földszint',name:'előszoba'},
       {floor:'Földszint',name:'nappali-konyha-étkező'},
@@ -88,6 +89,17 @@ test('A tervezési program a projekt adatait és a helyiséglistát használja',
   assert.match(result.values.haloszobak,/szülői és két gyerek/);
   assert.match(result.values.helyisegek,/iroda\/vendégszoba/);
   assert.equal(result.values.parkolo,'2');
+  assert.equal(result.values.alapterulet_sav,'160-180');
+  assert.equal(result.facts.netArea,168.93);
+  assert.equal(result.facts.areaRange,'160-180');
+  assert.doesNotMatch(result.warnings.join(' '),/nettó alapterület/);
+  const empty = programReplacements({project:{projekt_varos:'Kaposvár'}});
+  assert.match(empty.values.alapterulet_sav,/KIEGÉSZÍTENDŐ/);
+  assert.match(empty.warnings.join(' '),/nettó alapterület/);
+  assert.match(PROGRAM_TEXTS.f,/\{\{telepules\}\}|\{\{tervadatok_munkalap:ovezet\}\}/);
+  assert.doesNotMatch(PROGRAM_TEXTS.f,/Balatonfűzfő/);
+  assert.match(PROGRAM_TEXTS.g,/\{\{alapterulet_sav\}\}/);
+  assert.doesNotMatch(PROGRAM_TEXTS.g,/200-230/);
   assert.equal(result.facts.bedrooms,3);
   assert.equal(exitCount(roomData),1);
   assert.equal(bedroomCount(roomData),3);
