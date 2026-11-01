@@ -33,10 +33,10 @@ function technicalSheetValues(rows) {
 }
 
 // A tervezési program a)–p) sorai a „Tervezési program” lapról jönnek. Ha egy
-// sor üres, a kanonikus alapértelmezett szöveg lép a helyére; a {{...}}
-// jelölőket a projektadatok töltik ki.
-function technicalProgramLines(rows, replacements) {
-  return programLines(Array.isArray(rows) ? rows : [],replacements);
+// sor üres, a sablonban a helyén álló alapértelmezett szöveg lép a helyére; a
+// {{...}} jelölőket a projektadatok töltik ki.
+function technicalProgramLines(rows, replacements, defaults) {
+  return programLines(Array.isArray(rows) ? rows : [],replacements,defaults);
 }
 
 module.exports = {ADDRESSES, SHEET_PREFIX, technicalSheetValues, technicalProgramLines};

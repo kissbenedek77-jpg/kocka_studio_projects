@@ -1,9 +1,11 @@
 'use strict';
 
-// A tervezési program a)–p) pontjának kanonikus szövege. A szövegek adatként
-// viselkednek: a generátor nem fogalmazza újra őket, csak a {{...}} jelölők
-// helyére ír projektadatot. A projekt „Tervezési program” lapján szerkesztett
-// szöveg elsőbbséget élvez; ez a lista az alapérték és a hiánypótlás.
+// A tervezési program a)–p) pontjának alapértelmezett szövege a sablon
+// dokumentumban, a helyén áll (KOCKA_SZOVEG_PROGRAM_* névre szóló tartomány).
+// A generátor onnan olvassa ki; a kód csak a jelölők kitöltését végzi, saját
+// alapértelmezett fejezetszöveget nem tartalmaz. A PROGRAM_TEXTS kizárólag a
+// sablon egyszeri feltöltéséhez (scripts/update_technical_inline_texts.cjs)
+// maradt meg.
 const PROGRAM_TEXTS = {
   a: 'A tervezési feladat modern, korszerű, de gazdaságosan kivitelezhető családi otthon '+
     'építése. Fontos szempont a települési arculat figyelembe vétele úgy, hogy a megbízó '+
@@ -58,9 +60,8 @@ const PROGRAM_TEXTS = {
     'feltétele nincs.',
   p: 'a helyszínen nem áll fenn régészeti érintettség.'
 };
-const PROGRAM_LETTERS = Object.keys(PROGRAM_TEXTS);
+const PROGRAM_LETTERS = 'abcdefghijklmnop'.split('');
 const GAP = '[KIEGÉSZÍTENDŐ:';
-
 // A helyiséglista alapján eldönthető, mely helyiségcsoportok szerepeljenek a
 // programban. Amelyik csoportnak nincs nyoma a listában, az kimarad.
 const ROOM_GROUPS = [
@@ -236,12 +237,13 @@ function renderProgramText(text, replacements) {
   });
 }
 
-function programLines(rows, replacements = {}) {
+function programLines(rows, replacements = {}, defaults = PROGRAM_TEXTS) {
   const output = [];
   for (const [index, letter] of PROGRAM_LETTERS.entries()) {
     const row = rows?.[index] || [];
     const fromSheet = String(row[1] ?? '').trim();
-    const raw = fromSheet || PROGRAM_TEXTS[letter];
+    const raw = fromSheet || String(defaults?.[letter] ?? '').trim() ||
+      GAP+' a tervezési program '+letter+') pontjának szövege a sablonban.]';
     output.push(raw.split(/\r?\n/).map(line => renderProgramText(line,replacements))
       .map(line => line.trimEnd()).filter((line,position,array) =>
         line.trim() || (position > 0 && position < array.length-1)));

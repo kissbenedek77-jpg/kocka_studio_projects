@@ -14,13 +14,13 @@ const {parseRoomText,areaText} = require('./room_data.cjs');
 const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,fieldSheetRows,validateTechnicalField,manualValues,technicalReplacements} = require('./technical_document.cjs');
 const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs');
 const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
-const {textTemplates,appendixRequests} = require('./technical_texts.cjs');
+const {sectionTexts,sectionReplaceRequests,appendixRequests} = require('./technical_texts.cjs');
 const {findMarker,insertRequests,findEmptyTable,fillRequests} = require('./room_table.cjs');
 const {technicalTableRequests} = require('./technical_table.cjs');
-const {tabStopRequests} = require('./plan_list.cjs');
+const {MARKER:PLAN_MARKER,planRows,layoutRequests,alignRequests,findTable} = require('./plan_list.cjs');
 const {retegrendFacts,retegrendValues} = require('./retegrend.cjs');
 const {pdfToText} = require('./pdf_text.cjs');
-const {floorCount,bedroomCount,hasOffice} = require('./technical_program.cjs');
+const {floorCount,bedroomCount,hasOffice,PROGRAM_LETTERS} = require('./technical_program.cjs');
 const {chatInput,chatPrompt,parseChatResult} = require('./technical_chat.cjs');
 const {latestRenderCoverFile,coverImageObject,publicImageUrl,coverImageRequest} = require('./cover_image.cjs');
 const {PHASE_COUNT,projectPhases,phaseChange} = require('./phases.cjs');
@@ -693,7 +693,25 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     return read();
   }
 
-  async function saveTechnicalFields(uid,input) {
+  // A műszaki adatlapon mentett szöveg azonnal bekerül a DRAFT dokumentumba,
+  // ezért a felületen nem kell külön szinkronizálni. Véglegesített dokumentumot
+  // nem módosítunk; hiba esetén a mentés akkor is megmarad.
+  async function syncTechnicalDraft(uid) {
+    try {
+      const records = await documentRecords(uid);
+      const draft = records.find(item => item.type === 'muszakiLeiras' && item.status === 'DRAFT');
+      if (!draft) return {synced:false,syncMessage:'Nincs módosítható műszaki DRAFT, '+
+        'ezért a szöveg csak a következő generáláskor kerül a dokumentumba.'};
+      await ensureDocument(uid,'muszakiLeiras');
+      return {synced:true,syncMessage:'A módosítás bekerült a műszaki leírás DRAFT dokumentumába.'};
+    } catch (error) {
+      if (error.status === 429) throw error;
+      return {synced:false,syncMessage:'A műszaki leírás frissítése nem sikerült: '+
+        (error.message||String(error))};
+    }
+  }
+
+  async function saveTechnicalFields(uid,input,options = {}) {
     if (!input || typeof input !== 'object' || Array.isArray(input))
       throw new Error('A műszaki adatok hiányoznak.');
     const allowed = new Set(MANUAL_FIELDS.map(([key]) => key));
@@ -717,7 +735,13 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     if (data.length) await sheetWrite(() => sheets.spreadsheets.values.batchUpdate({
       spreadsheetId:sheet.id,requestBody:{valueInputOption:'RAW',data}
     }));
-    return getTechnicalFields(uid);
+    const result = await getTechnicalFields(uid);
+    // A felületről indított mentés után a módosított szöveg azonnal a DRAFT
+    // dokumentumba kerül. A belső hívások (generálás) nem szinkronizálnak, így
+    // nincs végtelen rekurzió.
+    if (!options.sync) return result;
+    const sync = await syncTechnicalDraft(uid);
+    return {...result,synced:sync.synced,syncMessage:sync.syncMessage};
   }
 
   async function draftTechnicalText(uid,input) {
@@ -907,12 +931,17 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       }))).data;
       const computed = await technicalReplacements({project:data,sheetRows:parts[0]?.values || [],
         programRows:parts[1]?.values || [],fieldRows:parts[2]?.values || [],pdfFiles:plans,
-        roomData,plans,textTemplates:textTemplates(templateDoc),
+        roomData,plans,sectionTexts:sectionTexts(templateDoc),
         templateMarkers:templateMarkers(templateDoc),
         extraValues:{...retegrendValues(retegrend),
           RETEGRENDEK_JOVAHAGYOTT_SZOVEG:(retegrend?.lines || []).join('\n')}},warnings);
+      // A végleges (kiértékelt) programszövegek és fejezetszövegek a műszaki
+      // adatlapra kerülnek, hogy a felületen szerkeszthetők legyenek. A már
+      // mentett szöveget nem írjuk felül.
+      const defaultKeys = [...CHAPTER_KEYS,
+        ...PROGRAM_LETTERS.map(letter => `TERVEZESI_PROGRAM:${letter}`)];
       const defaults = {};
-      for (const key of CHAPTER_KEYS)
+      for (const key of defaultKeys)
         if (!String(manual[key] || '').trim() && String(computed[key] || '').trim())
           defaults[key] = computed[key];
       if (Object.keys(defaults).length) await saveTechnicalFields(data.uid,defaults);
@@ -1174,7 +1203,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       try {
         mergeValues = await technicalReplacements({project:data,sheetRows:parts[0]?.values || [],
           programRows:parts[1]?.values || [],fieldRows:parts[2]?.values || [],pdfFiles,writtenFiles,
-          roomData,plans:pdfFiles,textTemplates:textTemplates(source),
+          roomData,plans:pdfFiles,sectionTexts:sectionTexts(source),
           templateMarkers:templateMarkers(source),
           extraValues:{...retegrendValues(retegrend),
           RETEGRENDEK_JOVAHAGYOTT_SZOVEG:(retegrend?.lines || []).join('\n')}},warnings);
@@ -1349,6 +1378,78 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     // Sikeres táblázatbeszúrás után a {{HELYISEGLISTA}} jelölő üresen marad,
     // különben a szöveges lista is bekerülne a táblázat mellé.
     if (type === 'muszakiLeiras' && roomTableInserted) mergeValues.HELYISEGLISTA = '';
+    // A tervjegyzék szintén táblázat: bal oldalon a tervlap címe, jobb oldalon a
+    // lépték a lap széléhez igazítva, keret és cellakitöltés nélkül.
+    let planTableInserted = false;
+    if (type === 'muszakiLeiras') {
+      const rows = planRows(mergeValues.TERVJEGYZEK);
+      if (rows.length) {
+        try {
+          const marker = findMarker(document, PLAN_MARKER);
+          const inserts = insertRequests(marker, rows, 2, {allowSingleRow:true});
+          if (inserts.length) {
+            // A táblázat kezdő indexe a jelölő helye, ezért az elrendezés
+            // (oszlopszélesség, keret, padding) ugyanebben a kérésben mehet.
+            const layout = layoutRequests(marker.startIndex, document.documentStyle);
+            await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+              requestBody:{requests:[...inserts,...layout],
+                ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+            planTableInserted = true;
+            document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+              documentId,includeTabsContent:false
+            }))).data;
+            const table = findEmptyTable(document, rows);
+            if (table) {
+              const startIndex = table.startIndex;
+              const fill = fillRequests(table, rows, {header:false});
+              if (fill.length) {
+                await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+                  requestBody:{requests:fill,
+                    ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+                document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+                  documentId,includeTabsContent:false
+                }))).data;
+              }
+              const align = alignRequests(findTable(document, startIndex));
+              if (align.length) await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({
+                documentId,requestBody:{requests:align,
+                  ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+            } else
+              warn('A tervjegyzék beszúrt táblázata nem található, ezért a lista a '+
+                'táblázat helyett folyószövegként jelenik meg a dokumentumban.');
+          }
+        } catch (error) {
+          if (error.status === 429) throw error;
+          planTableInserted = false;
+          warn('A tervjegyzék táblázatként nem jeleníthető meg ('+
+            (error.message||String(error))+'); ellenőrizd a dokumentumot.');
+        }
+      }
+    }
+    // Sikeres táblázatbeszúrás után a {{TERVJEGYZEK}} jelölő üresen marad,
+    // különben a szöveges lista is bekerülne a táblázat mellé.
+    if (planTableInserted) mergeValues.TERVJEGYZEK = '';
+    // A sablonban a helyükön álló fejezet- és programszövegek helyére a
+    // végleges (mentett vagy kiszámított) szöveg kerül. Így a szöveget a
+    // sablonban vagy a műszaki adatlapon lehet módosítani, a kód nem tartalmaz
+    // alapértelmezett fejezetszöveget.
+    if (type === 'muszakiLeiras') {
+      const sectionRequests = sectionReplaceRequests(document, mergeValues);
+      if (sectionRequests.length) {
+        try {
+          await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+            requestBody:{requests:sectionRequests,
+              ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+          document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+            documentId,includeTabsContent:false
+          }))).data;
+        } catch (error) {
+          if (error.status === 429) throw error;
+          warn('A fejezetszövegeket nem sikerült a helyükre beírni ('+
+            (error.message||String(error))+'); ellenőrizd a dokumentumot.');
+        }
+      }
+    }
     const requests = mergeRequests(document,mergeValues,
       {allowUnknown:type === 'muszakiLeiras',restoreMissing:type === 'muszakiLeiras',
         allowConditional:true});
@@ -1356,29 +1457,6 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       documentId,requestBody:{requests,
         ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}
     }));
-    // A tervjegyzék léptéke a lap jobb szélén, jobbra igazítva jelenik meg. A
-    // tabulátor-stop a beírt szöveghez utólag kerül a bekezdésekre, ezért a
-    // dokumentumot a csere után újra kell olvasni.
-    if (type === 'muszakiLeiras' && String(mergeValues.TERVJEGYZEK || '').includes('\t')) {
-      try {
-        const merged = (await googleQuota.run('docsRead',1,() => docs.documents.get({
-          documentId,includeTabsContent:false
-        }))).data;
-        const tabRequests = tabStopRequests(merged);
-        if (tabRequests.length) await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({
-          documentId,requestBody:{requests:tabRequests,
-            ...(merged.revisionId ? {writeControl:{requiredRevisionId:merged.revisionId}} : {})}
-        }));
-        else
-          warn('A tervjegyzék léptéke nem igazítható a lap jobb széléhez, mert a '+
-            'dokumentumban nem található a tervjegyzék bekezdése. Ellenőrizd a '+
-            'tervjegyzéket a dokumentumban.');
-      } catch (error) {
-        if (error.status === 429) throw error;
-        warn('A tervjegyzék léptéke nem igazítható a lap jobb széléhez ('+
-          (error.message||String(error))+'). Ellenőrizd a tervjegyzéket a dokumentumban.');
-      }
-    }
     if (type === 'muszakiLeiras') await refreshTechnicalCoverImage(uid, documentId);
     const stamp = new Date().toISOString();
     const revision = String(source.revisionId || '').trim();

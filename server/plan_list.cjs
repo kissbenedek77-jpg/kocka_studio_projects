@@ -1,18 +1,21 @@
 'use strict';
 
-// A tervjegyzék léptéke a lap jobb szélén, jobbra igazítva jelenik meg. A
-// sablonban a {{TERVJEGYZEK}} helyére soronként „cím<TAB>lépték” kerül, a
-// jobbra igazított tabulátor-stopot pedig utólag, a névre szóló tartomány
-// (KOCKA_MERGE_TERVJEGYZEK) bekezdésein állítjuk be. A modul csak kéréseket
-// állít elő, a Google Docs hívásokat a hívó végzi.
+// A tervjegyzék kétdobozos, keret és cellakitöltés nélküli táblázat: a bal
+// oszlopban a tervlap címe, a jobb oszlopban a lépték, a lap jobb széléhez
+// igazítva. A modul csak kéréseket állít elő, a Google Docs hívásokat a hívó
+// végzi (beszúrás és cellakitöltés: server/room_table.cjs).
 
-const RANGE_NAME = 'KOCKA_MERGE_TERVJEGYZEK';
+const MARKER = '{{TERVJEGYZEK}}';
 const TAB = '\t';
-// A Google Docs hosszúság-egységei PT-ben (a tabulátor-stop PT-ben értendő).
+// A Google Docs hosszúság-egységei PT-ben.
 const PT_PER_UNIT = {PT:1,IN:72,CM:72/2.54,MM:72/25.4,PX:0.75};
-// A4 álló lap szövegtükre a szokásos 2,54 cm-es margókkal, ha a dokumentum
-// stílusa nem ad használható lapszélességet.
-const A4_TEXT_WIDTH_PT = 451.28;
+// A4 álló lap szövegtükre a szokásos 2,5 cm-es margókkal, ha a dokumentum
+// stílusa nem ad használható lapszélességet (595,28 − 2 × 70,85 PT).
+const A4_TEXT_WIDTH_PT = 453.57;
+// A lépték oszlopa csak a „M=1:200” típusú szöveget tartalmazza.
+const SCALE_COLUMN_PT = 120;
+const NO_BORDER = {width:{magnitude:0,unit:'PT'},dashStyle:'SOLID'};
+const NO_PADDING = {magnitude:0,unit:'PT'};
 
 function toPt(length) {
   if (!length) return null;
@@ -22,72 +25,75 @@ function toPt(length) {
   return factor ? magnitude * factor : null;
 }
 
-// A tabulátor-stop helye a bal margótól számít, ezért a jobb szél a
-// lapszélesség és a két margó különbsége, csökkentve a bekezdés jobb
-// behúzásával. Az érték a dokumentum stílusából jön, nem becsült érték.
-function rightEdge(documentStyle, paragraphStyle) {
+// A táblázat a szövegtükör teljes szélességét kitölti; a jobb szél a
+// lapszélesség és a két margó különbsége.
+function rightEdge(documentStyle) {
   const width = toPt(documentStyle?.pageSize?.width);
   const left = toPt(documentStyle?.marginLeft);
   const right = toPt(documentStyle?.marginRight);
-  const indentEnd = Math.max(0,toPt(paragraphStyle?.indentEnd) || 0);
   const textWidth = width != null && left != null && right != null ? width - left - right : null;
-  const usable = textWidth != null && textWidth > 0 ? textWidth : A4_TEXT_WIDTH_PT;
-  return Math.max(36,usable - indentEnd);
+  return Math.max(60,textWidth != null && textWidth > 60 ? textWidth : A4_TEXT_WIDTH_PT);
 }
 
-function paragraphText(item) {
-  return (item.paragraph?.elements || []).map(part => part.textRun?.content || '').join('');
+// A tervjegyzék értéke soronként „cím<TAB>lépték”; a lépték elmaradhat.
+function planRows(value) {
+  return String(value ?? '').split('\n').map(line => line.trim()).filter(Boolean)
+    .map(line => {
+      const [title,...rest] = line.split(TAB);
+      return [title.trim(),rest.join(' ').trim()];
+    }).filter(row => row[0]);
 }
 
-function bodyParagraphs(document) {
-  return (document?.body?.content || []).filter(item => item.paragraph).map(item => ({
-    startIndex:item.startIndex,
-    endIndex:item.endIndex,
-    text:paragraphText(item),
-    paragraphStyle:item.paragraph.paragraphStyle
-  }));
+function round(value) {
+  return Math.round(value * 100) / 100;
 }
 
-function namedRanges(document) {
-  const named = document?.namedRanges?.[RANGE_NAME];
-  return (named?.namedRanges || []).flatMap(item => item.ranges || []);
+// A beszúrt táblázat elrendezése: keskeny léptékoszlop a lap jobb szélén,
+// láthatatlan keret és nulla cellakitöltés.
+function layoutRequests(tableStartIndex, documentStyle) {
+  const width = rightEdge(documentStyle);
+  const scaleWidth = Math.min(SCALE_COLUMN_PT,Math.max(40,width / 3));
+  const titleWidth = Math.max(60,width - scaleWidth);
+  const column = (index,columnWidth) => ({updateTableColumnProperties:{
+    tableStartLocation:{index:tableStartIndex},
+    columnIndices:[index],
+    tableColumnProperties:{widthType:'FIXED_WIDTH',
+      width:{magnitude:round(columnWidth),unit:'PT'}},
+    fields:'widthType,width'
+  }});
+  return [
+    column(0,titleWidth),
+    column(1,scaleWidth),
+    {updateTableCellStyle:{tableStartLocation:{index:tableStartIndex},
+      tableCellStyle:{borderTop:NO_BORDER,borderBottom:NO_BORDER,borderLeft:NO_BORDER,
+        borderRight:NO_BORDER,paddingTop:NO_PADDING,paddingBottom:NO_PADDING,
+        paddingLeft:NO_PADDING,paddingRight:NO_PADDING,contentAlignment:'TOP'},
+      fields:'borderTop,borderBottom,borderLeft,borderRight,'+
+        'paddingTop,paddingBottom,paddingLeft,paddingRight,contentAlignment'}}
+  ];
 }
 
-// A névre szóló tartomány a bekezdésekbe esik; a több soros tervjegyzék
-// tartománya több bekezdést is átfoghat, ezért metszés alapján keresünk.
-function planParagraphs(document) {
-  const ranges = namedRanges(document);
-  if (!ranges.length) return [];
-  const paragraphs = bodyParagraphs(document);
-  const found = [];
-  for (const range of ranges) {
-    const start = Number(range.startIndex) || 0;
-    const end = Math.max(start,Number(range.endIndex) || start);
-    const hits = paragraphs.filter(item => item.endIndex > start && item.startIndex < end);
-    const containing = hits.length ? hits
-      : paragraphs.filter(item => start >= item.startIndex && start < item.endIndex);
-    for (const item of containing)
-      if (!found.some(existing => existing.startIndex === item.startIndex)) found.push(item);
-  }
-  return found.sort((a,b) => a.startIndex - b.startIndex);
-}
-
-// Csak azokra a bekezdésekre kell tabulátor-stop, amelyekben ténylegesen van
-// tabulátor; a lépték nélküli tervlap sora érintetlen marad.
-function tabStopRequests(document) {
-  const paragraphs = planParagraphs(document);
+// A lépték a cella jobb széléhez igazodik, ezért a második oszlop bekezdései
+// jobbra (END) igazítottak.
+function alignRequests(table) {
   const requests = [];
-  for (const item of paragraphs) {
-    if (!item.text.includes(TAB)) continue;
-    const offset = rightEdge(document?.documentStyle,item.paragraphStyle);
+  for (const row of table?.table?.tableRows || []) {
+    const cell = (row.tableCells || [])[1];
+    const content = cell?.content || [];
+    const first = content[0];
+    const last = content[content.length - 1];
+    if (!first?.startIndex) continue;
     requests.push({updateParagraphStyle:{
-      range:{startIndex:item.startIndex,endIndex:item.endIndex},
-      paragraphStyle:{tabStops:[{alignment:'END',
-        offset:{magnitude:Math.round(offset * 100) / 100,unit:'PT'}}]},
-      fields:'tabStops'
-    }});
+      range:{startIndex:first.startIndex,
+        endIndex:Math.max(first.startIndex + 1,(last?.endIndex || first.endIndex || 2) - 1)},
+      paragraphStyle:{alignment:'END'},fields:'alignment'}});
   }
   return requests;
 }
 
-module.exports = {RANGE_NAME,TAB,rightEdge,planParagraphs,tabStopRequests};
+// A beszúrt táblázat újrakeresése a friss dokumentumban a kezdő indexe alapján.
+function findTable(document, startIndex) {
+  return (document?.body?.content || []).find(item => item.table && item.startIndex === startIndex) || null;
+}
+
+module.exports = {MARKER,TAB,rightEdge,planRows,layoutRequests,alignRequests,findTable};

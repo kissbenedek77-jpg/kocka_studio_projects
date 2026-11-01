@@ -1,71 +1,70 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {RANGE_NAME,rightEdge,planParagraphs,tabStopRequests} = require('../server/plan_list.cjs');
+const {MARKER,rightEdge,planRows,layoutRequests,alignRequests,findTable} =
+  require('../server/plan_list.cjs');
 
-// A tervjegyzék a dokumentumban bekezdésekként jelenik meg; a jobbra igazított
-// tabulátor-stop a KOCKA_MERGE_TERVJEGYZEK névre szóló tartomány bekezdéseire
-// kerül, a lap jobb szélének megfelelő helyre.
-
-function paragraph(startIndex,content) {
-  return {startIndex,endIndex:startIndex+content.length,
-    paragraph:{elements:[{startIndex,textRun:{content}}]}};
-}
-
-function namedRangeEntry(startIndex,endIndex) {
-  return {name:RANGE_NAME,namedRanges:[{name:RANGE_NAME,ranges:[{startIndex,endIndex}]}]};
-}
+// A tervjegyzék keret és cellakitöltés nélküli, kétdobozos táblázat: a bal
+// cellában a tervlap címe, a jobb cellában a lépték a lap jobb széléhez
+// igazítva. A kérések a Google Docs API alakját követik.
 
 const A4_STYLE = {pageSize:{width:{magnitude:595.28,unit:'PT'}},
-  marginLeft:{magnitude:72,unit:'PT'},marginRight:{magnitude:72,unit:'PT'}};
+  marginLeft:{magnitude:70.85,unit:'PT'},marginRight:{magnitude:70.85,unit:'PT'}};
 
-test('A tervjegyzék bekezdése jobbra igazított tabulátor-stopot kap a lap szélén', () => {
-  const first = 'EK-01 Helyszínrajz\tM=1:200\n';
-  const second = 'EK-02 Metszet\tM=1:100\n';
-  const third = 'scan_0012\n';
-  const document = {
-    documentStyle:A4_STYLE,
-    body:{content:[paragraph(1,'Előzmények\n'),
-      paragraph(20,first),paragraph(20+first.length,second),
-      paragraph(20+first.length+second.length,third)]},
-    namedRanges:{[RANGE_NAME]:namedRangeEntry(20,
-      20+first.length+second.length+third.length)}
-  };
-  const found = planParagraphs(document);
-  assert.deepEqual(found.map(item => item.startIndex),
-    [20,20+first.length,20+first.length+second.length],
-    'A lépték nélküli tervlap sora is a tervjegyzékhez tartozik.');
-  const requests = tabStopRequests(document);
-  // A lépték nélküli sorban nincs tabulátor, ezért ott nincs mit igazítani.
+const para = (start,content) => ({startIndex:start,endIndex:start+content.length,
+  paragraph:{elements:[{startIndex:start,textRun:{content}}]}});
+const cell = (start,text = '') => ({content:[para(start,text)]});
+const tableItem = (start,rows) => ({startIndex:start,endIndex:start+1,
+  table:{tableRows:rows.map(row => ({tableCells:row.map(start2 => cell(start2))}))}});
+
+test('A tervjegyzék sorai címből és léptékből állnak, a lépték elmaradhat', () => {
+  const rows = planRows('EK-01 Helyszínrajz\tM=1:200\nscan_0012\nEK-02 Metszet\tM=1:100\n');
+  assert.deepEqual(rows,[['EK-01 Helyszínrajz','M=1:200'],['scan_0012',''],
+    ['EK-02 Metszet','M=1:100']]);
+  assert.deepEqual(planRows(''),[]);
+  assert.deepEqual(planRows(null),[]);
+});
+
+test('A táblázat a szövegtükör teljes szélességét kitölti, a lépték a jobb szélen', () => {
+  const width = rightEdge(A4_STYLE);
+  assert.ok(Math.abs(width-453.58) < 0.05,'A szövegtükör szélessége: '+width);
+  assert.equal(rightEdge(),rightEdge({}),'Stílus nélkül az A4-es alapérték érvényes.');
+  assert.ok(rightEdge() > 400);
+  const requests = layoutRequests(56,A4_STYLE);
+  const columns = requests.filter(request => request.updateTableColumnProperties)
+    .map(request => request.updateTableColumnProperties);
+  assert.deepEqual(columns.map(item => item.columnIndices[0]),[0,1]);
+  assert.equal(columns[0].tableStartLocation.index,56);
+  assert.equal(columns[0].tableColumnProperties.widthType,'FIXED_WIDTH');
+  assert.ok(Math.abs(columns[0].tableColumnProperties.width.magnitude+
+    columns[1].tableColumnProperties.width.magnitude-width) < 0.05,
+  'A két oszlop együtt a szövegtükör szélessége.');
+  assert.ok(columns[1].tableColumnProperties.width.magnitude <= 120,
+    'A lépték oszlopa keskeny.');
+  const style = requests.find(request => request.updateTableCellStyle).updateTableCellStyle;
+  assert.equal(style.tableStartLocation.index,56);
+  for (const border of ['borderTop','borderBottom','borderLeft','borderRight'])
+    assert.equal(style.tableCellStyle[border].width.magnitude,0,'A keret nem látható.');
+  for (const padding of ['paddingTop','paddingBottom','paddingLeft','paddingRight'])
+    assert.equal(style.tableCellStyle[padding].magnitude,0,'A cellakitöltés nulla.');
+  assert.equal(style.tableCellStyle.contentAlignment,'TOP');
+  assert.match(style.fields,/paddingTop/);
+});
+
+test('A lépték cellája jobbra igazított, a cím cellája érintetlen', () => {
+  const table = tableItem(300,[[310,340],[360,390]]);
+  const requests = alignRequests(table);
   assert.equal(requests.length,2);
-  const firstRequest = requests[0].updateParagraphStyle;
-  assert.equal(firstRequest.fields,'tabStops');
-  assert.equal(firstRequest.range.startIndex,20);
-  assert.equal(firstRequest.paragraphStyle.tabStops.length,1);
-  assert.equal(firstRequest.paragraphStyle.tabStops[0].alignment,'END');
-  assert.equal(firstRequest.paragraphStyle.tabStops[0].offset.unit,'PT');
-  assert.equal(firstRequest.paragraphStyle.tabStops[0].offset.magnitude,451.28,
-    'A tabulátor-stop a szövegtükör jobb szélén áll (595,28 − 72 − 72 PT).');
+  assert.equal(requests[0].updateParagraphStyle.paragraphStyle.alignment,'END');
+  assert.equal(requests[0].updateParagraphStyle.fields,'alignment');
+  assert.deepEqual(requests.map(request => request.updateParagraphStyle.range.startIndex),
+    [340,390]);
+  assert.deepEqual(alignRequests(null),[]);
 });
 
-test('A tabulátor-stop a dokumentum margóiból és a bekezdés behúzásából számol', () => {
-  const fromMargin = rightEdge({...A4_STYLE,marginLeft:{magnitude:56.7,unit:'PT'},
-    marginRight:{magnitude:56.7,unit:'PT'}});
-  assert.ok(Math.abs(fromMargin-481.88) < 0.01,'A margók levonása: '+fromMargin);
-  // Centiméterben megadott stílus ugyanazt az értéket adja.
-  const fromCm = rightEdge({pageSize:{width:{magnitude:21,unit:'CM'}},
-    marginLeft:{magnitude:2.54,unit:'CM'},marginRight:{magnitude:2.54,unit:'CM'}});
-  assert.ok(Math.abs(fromCm-451.28) < 0.01,'A cm-ben adott stílus PT-re váltva: '+fromCm);
-  assert.equal(rightEdge(A4_STYLE,{indentEnd:{magnitude:12,unit:'PT'}}),439.28);
-  // Használhatatlan stílus esetén az A4-es szövegtükör az alapérték.
-  assert.equal(rightEdge(),451.28);
-  assert.equal(rightEdge({pageSize:{width:{magnitude:0,unit:'PT'}},
-    marginLeft:{magnitude:0,unit:'PT'},marginRight:{magnitude:0,unit:'PT'}}),451.28);
-});
-
-test('Névre szóló tartomány nélkül nincs igazítási kérés', () => {
-  const document = {body:{content:[paragraph(1,'EK-01 Helyszínrajz\tM=1:200\n')]},
-    namedRanges:{}};
-  assert.deepEqual(planParagraphs(document),[]);
-  assert.deepEqual(tabStopRequests(document),[]);
+test('A beszúrt táblázat a kezdő indexe alapján újrakereshető', () => {
+  const first = tableItem(100,[[110,130]]);
+  const document = {body:{content:[para(1,'Bevezető\n'),first,tableItem(300,[[310,340]])]}};
+  assert.equal(findTable(document,300).startIndex,300);
+  assert.equal(findTable(document,999),null);
 });

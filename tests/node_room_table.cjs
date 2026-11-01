@@ -27,6 +27,22 @@ test('A helyiséglista jelölője megtalálható és táblázat kérése készü
   assert.deepEqual(requests[1].insertTable,{location:{index:22},rows:3,columns:2});
   assert.deepEqual(insertRequests(null,[['a','b']]),[]);
   assert.equal(findMarker({body:{content:[para(1,'más szöveg\n')]}}),null);
+  // A tervjegyzék egyetlen tervlapnál is táblázat, ezért ott egy sor is elég.
+  assert.deepEqual(insertRequests({startIndex:5,endIndex:20},[['EK-01','M=1:200']]),[],
+    'A helyiséglistánál az egy soros táblázat nem értelmes.');
+  const single = insertRequests({startIndex:5,endIndex:20},[['EK-01','M=1:200']],2,
+    {allowSingleRow:true});
+  assert.equal(single.length,2);
+  assert.equal(single.find(request => request.insertTable).insertTable.rows,1);
+});
+
+test('A fejléc nélküli táblázat első sora nem lesz félkövér', () => {
+  const rows = [['EK-01 Helyszínrajz','M=1:200']];
+  const filled = {startIndex:500,endIndex:501,table:{tableRows:[
+    {tableCells:[cell(510),cell(520)]}]}};
+  const requests = fillRequests(filled,rows,{header:false});
+  assert.equal(requests.filter(request => request.updateTextStyle).length,0);
+  assert.equal(requests.filter(request => request.insertText).length,2);
 });
 
 test('A beszúrt üres táblázat azonosítható és a cellák feltöltése helyes', () => {

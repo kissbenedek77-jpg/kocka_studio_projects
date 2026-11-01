@@ -10,19 +10,24 @@ function paragraphText(item) {
   return (item.paragraph?.elements || []).map(part => part.textRun?.content || '').join('');
 }
 
-function findMarker(document) {
+function findMarker(document, marker = MARKER) {
   for (const item of document?.body?.content || []) {
     if (!item.paragraph) continue;
-    if (paragraphText(item).trim() !== MARKER) continue;
-    const startIndex = item.startIndex + paragraphText(item).indexOf(MARKER);
-    return {startIndex, endIndex:startIndex + MARKER.length};
+    if (!paragraphText(item).includes(marker)) continue;
+    const base = Number.isInteger(item.startIndex) ? item.startIndex
+      : item.paragraph.elements?.[0]?.startIndex;
+    if (!Number.isInteger(base)) continue;
+    const startIndex = base + paragraphText(item).indexOf(marker);
+    return {startIndex, endIndex:startIndex + marker.length};
   }
   return null;
 }
 
 // 1. fázis: a jelölő szövegének törlése és a táblázat beszúrása a helyére.
-function insertRequests(marker, rows, columns = 2) {
-  if (!marker || !Array.isArray(rows) || rows.length < 2) return [];
+// A tervjegyzék egyetlen tervlapnál is táblázat, ezért ott az egy soros
+// táblázat is megengedett.
+function insertRequests(marker, rows, columns = 2, {allowSingleRow = false} = {}) {
+  if (!marker || !Array.isArray(rows) || rows.length < (allowSingleRow ? 1 : 2)) return [];
   return [
     {deleteContentRange:{range:{startIndex:marker.startIndex,endIndex:marker.endIndex}}},
     {insertTable:{location:{index:marker.startIndex},rows:rows.length,columns}}
@@ -43,8 +48,9 @@ function findEmptyTable(document, rows, columns = 2) {
   return null;
 }
 
-// 3. fázis: a cellák feltöltése és a fejléc félkövérré tétele.
-function fillRequests(table, rows) {
+// 3. fázis: a cellák feltöltése és a fejléc félkövérré tétele. A fejléc nélküli
+// táblázatnál (például a tervjegyzék) a félkövér kiemelés elmarad.
+function fillRequests(table, rows, {header = true} = {}) {
   const values = [];
   const narrow = [];
   (table.table.tableRows || []).forEach((row, rowIndex) => {
@@ -56,7 +62,7 @@ function fillRequests(table, rows) {
       const end = content[content.length - 1]?.endIndex;
       if (start === undefined) return;
       values.push({start, end:(end ?? start + 1) - 1, text});
-      if (rowIndex === 0) narrow.push({start, end:start + text.length});
+      if (header && rowIndex === 0) narrow.push({start, end:start + text.length});
     });
   });
   const requests = values.sort((a, b) => b.start - a.start).map(edit => {

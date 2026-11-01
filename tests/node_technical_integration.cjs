@@ -58,17 +58,15 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
       .map((text,index)=>({startIndex:20+index*20,paragraph:{elements:[
         {startIndex:20+index*20,textRun:{content:text+'\n'}}]}})),
     dataTable(200),
-    // A tervjegyzék a névre szóló tartományba kerül; a lépték a lap jobb szélén
-    // jelenik meg, tabulátorral elválasztva.
-    {startIndex:300,endIndex:327,paragraph:{elements:[{startIndex:300,
-      textRun:{content:'EK-01 Helyszínrajz\tM=1:200\n'}}]}}]};
-  const namedRanges={KOCKA_MERGE_TERVJEGYZEK:{name:'KOCKA_MERGE_TERVJEGYZEK',
-    namedRanges:[{name:'KOCKA_MERGE_TERVJEGYZEK',ranges:[{startIndex:300,endIndex:327}]}]}};
+    // A tervjegyzék jelölője: a helyére keret és cellakitöltés nélküli
+    // táblázat kerül, a lépték a lap jobb szélén.
+    {startIndex:300,endIndex:315,paragraph:{elements:[{startIndex:300,
+      textRun:{content:'{{TERVJEGYZEK}}\n'}}]}}]};
   const documentStyle={pageSize:{width:{magnitude:595.28,unit:'PT'}},
-    marginLeft:{magnitude:72,unit:'PT'},marginRight:{magnitude:72,unit:'PT'}};
+    marginLeft:{magnitude:70.85,unit:'PT'},marginRight:{magnitude:70.85,unit:'PT'}};
   const docWrites=[];
-  google.docs=()=>({documents:{get:async()=>({data:{revisionId:'r1',body,namedRanges,
-    documentStyle}}),
+  google.docs=()=>({documents:{get:async()=>({data:{revisionId:'r1',body,
+    namedRanges:{},documentStyle}}),
     batchUpdate:async options=>{docWrites.push(options);docWrite=options;return {data:{}};}}});
   try{
     const client=googleClient({clientId:'test',clientSecret:'test',baseUrl:'https://node.example',
@@ -94,12 +92,19 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
     assert.equal(deleted[1].deleteTableRow.tableCellLocation.rowIndex,1);
     assert.equal(texts.some(text=>/\{\{[^{}]+\}\}/.test(String(text))),false,
       'A kész példányban nem maradhat nyers {{...}} jelölő.');
-    const tabStops=shaping.filter(request=>request.updateParagraphStyle?.fields==='tabStops');
-    assert.equal(tabStops.length,1,'A tervjegyzék bekezdése tabulátor-stopot kap.');
-    assert.equal(tabStops[0].updateParagraphStyle.range.startIndex,300);
-    assert.equal(tabStops[0].updateParagraphStyle.paragraphStyle.tabStops[0].alignment,'END');
-    assert.equal(tabStops[0].updateParagraphStyle.paragraphStyle.tabStops[0].offset.magnitude,
-      451.28,'A stop a szövegtükör jobb szélén áll (595,28 − 72 − 72 PT).');
+    // A tervjegyzék táblázatként jelenik meg, keret és cellakitöltés nélkül.
+    const inserted=shaping.filter(request=>request.insertTable)
+      .find(request=>request.insertTable.location.index===300)?.insertTable;
+    assert.deepEqual(inserted,{location:{index:300},rows:1,columns:2});
+    const columns=shaping.filter(request=>request.updateTableColumnProperties)
+      .map(request=>request.updateTableColumnProperties);
+    assert.equal(columns.length,2,'Két oszlop szélessége állítódik.');
+    assert.equal(columns[0].tableColumnProperties.widthType,'FIXED_WIDTH');
+    const cellStyle=shaping.find(request=>request.updateTableCellStyle)?.updateTableCellStyle;
+    assert.equal(cellStyle.tableCellStyle.borderTop.width.magnitude,0);
+    assert.equal(cellStyle.tableCellStyle.paddingLeft.magnitude,0);
+    assert.equal(texts.some(text=>String(text).includes('Helyszínrajz')),false,
+      'A tervjegyzék nem szövegként kerül a dokumentumba, hanem táblázatként.');
     assert.deepEqual(appended.requestBody.values[0].slice(0,4),
       ['ABC123','muszakiLeiras','generated-technical-doc','DRAFT']);
   }finally{[google.sheets,google.drive,google.docs]=originals;}

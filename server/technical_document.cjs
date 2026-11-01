@@ -2,7 +2,7 @@
 
 const {documentValues} = require('./doc_merge.cjs');
 const {ADDRESSES, SHEET_PREFIX, technicalSheetValues, technicalProgramLines} = require('./technical_sheet.cjs');
-const {programReplacements,exitCount} = require('./technical_program.cjs');
+const {programReplacements,exitCount,PROGRAM_LETTERS} = require('./technical_program.cjs');
 const {renderTemplate} = require('./technical_texts.cjs');
 const {planScale, extractPdfScale} = require('./plans.cjs');
 
@@ -56,7 +56,13 @@ const MANUAL_FIELDS = [
   ['KONCEPCIO:homlokzat','Homlokzati megjelenés, jellemző anyagok és színek'],
   ['KONCEPCIO:funkcio','Helyiségek kapcsolata és használati rend'],
   ['SZAKAG:egyeztetes','Szakági munkarészek és felelős tervezők egyeztetése'],
-  ['TERV_HIVATKOZAS','A leíráshoz tartozó helyszínrajz, alaprajz, metszet és homlokzat tervlapjele']
+  ['TERV_HIVATKOZAS','A leíráshoz tartozó helyszínrajz, alaprajz, metszet és homlokzat tervlapjele'],
+  // A tervezési program a)–p) pontjának végleges (kiértékelt) szövege. A
+  // alapértéket a sablon dokumentum adja; a generálás ide menti a kész szöveget,
+  // és a felületen módosított változat kerül a műszaki leírásba.
+  ...['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p']
+    .map(letter => [`TERVEZESI_PROGRAM:${letter}`,
+      `Tervezési program ${letter}) pontjának végleges szövege`])
 ];
 const FIELD_KEYS = new Set(MANUAL_FIELDS.map(([key]) => key));
 // A felületen a hosszú fejezetszövegek alapértéke a sablon dokumentumból jön.
@@ -249,7 +255,7 @@ function rendeltetesiKategoria(roomData) {
 }
 
 function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfFiles = [],
-  writtenFiles = [], roomData = null, plans = [], textTemplates = {}, extraValues = {},
+  writtenFiles = [], roomData = null, plans = [], sectionTexts = {}, extraValues = {},
   templateMarkers = [], now = new Date()}, warnings = []) {
   const warn = message => {
     const text = String(message || '').trim().slice(0,500);
@@ -319,7 +325,8 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     warn('A kijáratok számát a földszinti bejárati/előtér helyiségek alapján becsültük ('+
       exits+' db); ellenőrizd az alaprajzokon.');
   const context = {...values,...sheet};
-  for (const [key,text] of Object.entries(textTemplates || {})) {
+  for (const [key,text] of Object.entries(sectionTexts || {})) {
+    if (key.startsWith('TERVEZESI_PROGRAM:')) continue;
     if (String(values[key] || '').trim()) continue;
     values[key] = renderTemplate(text,context);
   }
@@ -342,10 +349,23 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
   // hálószobák, helyiségcsoportok, iroda és parkoló.
   const programData = programReplacements({project,sheetValues:sheet,roomData,plans});
   for (const warning of programData.warnings) warn(warning);
-  const program = technicalProgramLines(programRows, {...values,...programData.values});
+  // A sablonban a helyükön álló program-szövegek {{...}} jelölőit a projekt
+  // adatai töltik ki, ezért ezek az értékek a dokumentum helyettesítéseihez is
+  // kellenek – nem csak a program soraihoz.
+  for (const [key,value] of Object.entries(programData.values))
+    if (!String(values[key] ?? '').trim()) values[key] = value;
+  const programDefaults = {};
+  for (const letter of PROGRAM_LETTERS) {
+    const text = sectionTexts[`TERVEZESI_PROGRAM:${letter}`];
+    if (String(text || '').trim()) programDefaults[letter] = text;
+  }
+  const program = technicalProgramLines(programRows, values, programDefaults);
   program.forEach((lines,index) => {
     const letter = String.fromCharCode(97+index);
-    values[`TERVEZESI_PROGRAM:${letter}`] = lines.join('\n').replace(new RegExp(`^${letter}\\)\\s*`),'');
+    const key = `TERVEZESI_PROGRAM:${letter}`;
+    // A felületen mentett (végleges) szöveg mindig elsőbbséget élvez.
+    if (String(manual[key] || '').trim()) return;
+    values[key] = lines.join('\n').replace(new RegExp(`^${letter}\\)\\s*`),'');
   });
   // A tervjegyzék minden feltöltött tervlapot tartalmaz. A lépték a sor végén,
   // jobbra igazítva jelenik meg: a cím és a lépték között tabulátor áll, a
@@ -396,10 +416,10 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     if (String(values[key] ?? '').trim()) continue;
     values[key] = marker.inTable || DATA_MARKER.test(key) ? '' : gapText(key);
   }
-for (const key of optionalKeys) if (!(key in values)) values[key] = '';
+  for (const key of optionalKeys) if (!(key in values)) values[key] = '';
   // Ha nincs telek adata, oszlopok alapértéke marad üressé (semmilyen törlés nem történik)
   for (const key of CHAPTER_KEYS) if (!String(values[key] || '').trim())
-    values[key] = '[KIEGÉSZÍTENDŐ: '+key+' – a sablon dokumentum appendixében vagy a '+
+    values[key] = '[KIEGÉSZÍTENDŐ: '+key+' – a sablon dokumentumban vagy a '+
       'műszaki adatlapon add meg a szöveget.]';
   return Object.fromEntries(Object.entries(values).filter(([key,value]) =>
     keep.has(key) || String(value ?? '').trim()));

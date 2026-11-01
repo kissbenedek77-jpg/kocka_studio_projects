@@ -11,6 +11,7 @@
     main{max-width:1060px;margin:auto;padding:1.1rem;min-width:0}a{color:#146081;overflow-wrap:anywhere}header a{color:white}header strong{overflow-wrap:anywhere}
     .links{display:flex;gap:1rem;flex-wrap:wrap;margin:.8rem 0 1.4rem}.notice{background:#e9f3f3;border-left:4px solid #287b82;padding:1rem;margin-bottom:1rem}
     .error{background:#fff0ed;border-left-color:#bb4b41}.success{background:#e8f4e9;border-left-color:#43844c}
+    .warning{background:#fff7e6;border-left-color:#a9782a}
     section{background:white;border:1px solid #d8e1e4;border-radius:12px;padding:1.2rem;margin:1rem 0}
     h2{font-size:1.12rem;margin:.1rem 0 1rem}h3{font-size:1rem;margin:0 0 .4rem}
     .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
@@ -71,6 +72,7 @@
       if(key.startsWith('SZERKEZET:'))return 'Épületszerkezetek';
       if(key.startsWith('GEPESZET:')||key.startsWith('VILLAMOS:')||key.startsWith('KORNYEZET:'))return 'Szakági adatok';
       if(key.includes('NYILATKOZAT')||key.includes('RETEGRENDEK'))return 'Jóváhagyott szövegek';
+      if(key.startsWith('TERVEZESI_PROGRAM:'))return 'Tervezési program és fejezetszövegek';
       return 'Projekt és helyiségek'}
     async function load(){if(!/^[A-Za-z0-9-]{4,64}$/.test(uid)){message('Érvénytelen projektazonosító.','error');return}
       message('Adatok betöltése…');try{const data=await rpc('dashboardGetTechnicalFields',uid);
@@ -78,7 +80,8 @@
         const groups=new Map(),root=document.getElementById('groups');root.replaceChildren();
         const order=['Dokumentum','Projekt és helyiségek','Helyszín és előzmények',
           'Építészeti koncepció','Övezeti előírások','Területek és lakásszám','Építményérték',
-          'Épületszerkezetek','Szakági adatok','Tervlapok és szakági egyeztetés','Jóváhagyott szövegek'];
+          'Épületszerkezetek','Szakági adatok','Tervlapok és szakági egyeztetés','Jóváhagyott szövegek',
+          'Tervezési program és fejezetszövegek'];
         data.fields.slice().sort((a,b)=>order.indexOf(groupFor(a.key))-order.indexOf(groupFor(b.key)))
           .forEach(field=>{const name=groupFor(field.key);let grid=groups.get(name);
           if(!grid){const section=document.createElement('section'),title=document.createElement('h2');
@@ -89,7 +92,8 @@
             input=document.createElement('input');input.type='date';
           }else{
             input=document.createElement('textarea');
-            input.rows=field.key.includes('LEIRAS')||field.key.includes('NYILATKOZAT')||field.key==='HELYISEGLISTA'?7:3;
+            input.rows=field.key.includes('LEIRAS')||field.key.includes('NYILATKOZAT')||
+              field.key==='HELYISEGLISTA'?7:field.key.startsWith('TERVEZESI_PROGRAM:')?6:3;
           }
           input.id='field-'+data.fields.indexOf(field);input.dataset.key=field.key;input.value=field.value;
           label.htmlFor=input.id;label.textContent=field.help;
@@ -173,8 +177,8 @@
     });
     form.addEventListener('submit',async event=>{event.preventDefault();const button=document.getElementById('save');
       const values={};form.querySelectorAll('[data-key]').forEach(input=>{values[input.dataset.key]=input.value});
-      button.disabled=true;message('Mentés…');try{await rpc('dashboardSaveTechnicalFields',uid,values);
-        message('A műszaki adatok mentve. Frissítsd a DRAFT dokumentumot a dashboardon.','success')
+      button.disabled=true;message('Mentés…');try{const result=await rpc('dashboardSaveTechnicalFields',uid,values);
+        message(result.syncMessage||'A műszaki adatok mentve.',result.synced?'success':'warning')
       }catch(error){message(error.message||String(error),'error')}finally{button.disabled=false}});
     load();
   </script>
