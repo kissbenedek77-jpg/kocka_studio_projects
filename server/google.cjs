@@ -1355,6 +1355,79 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       project:await dashboardProject(uid)};
   }
 
+  // A DRAFT dokumentumok újrainicializálása: a meglévő piszkozatok a kukába
+  // kerülnek, az indexsoraik törlődnek, majd a friss sablonokból ugyanazok a
+  // fájlok újra létrejönnek – mintha most indult volna a projekt. A projekt
+  // adatai (tervezési adatlap, helyiséglista, műszaki mezők) nem változnak.
+  async function reinitializeDraftDocuments(uid,confirmation) {
+    const initial = await project(uid);
+    const normalized = initial.data.uid;
+    if (confirmation !== 'reinit:'+normalized)
+      throw new Error('A fájlok újrainicializálásának megerősítése hiányzik.');
+    const state = await dashboardProject(normalized);
+    if (state.stage === 'closed')
+      throw new Error('A lezárt projekt dokumentumai nem inicializálhatók újra.');
+    if (!state.folderUrl)
+      throw new Error('A fájlok újrainicializálásához előbb hozd létre a projektmappát.');
+    const records = await documentRecords(normalized);
+    const finalTypes = new Set(records.filter(item => item.status === 'FINAL').map(item => item.type));
+    const drafts = records.filter(item => item.status !== 'FINAL' &&
+      Object.prototype.hasOwnProperty.call(DOCUMENT_TEMPLATES,item.type));
+    const trashed = [];
+    const warnings = [];
+    for (const item of drafts) {
+      try {
+        await googleQuota.run('drive',100,() => drive.files.update({fileId:item.id,
+          requestBody:{trashed:true},fields:'id',supportsAllDrives:true}));
+        googleCache.clear(`file:${item.id}`);
+        trashed.push(item);
+      } catch (error) {
+        if (error.status === 429) throw error;
+        warnings.push('A korábbi „'+DOCUMENT_TEMPLATES[item.type].title+
+          '” piszkozatot nem sikerült a kukába tenni ('+(error.message||String(error))+
+          '); helyette a meglévő példány frissül.');
+      }
+    }
+    if (trashed.length) await deleteDocumentIndexRows(trashed.map(item => item.rowNumber));
+    const types = [...new Set(trashed.map(item => item.type))];
+    if (state.stage === 'started') {
+      // Indításkor ezek a DRAFT fájlok jönnek létre a projektmappában.
+      for (const type of ['meghatalmazas','alairolap','muszakiLeiras'])
+        if (!types.includes(type)) types.push(type);
+    }
+    const targets = types.filter(type => !finalTypes.has(type));
+    if (!targets.length) throw new Error('Nincs újrainicializálható DRAFT dokumentum.');
+    for (const type of targets) {
+      const document = await ensureDocument(normalized,type);
+      for (const warning of document.warnings || [])
+        if (!warnings.includes(warning)) warnings.push(warning);
+    }
+    return {message:targets.length+' DRAFT dokumentum újra létrehozva a friss sablonokból.'+
+      (trashed.length ? ' A korábbi piszkozatok a kukába kerültek.' : ''),
+      warnings,project:await dashboardProject(normalized)};
+  }
+
+  // A dokumentumindex sorainak törlése alulról felfelé, hogy a sorok eltolódása
+  // ne érintse a még törlendő tartományokat.
+  async function deleteDocumentIndexRows(rowNumbers) {
+    const rows = [...new Set(rowNumbers)].filter(Number.isFinite).sort((a,b) => b-a);
+    if (!rows.length) return;
+    const metadata = await sheetRead(() => sheets.spreadsheets.get({spreadsheetId:book,
+      fields:'sheets(properties(sheetId,title))'}));
+    const sheetId = (metadata.data.sheets || []).find(item =>
+      item.properties?.title === '_DokumentumIndex')?.properties?.sheetId;
+    if (sheetId == null) return;
+    const ranges = [];
+    for (const rowNumber of rows) {
+      const last = ranges[ranges.length-1];
+      if (last && rowNumber === last.start-1) last.start = rowNumber;
+      else ranges.push({start:rowNumber,end:rowNumber});
+    }
+    await sheetWrite(() => sheets.spreadsheets.batchUpdate({spreadsheetId:book,
+      requestBody:{requests:ranges.map(range => ({deleteDimension:{range:{sheetId,
+        dimension:'ROWS',startIndex:range.start-1,endIndex:range.end}}}))}}));
+  }
+
   async function documentRecords(uid) {
     const rows = await values("'_DokumentumIndex'!A2:E");
     return rows.map((row,index) => ({uid:String(row[0] || '').trim().toUpperCase(),
@@ -2361,7 +2434,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     listClientSubmissions, markClientSubmissionRead,
     saveMemo, saveExpectedFiles, pdfaExpectedFiles, answerCheck, saveOffer, setStartDate, ensureDocument,
     uploadAudio, summarizeAudio, draftTechnicalText, generateTechnicalDocument, technicalChat,
-    syncProject, startProject, closeProject,
+    syncProject, reinitializeDraftDocuments, startProject, closeProject,
     archiveProject,deleteProject,prepareEmail,
     restartProject, getTechnicalFields, saveTechnicalFields, setPhase,auditProjectPdfs};
 }

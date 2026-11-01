@@ -340,6 +340,8 @@ async function rpc(name, args, session) {
   if (name === 'dashboardUploadAudio') return google.uploadAudio(uid, args[1], args[2], args[3]);
   if (name === 'dashboardSummarizeAudio') return google.summarizeAudio(uid, args[1]);
   if (name === 'dashboardPerform' && args[1] === 'sync') return google.syncProject(uid);
+  if (name === 'dashboardPerform' && args[1] === 'reinit')
+    return google.reinitializeDraftDocuments(uid,args[2]);
   if (name === 'dashboardPerform' && args[1] === 'start')
     return google.startProject(uid,args[2],args[3]);
   if (name === 'dashboardPerform' && args[1] === 'close')
