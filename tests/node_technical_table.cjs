@@ -1,15 +1,15 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {hasExistingData,hasFloorAreaRatio,findDataTable,technicalTableRequests} =
+const {hasExistingData,hasFloorAreaRatio,findDataTable,cellHasData,technicalTableRequests} =
   require('../server/technical_table.cjs');
 
 const key = cell => `TERVEZESI_ADATOK:Munkalap1!${cell}`;
 const cell = (text,startIndex) => ({content:[{paragraph:{
   elements:[{startIndex,textRun:{content:text}}]}}]});
 
-// A sablon 8 soros „Tervezési adatok” táblázata, benne a törölhető oszloppal
-// és a feltételes szintterületi sorral.
+// A sablon „Tervezési adatok” táblázata: fejléc, szintterületi mutató,
+// építménymagasság és telekterület sor, benne a törölhető „Meglévő” oszloppal.
 function documentWithTable() {
   const row = (index,cells) => ({tableCells:cells.map((text,column) =>
     cell(text,1000+index*400+column*80))});
@@ -30,13 +30,16 @@ test('A tervezési adatok táblázata a fejlécéről azonosítható', () => {
   assert.equal(findDataTable({body:{content:[]}}),null);
 });
 
-test('Üres meglévő adatnál a teljes oszlop, B7 nélkül a szintterületi sor törlődik', () => {
+test('Üres adatnál a teljes oszlop és minden adat nélküli sor törlődik', () => {
   const requests = technicalTableRequests(documentWithTable(),{});
-  assert.equal(requests.length,2);
+  assert.equal(requests.length,3);
+  // Először az oszlop, majd a sorok alulról felfelé.
   assert.deepEqual(requests[0],{deleteTableColumn:{tableCellLocation:{
     tableStartLocation:{index:200},rowIndex:0,columnIndex:2}}});
-  assert.deepEqual(requests[1],{deleteTableRow:{tableCellLocation:{
-    tableStartLocation:{index:200},rowIndex:1,columnIndex:0}}});
+  assert.deepEqual(requests.slice(1),[
+    {deleteTableRow:{tableCellLocation:{tableStartLocation:{index:200},rowIndex:2,columnIndex:0}}},
+    {deleteTableRow:{tableCellLocation:{tableStartLocation:{index:200},rowIndex:1,columnIndex:0}}}
+  ]);
 });
 
 test('Meglévő épület adata és B7 követelmény esetén a táblázat érintetlen', () => {
@@ -46,13 +49,27 @@ test('Meglévő épület adata és B7 követelmény esetén a táblázat érinte
   }),[]);
 });
 
-test('Az oszlop csak akkor marad, ha minden meglévő adat üres', () => {
+test('A meglévő oszlop csak akkor marad, ha van meglévő épületadat', () => {
   assert.equal(hasExistingData({[key('E8')]:'2'}),true);
   assert.equal(hasExistingData({[key('E6')]:'  '}),false);
+  // A telek területe nem számít meglévő épületadatnak.
+  assert.equal(hasExistingData({[key('E2')]:'1000'}),false);
   assert.equal(hasFloorAreaRatio({[key('B7')]:'0,9'}),true);
   assert.equal(hasFloorAreaRatio({[key('B7')]:''}),false);
   const requests = technicalTableRequests(documentWithTable(),{[key('F8')]:'3'});
-  assert.equal(requests.length,2,'A tervezett érték nem pótolja a meglévő oszlopot.');
+  assert.equal(requests.length,3,
+    'A tervezett érték nem pótolja a meglévő oszlopot, és a két adat nélküli sor törlődik.');
+});
+
+test('A csak tervezett értéket tartalmazó sor megmarad', () => {
+  const requests = technicalTableRequests(documentWithTable(),{
+    [key('F6')]:'5,5',[key('B7')]:'0,9'
+  });
+  assert.deepEqual(requests,[{deleteTableColumn:{tableCellLocation:{
+    tableStartLocation:{index:200},rowIndex:0,columnIndex:2}}}]);
+  assert.equal(cellHasData(`{{${key('F6')}}}`,{[key('F6')]:'5,5'}),true);
+  assert.equal(cellHasData(`{{${key('E6')}}}`,{[key('E6')]:''}),false);
+  assert.equal(cellHasData('max. 6 m',{}),true);
 });
 
 test('A már igazított táblázaton a művelet ismételve sem módosít', () => {

@@ -72,12 +72,16 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
     assert.ok(texts.includes('Lakóépület bővítése'));
     assert.ok(texts.some(text=>text.includes('nappali\t30,00 m²')));
     const shaping=docWrites.flatMap(write=>write.requestBody.requests||[]);
-    // A friss sablon már tartalmazza a helyszín- és koncepciófejezetek helyét, a
-    // táblázat szerkezetét pedig nem igazítjuk: hiányzó adatnál üres cella marad.
+    // A friss sablon már tartalmazza a helyszín- és koncepciófejezetek helyét,
+    // a táblázatból viszont a használatlan „Meglévő” oszlop és az adat nélküli
+    // szintterületi sor törlődik.
     assert.equal(shaping.some(request=>request.insertText),false,
       'A friss sablonhoz nem kell kiegészítő szöveget beszúrni.');
-    assert.equal(shaping.some(request=>request.deleteTableColumn||request.deleteTableRow),false,
-      'A táblázat sorai és oszlopai a sablon szerint maradnak.');
+    const deleted=shaping.filter(request=>request.deleteTableColumn||request.deleteTableRow);
+    assert.deepEqual(deleted.map(request=>Object.keys(request)[0]),
+      ['deleteTableColumn','deleteTableRow']);
+    assert.equal(deleted[0].deleteTableColumn.tableCellLocation.columnIndex,2);
+    assert.equal(deleted[1].deleteTableRow.tableCellLocation.rowIndex,1);
     assert.equal(texts.some(text=>/\{\{[^{}]+\}\}/.test(String(text))),false,
       'A kész példányban nem maradhat nyers {{...}} jelölő.');
     assert.deepEqual(appended.requestBody.values[0].slice(0,4),

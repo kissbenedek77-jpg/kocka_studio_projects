@@ -16,6 +16,7 @@ const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs')
 const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
 const {textTemplates,appendixRequests} = require('./technical_texts.cjs');
 const {findMarker,insertRequests,findEmptyTable,fillRequests} = require('./room_table.cjs');
+const {technicalTableRequests} = require('./technical_table.cjs');
 const {retegrendFacts,retegrendValues} = require('./retegrend.cjs');
 const {pdfToText} = require('./pdf_text.cjs');
 const {floorCount,bedroomCount,hasOffice} = require('./technical_program.cjs');
@@ -1272,10 +1273,31 @@ function googleClient(config, refreshToken = '', authOverride = null) {
           (error.message||String(error))+'). A dokumentum végén ellenőrizd a függeléket.');
       }
     }
+    // A beépítési paraméterek táblázatából a sablonhoz kötött, adat nélküli
+    // sorok és a használatlan „Meglévő” oszlop törlődnek. A törlés a szöveges
+    // helyettesítés előtt fut, hogy az érintett jelölők ne maradjanak a kész
+    // példányban.
+    if (type === 'muszakiLeiras') {
+      try {
+        const tableRequests = technicalTableRequests(document,mergeValues);
+        if (tableRequests.length) {
+          await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+            requestBody:{requests:tableRequests,
+              ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+          document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+            documentId,includeTabsContent:false
+          }))).data;
+        }
+      } catch (error) {
+        if (error.status === 429) throw error;
+        warn('A tervezési adatok táblázatának üres sorai és a használatlan „Meglévő” '+
+          'oszlop nem törölhetők ('+(error.message||String(error))+'). Ellenőrizd a '+
+          'táblázatot a dokumentumban.');
+      }
+    }
     // A friss sablon már tartalmazza a helyszín- és koncepciófejezetek helyét,
     // ezért a régi sablonhoz készült kiegészítő beszúrás nem kell. A táblázat
-    // szerkezetét is a sablon adja: hiányzó adatnál üres cella marad, a sor nem
-    // törlődik és nem kerül bele {{...}} jelölő.
+    // sorait és oszlopait fentebb már a tényleges adatokhoz igazítottuk.
     const conditional = conditionalRequests(source,document,mergeValues);
     if (conditional.length) {
       await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({

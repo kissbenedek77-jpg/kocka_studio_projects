@@ -7,6 +7,18 @@ const {renderTemplate} = require('./technical_texts.cjs');
 const {planScale, extractPdfScale} = require('./plans.cjs');
 
 const FIELD_SHEET = 'Műszaki leírás';
+// 245/2006. (XII. 5.) Korm. rendelet 1. melléklet – Egységárak építménytípusonként.
+// A lakóépület az 1. sor. Ha a helyiséglistában van pinceszinti (-1) szint, akkor
+// az 5. sor – a terepszint alatti építményrész – is bekerül, az adott szint
+// helyiségeinek területével. Más sor nem kerül a leírásba.
+const EPITMENYERTEK_ROWS = {
+  1: {number:'1.',label:'Lakó, üdülő, kulturális, nevelési, oktatási, hitéleti, '+
+    'egészségügyi, szociális, igazgatási rendeltetésre szolgáló épület, épületrész',
+  unit:'nettó alapterület / m²',price:'600'},
+  5: {number:'5.',label:'Pince, mélygarázs, egyéb terepszint alatti építmény, épületrész',
+    unit:'nettó alapterület / m²',price:'400'}
+};
+const BASEMENT_FLOOR = /^(?:-1(?:\.|\s|$)|pince)/i;
 const MANUAL_FIELDS = [
   ['TERV_TARGYA','A terv pontos tárgya és eljárása'],
   ['EPITES_JELLEGE','Az építés jellege'],
@@ -198,6 +210,44 @@ function technicalReview(sheet, manual) {
   return {issues:checks,comparison:comparison.join('\n')};
 }
 
+// A terv tárgya a projekt adatlapján megadott építésjellegből származik. Új
+// építésnél „új lakóépület építése”, bővítésnél/átépítésnél a meglévő lakóépület
+// bővítése/átépítése szerepel. Kézzel megadott érték mindig elsőbbséget élvez.
+function tervTargya(project = {}) {
+  const type = String(project.projektTipus || '').trim();
+  if (/^új\s+építés$/i.test(type)) return 'új lakóépület építése';
+  if (/^(?:bővítés|átépítés)$/i.test(type))
+    return 'meglévő lakóépület bővítése/átépítése';
+  return '';
+}
+
+function isBasementFloor(floor) {
+  return BASEMENT_FLOOR.test(String(floor || '').trim());
+}
+
+// A pinceszinti helyiségek területe centben, vagy null, ha nincs ilyen szint.
+function basementArea(roomData) {
+  const rooms = (roomData?.rooms || []).filter(room => isBasementFloor(room.floor));
+  if (!rooms.length) return null;
+  return rooms.reduce((sum,room) => sum + (Number(room.area) || 0),0);
+}
+
+function epitmenyErtekRowText(row) {
+  return row.number+' '+row.label+' – '+row.unit+' – '+row.price+' E Ft/m²';
+}
+
+// A rendeltetési kategória a jogszabály 1. mellékletéből: csak a lakóépület
+// (1. sor) adatai, pinceszint esetén kiegészítve az 5. sorral és a pinceszinti
+// helyiségek területével.
+function rendeltetesiKategoria(roomData) {
+  const lines = [epitmenyErtekRowText(EPITMENYERTEK_ROWS[1])];
+  const area = basementArea(roomData);
+  if (area !== null && area > 0)
+    lines.push(epitmenyErtekRowText(EPITMENYERTEK_ROWS[5])+' – pinceszint: '+
+      (area/100).toFixed(2).replace('.',',')+' m²');
+  return lines.join('\n');
+}
+
 function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfFiles = [],
   writtenFiles = [], roomData = null, plans = [], textTemplates = {}, extraValues = {},
   templateMarkers = [], now = new Date()}, warnings = []) {
@@ -214,13 +264,15 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
       !validIsoDate(date))
     delete manual['OVEZET:ellenorzes_allapota'];
   const values = {...documentValues(project),...manual};
-  // EPITMENYERTEK:rendeltetesi_kategoria a jogszabályból, csak az első sor
-  const categoryFromSheet = sheet?.['TERVEZESI_ADATOK:Munkalap1!B2'] || 
-      sheet?.['TERVEZESI_ADATOK:Munkalap1!B3'] || 
-      sheet?.['TERVEZESI_ADATOK:Munkalap1!B5'] || '';
-  if (categoryFromSheet && !String(manual['EPITMENYERTEK:rendeltetesi_kategoria'] || '').trim()) {
-    values['EPITMENYERTEK:rendeltetesi_kategoria'] = String(categoryFromSheet).trim();
+  // A terv tárgya az építés jellegéből; a kézzel mentett érték marad felülíratlan.
+  if (!String(values.TERV_TARGYA || '').trim()) {
+    const target = tervTargya(project);
+    if (target) values.TERV_TARGYA = target;
   }
+  // EPITMENYERTEK:rendeltetesi_kategoria a 245/2006. (XII. 5.) Korm. rendelet
+  // 1. mellékletéből: a lakóépület 1. sora, pinceszint esetén az 5. sor is.
+  if (!String(manual['EPITMENYERTEK:rendeltetesi_kategoria'] || '').trim())
+    values['EPITMENYERTEK:rendeltetesi_kategoria'] = rendeltetesiKategoria(roomData);
   // A számított rétegrend-értékek a forrásadatokból jönnek; a kézzel mentett
   // fejezetszöveg viszont mindig elsőbbséget élvez.
   for (const [key,value] of Object.entries(extraValues || {})) {
@@ -295,27 +347,30 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     const letter = String.fromCharCode(97+index);
     values[`TERVEZESI_PROGRAM:${letter}`] = lines.join('\n').replace(new RegExp(`^${letter}\\)\\s*`),'');
   });
-  // A tervjegyzék csak olyan tervlapot tartalmaz, amelyhez ismert a méretarány.
-  // Lépték nélkül a lista üres marad, legfeljebb egy figyelmeztetéssel.
-  const plansWithScale = pdfFiles.map(file => {
+  // A tervjegyzék minden feltöltött tervlapot tartalmaz. A lépték a sor végén,
+  // jobbra igazítva jelenik meg; ha a lépték nem állapítható meg, a tervlap a
+  // nevével szerepel, csak a lépték marad el.
+  const planEntries = pdfFiles.map(file => {
     const title = String(file.name || '').replace(/\.pdf$/i,'')
       .replace(/[\r\n\t]/g,' ').trim();
     const pdfBytes = file.bytes ? Buffer.from(file.bytes) : undefined;
     return {title, scale:planScale(title, pdfBytes)};
-  }).filter(item => item.title && item.scale);
-  if (plansWithScale.length) {
-    values.TERVJEGYZEK = plansWithScale
-      .map(item => {
-        const scale = String(item.scale || '').trim();
-        const title = String(item.title || '').trim();
-        // Lépték jobbra igazítva a sor végén
-        return `${title.padEnd(40)}${scale}`;
-      })
-      .sort((a,b) => a.localeCompare(b,'hu')).join('\n');
+  }).filter(item => item.title);
+  if (planEntries.length) {
+    planEntries.sort((a,b) => a.title.localeCompare(b.title,'hu'));
+    // A lépték jobb széle közös oszlopba kerül, ezért a sorok hossza azonos.
+    const width = Math.max(40,...planEntries.filter(item => item.scale)
+      .map(item => item.title.length+item.scale.length+2));
+    values.TERVJEGYZEK = planEntries.map(item => {
+      if (!item.scale) return item.title;
+      const padding = ' '.repeat(Math.max(2,width-item.title.length-item.scale.length));
+      return item.title+padding+item.scale;
+    }).join('\n');
   }
-  if (pdfFiles.length && !plansWithScale.length)
-    warn('A tervjegyzék üres: egyetlen tervlaphoz sem ismert a méretarány. Egészítsd ki '+
-      'a fájlnevet (például „alaprajz”), vagy a „Tervjegyzék szabályok” munkalapot.');
+  if (pdfFiles.length && !planEntries.some(item => item.scale))
+    warn('A tervjegyzékben egyetlen tervlaphoz sem ismert a méretarány, ezért a '+
+      'tervlapok lépték nélkül szerepelnek. Egészítsd ki a fájlnevet (például '+
+      '„alaprajz”), vagy a „Tervjegyzék szabályok” munkalapot.');
   values.IRATJEGYZEK = ['Építészeti műszaki leírás (jelen dokumentum)',
     ...writtenFiles.filter(file => file.mimeType === 'application/vnd.google-apps.document' ||
       file.mimeType === 'application/pdf').map(file => String(file.name || '').trim())
@@ -356,4 +411,5 @@ for (const key of optionalKeys) if (!(key in values)) values[key] = '';
 
 module.exports = {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,validateTechnicalField,fieldSheetRows,
   manualValues,numberFromSheet,technicalReview,technicalReplacements,displayDate,validIsoDate,
-  validHungarianDate,hungarianToday,gapText,DATA_MARKER};
+  validHungarianDate,hungarianToday,gapText,DATA_MARKER,tervTargya,rendeltetesiKategoria,
+  basementArea};

@@ -1,7 +1,8 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {technicalReplacements,technicalReview,validateTechnicalField,fieldSheetRows} = require('../server/technical_document.cjs');
+const {technicalReplacements,technicalReview,validateTechnicalField,fieldSheetRows,
+  tervTargya,rendeltetesiKategoria} = require('../server/technical_document.cjs');
 const {mergeRequests,unresolvedMarkers} = require('../server/doc_merge.cjs');
 const {technicalSupplementRequests} = require('../server/technical_upgrade.cjs');
 
@@ -181,7 +182,7 @@ test('Kiadás dátuma megadás nélkül a generálás napja, ÉÉÉÉ.HH.NN. ala
   assert.equal(manualWarnings.some(text => text.includes('kiadás dátuma')),false);
 });
 
-test('A tűzszakasz a terasz nélküli helyiségösszeg, a tervjegyzék lépték nélkül üres', () => {
+test('A tűzszakasz a terasz nélküli helyiségösszeg, a lépték nélküli tervlap is bekerül', () => {
   const programRows = Array.from({length:16},(_,index) => {
     const letter = String.fromCharCode(97+index);
     return [letter,`${letter}) Kitöltött program.`];
@@ -191,9 +192,58 @@ test('A tűzszakasz a terasz nélküli helyiségösszeg, a tervjegyzék lépték
     fieldRows:[],pdfFiles:[{name:'scan_0012.pdf'},{name:'valami.pdf'}],
     roomData:{totalCents:16425,externalCents:3112,rooms:[]}},warnings);
   assert.equal(values.tuzszakasz_m2,'133,13');
-  assert.equal(values.TERVJEGYZEK,'');
+  // Lépték nélkül is szerepel a tervlap, csak a méretarány marad el.
+  assert.deepEqual(values.TERVJEGYZEK.split('\n'),['scan_0012','valami']);
   assert.equal(warnings.filter(text => text.includes('tervjegyzék')).length,1,
     'Legfeljebb egy figyelmeztetés szólhat a hiányzó méretarányról: '+warnings);
+});
+
+test('A tervjegyzékben a lépték a sor végén, közös jobb széllel áll', () => {
+  const programRows = Array.from({length:16},(_,index) => {
+    const letter = String.fromCharCode(97+index);
+    return [letter,`${letter}) Kitöltött program.`];
+  });
+  const values = technicalReplacements({project:{uid:'ABC123'},sheetRows:[],programRows,
+    fieldRows:[],pdfFiles:[{name:'EK-01 Helyszínrajz.pdf'},{name:'EK-02 Metszet.pdf'},
+      {name:'scan_0012.pdf'}]});
+  const lines = values.TERVJEGYZEK.split('\n');
+  assert.equal(lines.length,3);
+  const scaled = lines.filter(line => /M=1:\d+/.test(line));
+  assert.equal(scaled.length,2);
+  assert.equal(new Set(scaled.map(line => line.length)).size,1,
+    'A léptékek jobb széle azonos oszlopba esik.');
+  assert.ok(scaled.every(line => !line.endsWith(' ')));
+  assert.ok(lines.includes('scan_0012'),'A lépték nélküli tervlap neve megmarad.');
+});
+
+test('A terv tárgya az építés jellegéből, a rendeltetési kategória a jogszabályból', () => {
+  assert.equal(tervTargya({projektTipus:'Új építés'}),'új lakóépület építése');
+  assert.equal(tervTargya({projektTipus:'Bővítés'}),'meglévő lakóépület bővítése/átépítése');
+  assert.equal(tervTargya({projektTipus:'Átépítés'}),'meglévő lakóépület bővítése/átépítése');
+  assert.equal(tervTargya({projektTipus:'Egyéb'}),'');
+  const withoutBasement = rendeltetesiKategoria({rooms:[{floor:'Földszint',area:5000}]});
+  assert.match(withoutBasement,/^1\. Lakó/);
+  assert.match(withoutBasement,/600 E Ft\/m²/);
+  assert.doesNotMatch(withoutBasement,/5\. Pince/);
+  const withBasement = rendeltetesiKategoria({rooms:[
+    {floor:'-1',area:4250},{floor:'Földszint',area:5000}]});
+  assert.match(withBasement,/^1\. Lakó[\s\S]*5\. Pince/);
+  assert.match(withBasement,/pinceszint: 42,50 m²/);
+  assert.match(withBasement,/400 E Ft\/m²/);
+  // A terv tárgya a projekt adatlapjáról kerül a dokumentumba.
+  const programRows = Array.from({length:16},(_,index) => {
+    const letter = String.fromCharCode(97+index);
+    return [letter,`${letter}) Kitöltött program.`];
+  });
+  const values = technicalReplacements({project:{uid:'ABC123',projektTipus:'Új építés'},
+    sheetRows:[],programRows,fieldRows:[]});
+  assert.equal(values.TERV_TARGYA,'új lakóépület építése');
+  // A kézzel mentett terv tárgya elsőbbséget élvez.
+  const fields = fieldSheetRows();
+  fields.find(row => row[0] === 'TERV_TARGYA')[1] = 'Kézi terv tárgya';
+  const manual = technicalReplacements({project:{uid:'ABC123',projektTipus:'Új építés'},
+    sheetRows:[],programRows,fieldRows:fields.slice(1)});
+  assert.equal(manual.TERV_TARGYA,'Kézi terv tárgya');
 });
 
 test('A régi DRAFT bővítése megőrzi az eredeti tartalmat és ismételhető', () => {
