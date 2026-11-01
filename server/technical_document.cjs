@@ -133,7 +133,7 @@ function manualValues(rows) {
   for (const row of rows || []) {
     const key = String(row?.[0] || '').trim();
     if (!FIELD_KEYS.has(key)) continue;
-    const value = String(row?.[1] ?? '').trim();
+    let value = String(row?.[1] ?? '').trim();
     if (value.length > 50000) throw new Error('Túl hosszú műszaki adat: '+key);
     if (value && !/\{\{[^{}]+\}\}/.test(value)) result[key] = value;
   }
@@ -214,6 +214,13 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
       !validIsoDate(date))
     delete manual['OVEZET:ellenorzes_allapota'];
   const values = {...documentValues(project),...manual};
+  // EPITMENYERTEK:rendeltetesi_kategoria a jogszabályból, csak az első sor
+  const categoryFromSheet = sheet?.['TERVEZESI_ADATOK:Munkalap1!B2'] || 
+      sheet?.['TERVEZESI_ADATOK:Munkalap1!B3'] || 
+      sheet?.['TERVEZESI_ADATOK:Munkalap1!B5'] || '';
+  if (categoryFromSheet && !String(manual['EPITMENYERTEK:rendeltetesi_kategoria'] || '').trim()) {
+    values['EPITMENYERTEK:rendeltetesi_kategoria'] = String(categoryFromSheet).trim();
+  }
   // A számított rétegrend-értékek a forrásadatokból jönnek; a kézzel mentett
   // fejezetszöveg viszont mindig elsőbbséget élvez.
   for (const [key,value] of Object.entries(extraValues || {})) {
@@ -298,7 +305,12 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
   }).filter(item => item.title && item.scale);
   if (plansWithScale.length) {
     values.TERVJEGYZEK = plansWithScale
-      .map(item => `${item.title}\t${item.scale}`)
+      .map(item => {
+        const scale = String(item.scale || '').trim();
+        const title = String(item.title || '').trim();
+        // Lépték jobbra igazítva a sor végén
+        return `${title.padEnd(40)}${scale}`;
+      })
       .sort((a,b) => a.localeCompare(b,'hu')).join('\n');
   }
   if (pdfFiles.length && !plansWithScale.length)
@@ -333,7 +345,8 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     if (String(values[key] ?? '').trim()) continue;
     values[key] = marker.inTable || DATA_MARKER.test(key) ? '' : gapText(key);
   }
-  for (const key of optionalKeys) if (!(key in values)) values[key] = '';
+for (const key of optionalKeys) if (!(key in values)) values[key] = '';
+  // Ha nincs telek adata, oszlopok alapértéke marad üressé (semmilyen törlés nem történik)
   for (const key of CHAPTER_KEYS) if (!String(values[key] || '').trim())
     values[key] = '[KIEGÉSZÍTENDŐ: '+key+' – a sablon dokumentum appendixében vagy a '+
       'műszaki adatlapon add meg a szöveget.]';
