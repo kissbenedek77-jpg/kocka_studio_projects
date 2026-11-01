@@ -198,7 +198,7 @@ test('A tűzszakasz a terasz nélküli helyiségösszeg, a lépték nélküli te
     'Legfeljebb egy figyelmeztetés szólhat a hiányzó méretarányról: '+warnings);
 });
 
-test('A tervjegyzékben a lépték a sor végén, közös jobb széllel áll', () => {
+test('A tervjegyzékben a lépték tabulátorral a sor végére kerül', () => {
   const programRows = Array.from({length:16},(_,index) => {
     const letter = String.fromCharCode(97+index);
     return [letter,`${letter}) Kitöltött program.`];
@@ -210,9 +210,10 @@ test('A tervjegyzékben a lépték a sor végén, közös jobb széllel áll', (
   assert.equal(lines.length,3);
   const scaled = lines.filter(line => /M=1:\d+/.test(line));
   assert.equal(scaled.length,2);
-  assert.equal(new Set(scaled.map(line => line.length)).size,1,
-    'A léptékek jobb széle azonos oszlopba esik.');
-  assert.ok(scaled.every(line => !line.endsWith(' ')));
+  // A jobb szélhez igazítást a dokumentum tabulátor-stopja adja, ezért a
+  // szövegben csak a cím, egy tabulátor és a lépték szerepel.
+  assert.ok(scaled.every(line => /^[^\t]+\tM=1:\d+$/.test(line)),
+    'A lépték tabulátor után, szóköz-kitöltés nélkül következik: '+scaled);
   assert.ok(lines.includes('scan_0012'),'A lépték nélküli tervlap neve megmarad.');
 });
 

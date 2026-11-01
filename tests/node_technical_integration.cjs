@@ -57,9 +57,18 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
     ...['Tartalomjegyzék','Adatok','Beépítési paraméterek','Épület adatai','Tűzvédelem']
       .map((text,index)=>({startIndex:20+index*20,paragraph:{elements:[
         {startIndex:20+index*20,textRun:{content:text+'\n'}}]}})),
-    dataTable(200)]};
+    dataTable(200),
+    // A tervjegyzék a névre szóló tartományba kerül; a lépték a lap jobb szélén
+    // jelenik meg, tabulátorral elválasztva.
+    {startIndex:300,endIndex:327,paragraph:{elements:[{startIndex:300,
+      textRun:{content:'EK-01 Helyszínrajz\tM=1:200\n'}}]}}]};
+  const namedRanges={KOCKA_MERGE_TERVJEGYZEK:{name:'KOCKA_MERGE_TERVJEGYZEK',
+    namedRanges:[{name:'KOCKA_MERGE_TERVJEGYZEK',ranges:[{startIndex:300,endIndex:327}]}]}};
+  const documentStyle={pageSize:{width:{magnitude:595.28,unit:'PT'}},
+    marginLeft:{magnitude:72,unit:'PT'},marginRight:{magnitude:72,unit:'PT'}};
   const docWrites=[];
-  google.docs=()=>({documents:{get:async()=>({data:{revisionId:'r1',body,namedRanges:{}}}),
+  google.docs=()=>({documents:{get:async()=>({data:{revisionId:'r1',body,namedRanges,
+    documentStyle}}),
     batchUpdate:async options=>{docWrites.push(options);docWrite=options;return {data:{}};}}});
   try{
     const client=googleClient({clientId:'test',clientSecret:'test',baseUrl:'https://node.example',
@@ -67,7 +76,8 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
     const result=await client.ensureDocument('ABC123','muszakiLeiras');
     assert.equal(result.created,true);
     assert.equal(areaWritten.requestBody.values[0][0],30);
-    const texts=docWrite.requestBody.requests.filter(item=>item.replaceNamedRangeContent)
+    const texts=docWrites.flatMap(write=>write.requestBody.requests||[])
+      .filter(item=>item.replaceNamedRangeContent)
       .map(item=>item.replaceNamedRangeContent.text);
     assert.ok(texts.includes('Lakóépület bővítése'));
     assert.ok(texts.some(text=>text.includes('nappali\t30,00 m²')));
@@ -84,6 +94,12 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
     assert.equal(deleted[1].deleteTableRow.tableCellLocation.rowIndex,1);
     assert.equal(texts.some(text=>/\{\{[^{}]+\}\}/.test(String(text))),false,
       'A kész példányban nem maradhat nyers {{...}} jelölő.');
+    const tabStops=shaping.filter(request=>request.updateParagraphStyle?.fields==='tabStops');
+    assert.equal(tabStops.length,1,'A tervjegyzék bekezdése tabulátor-stopot kap.');
+    assert.equal(tabStops[0].updateParagraphStyle.range.startIndex,300);
+    assert.equal(tabStops[0].updateParagraphStyle.paragraphStyle.tabStops[0].alignment,'END');
+    assert.equal(tabStops[0].updateParagraphStyle.paragraphStyle.tabStops[0].offset.magnitude,
+      451.28,'A stop a szövegtükör jobb szélén áll (595,28 − 72 − 72 PT).');
     assert.deepEqual(appended.requestBody.values[0].slice(0,4),
       ['ABC123','muszakiLeiras','generated-technical-doc','DRAFT']);
   }finally{[google.sheets,google.drive,google.docs]=originals;}

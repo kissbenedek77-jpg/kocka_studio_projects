@@ -17,6 +17,7 @@ const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technica
 const {textTemplates,appendixRequests} = require('./technical_texts.cjs');
 const {findMarker,insertRequests,findEmptyTable,fillRequests} = require('./room_table.cjs');
 const {technicalTableRequests} = require('./technical_table.cjs');
+const {tabStopRequests} = require('./plan_list.cjs');
 const {retegrendFacts,retegrendValues} = require('./retegrend.cjs');
 const {pdfToText} = require('./pdf_text.cjs');
 const {floorCount,bedroomCount,hasOffice} = require('./technical_program.cjs');
@@ -1355,6 +1356,29 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       documentId,requestBody:{requests,
         ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}
     }));
+    // A tervjegyzék léptéke a lap jobb szélén, jobbra igazítva jelenik meg. A
+    // tabulátor-stop a beírt szöveghez utólag kerül a bekezdésekre, ezért a
+    // dokumentumot a csere után újra kell olvasni.
+    if (type === 'muszakiLeiras' && String(mergeValues.TERVJEGYZEK || '').includes('\t')) {
+      try {
+        const merged = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+          documentId,includeTabsContent:false
+        }))).data;
+        const tabRequests = tabStopRequests(merged);
+        if (tabRequests.length) await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({
+          documentId,requestBody:{requests:tabRequests,
+            ...(merged.revisionId ? {writeControl:{requiredRevisionId:merged.revisionId}} : {})}
+        }));
+        else
+          warn('A tervjegyzék léptéke nem igazítható a lap jobb széléhez, mert a '+
+            'dokumentumban nem található a tervjegyzék bekezdése. Ellenőrizd a '+
+            'tervjegyzéket a dokumentumban.');
+      } catch (error) {
+        if (error.status === 429) throw error;
+        warn('A tervjegyzék léptéke nem igazítható a lap jobb széléhez ('+
+          (error.message||String(error))+'). Ellenőrizd a tervjegyzéket a dokumentumban.');
+      }
+    }
     if (type === 'muszakiLeiras') await refreshTechnicalCoverImage(uid, documentId);
     const stamp = new Date().toISOString();
     const revision = String(source.revisionId || '').trim();

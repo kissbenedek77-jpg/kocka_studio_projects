@@ -348,8 +348,10 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     values[`TERVEZESI_PROGRAM:${letter}`] = lines.join('\n').replace(new RegExp(`^${letter}\\)\\s*`),'');
   });
   // A tervjegyzék minden feltöltött tervlapot tartalmaz. A lépték a sor végén,
-  // jobbra igazítva jelenik meg; ha a lépték nem állapítható meg, a tervlap a
-  // nevével szerepel, csak a lépték marad el.
+  // jobbra igazítva jelenik meg: a cím és a lépték között tabulátor áll, a
+  // jobbra igazított tabulátor-stopot a dokumentum kapja meg
+  // (server/plan_list.cjs). Ha a lépték nem állapítható meg, a tervlap a nevével
+  // szerepel, csak a lépték marad el.
   const planEntries = pdfFiles.map(file => {
     const title = String(file.name || '').replace(/\.pdf$/i,'')
       .replace(/[\r\n\t]/g,' ').trim();
@@ -358,14 +360,8 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
   }).filter(item => item.title);
   if (planEntries.length) {
     planEntries.sort((a,b) => a.title.localeCompare(b.title,'hu'));
-    // A lépték jobb széle közös oszlopba kerül, ezért a sorok hossza azonos.
-    const width = Math.max(40,...planEntries.filter(item => item.scale)
-      .map(item => item.title.length+item.scale.length+2));
-    values.TERVJEGYZEK = planEntries.map(item => {
-      if (!item.scale) return item.title;
-      const padding = ' '.repeat(Math.max(2,width-item.title.length-item.scale.length));
-      return item.title+padding+item.scale;
-    }).join('\n');
+    values.TERVJEGYZEK = planEntries.map(item =>
+      item.scale ? item.title + '\t' + item.scale : item.title).join('\n');
   }
   if (pdfFiles.length && !planEntries.some(item => item.scale))
     warn('A tervjegyzékben egyetlen tervlaphoz sem ismert a méretarány, ezért a '+
