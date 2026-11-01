@@ -18,13 +18,17 @@ function mockReinit({status='ELŐKÉSZÍTÉS'}={}) {
   row[33]='Magyaratád';row[38]='Magyaratád 531';
   const state={records:[['ABC123','ajanlat','offer-doc','DRAFT',''],
     ['ABC123','szerzodes','contract-doc','FINAL','']],
-    trashed:[],deletedRows:[],copies:[],docWrites:[]};
+    trashed:[],deletedRows:[],copies:[],docWrites:[],fieldWrites:[],cleared:[],
+    fieldRows:[['TERV_TARGYA','régi terv tárgya','súgó'],
+      ['EPITES_JELLEGE','','súgó'],['HELYISEGLISTA','régi lista','súgó']]};
   const parents={'project-root':'prep-root','template-root':'prep-root',
     'folder-0':'project-root','folder-1':'project-root','offer-doc':'folder-1',
-    'contract-doc':'folder-1'};
+    'contract-doc':'folder-1','project-sheet':'folder-0'};
   const names={'project-root':'Projekt A','prep-root':'_Ajánlatok','folder-0':'írásos',
-    'folder-1':'_Belső',
+    'folder-1':'_Belső','project-sheet':'Tervezési adatok - Projekt A',
     'offer-doc':'Ajánlat - Próba','contract-doc':'Építész szerződés - Próba'};
+  const spreadsheet=id=>id==='project-sheet'?'application/vnd.google-apps.spreadsheet':
+    id.endsWith('-doc')?'application/vnd.google-apps.document':'application/vnd.google-apps.folder';
   google.sheets=()=>({spreadsheets:{
     get:async options=>options.includeGridData?{data:{sheets:[{data:[{startRow:1,
       rowData:[{values:[{hyperlink:'https://drive.google.com/drive/folders/project-root'}]}]}]}]}}:
@@ -32,15 +36,23 @@ function mockReinit({status='ELŐKÉSZÍTÉS'}={}) {
         {properties:{sheetId:2,title:'_DokumentumIndex'}},
         {properties:{title:'Műszaki leírás'}}]}},
     values:{
-      get:async options=>({data:{values:options.range.includes('Adatok')&&
+      get:async options=>({data:{values:options.range.includes('Műszaki leírás')?
+        state.fieldRows:options.range.includes('Adatok')&&
         !options.range.includes('AO1')?[row]:options.range.includes('_DokumentumIndex')?
           state.records:[]}}),
       batchGet:async options=>({data:{valueRanges:options.ranges.map(range=>({values:
         range.includes('_DokumentumIndex')?state.records:[]}))}}),
       update:async()=>({data:{}}),
+      batchUpdate:async options=>{
+        for(const item of options.requestBody.data || []) state.fieldWrites.push(item);
+        return {data:{}};
+      },
+      clear:async options=>{state.cleared.push(options.range);return {data:{}};},
       append:async options=>{
         if(options.range.includes('_DokumentumIndex'))
           state.records.push(...options.requestBody.values);
+        if(options.range.includes('Műszaki leírás'))
+          state.fieldRows.push(...options.requestBody.values);
         return {data:{}};
       }
     },
@@ -55,14 +67,12 @@ function mockReinit({status='ELŐKÉSZÍTÉS'}={}) {
   }});
   google.drive=()=>({files:{
     get:async options=>({data:{id:options.fileId,name:names[options.fileId]||'Dokumentum',
-      mimeType:options.fileId.endsWith('-doc')?'application/vnd.google-apps.document':
-        'application/vnd.google-apps.folder',
+      mimeType:spreadsheet(options.fileId),
       parents:parents[options.fileId]?[parents[options.fileId]]:[]}}),
     list:async options=>{const parent=options.q.match(/'([^']+)' in parents/)?.[1];
       const files=Object.keys(parents).filter(id=>parents[id]===parent &&
         !state.trashed.includes(id)).map(id=>({id,name:names[id],
-          mimeType:id.endsWith('-doc')?'application/vnd.google-apps.document':
-            'application/vnd.google-apps.folder'}));
+          mimeType:spreadsheet(id)}));
       return {data:{files}};},
     copy:async options=>{const id='copy-'+options.fileId+'-'+(state.copies.length+1);
       names[id]=options.requestBody.name;parents[id]=options.requestBody.parents[0];
@@ -114,5 +124,21 @@ test('Lezárt projekt DRAFT fájljai nem inicializálhatók újra',async()=>{
     await assert.rejects(mock.client.reinitializeDraftDocuments('ABC123','reinit:ABC123'),
       /Lezárt|lezárt/);
     assert.deepEqual(mock.state.trashed,[]);
+  }finally{mock.restore();}
+});
+
+test('A műszaki leírás mentett tartalma teljesen kiürül',async()=>{
+  const mock=mockReinit();
+  try{
+    const ok=await mock.client.resetTechnicalContent('ABC123');
+    assert.equal(ok,true);
+    // A program és a helyiséglista-táblázat teljes tartománya törlődik.
+    assert.deepEqual(mock.state.cleared,
+      ["'Tervezési program'!B2:B17",'Munkalap2!A2:B500']);
+    // A fejezetmezők minden sora üres értéket kap (a fejléc nem).
+    assert.equal(mock.state.fieldWrites.length,mock.state.fieldRows.length);
+    assert.ok(mock.state.fieldWrites.every(item =>
+      /^'Műszaki leírás'!B\d+$/.test(item.range) && item.values[0][0]===''));
+    assert.ok(mock.state.fieldWrites.every(item => item.range!==`'Műszaki leírás'!B1`));
   }finally{mock.restore();}
 });

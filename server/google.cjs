@@ -1356,9 +1356,10 @@ function googleClient(config, refreshToken = '', authOverride = null) {
   }
 
   // A DRAFT dokumentumok újrainicializálása: a meglévő piszkozatok a kukába
-  // kerülnek, az indexsoraik törlődnek, majd a friss sablonokból ugyanazok a
-  // fájlok újra létrejönnek – mintha most indult volna a projekt. A projekt
-  // adatai (tervezési adatlap, helyiséglista, műszaki mezők) nem változnak.
+  // kerülnek, az indexsoraik törlődnek, a műszaki leírás sablonhoz kötött
+  // tartalma kiürül, majd a friss sablonokból ugyanazok a fájlok újra
+  // létrejönnek – mintha most indult volna a projekt. A tervezési paraméterek
+  // (Munkalap1), a feltöltött tervlapok és a PLN-forrás nem változnak.
   async function reinitializeDraftDocuments(uid,confirmation) {
     const initial = await project(uid);
     const normalized = initial.data.uid;
@@ -1388,7 +1389,14 @@ function googleClient(config, refreshToken = '', authOverride = null) {
           '); helyette a meglévő példány frissül.');
       }
     }
-    if (trashed.length) await deleteDocumentIndexRows(trashed.map(item => item.rowNumber));
+    if (trashed.length) {
+      await deleteDocumentIndexRows(trashed.map(item => item.rowNumber));
+      // A gyorsítótár nem tartalmazhatja a kukázott példányokat és a régi
+      // mappalistákat, különben az újragenerálás a kukázott fájlt találná meg
+      // azonos néven, és nem készülne valóban új piszkozat.
+      googleCache.clear('children:');
+      googleCache.clear('file:');
+    }
     const types = [...new Set(trashed.map(item => item.type))];
     if (state.stage === 'started') {
       // Indításkor ezek a DRAFT fájlok jönnek létre a projektmappában.
@@ -1397,14 +1405,53 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     }
     const targets = types.filter(type => !finalTypes.has(type));
     if (!targets.length) throw new Error('Nincs újrainicializálható DRAFT dokumentum.');
+    const warn = message => {
+      const text = String(message || '').trim();
+      if (text && !warnings.includes(text)) warnings.push(text);
+    };
+    // A műszaki leírás csak akkor indulhat üres sablonból, ha a korábban mentett
+    // fejezetszövegek és a sablonhoz kötött táblázattartalom is törlődik.
+    let contentReset = false;
+    if (targets.includes('muszakiLeiras')) contentReset = await resetTechnicalContent(normalized,warn);
     for (const type of targets) {
       const document = await ensureDocument(normalized,type);
-      for (const warning of document.warnings || [])
-        if (!warnings.includes(warning)) warnings.push(warning);
+      for (const warning of document.warnings || []) warn(warning);
     }
     return {message:targets.length+' DRAFT dokumentum újra létrehozva a friss sablonokból.'+
-      (trashed.length ? ' A korábbi piszkozatok a kukába kerültek.' : ''),
+      (trashed.length ? ' A korábbi piszkozatok a kukába kerültek.' : '')+
+      (contentReset ? ' A műszaki leírás mentett szövegei törlődtek, a piszkozat üres sablonból indul.'
+        : ''),
       warnings,project:await dashboardProject(normalized)};
+  }
+
+  // A műszaki leírás sablonhoz kötött tartalmának teljes kiürítése: a mentett
+  // fejezetszövegek (Műszaki leírás lap B oszlopa), az a–p tervezési program
+  // sorai és a helyiséglista-táblázat törlődnek, hogy az új piszkozat valóban
+  // üres sablonból induljon. A tervezési paraméterek (Munkalap1) érintetlenek.
+  async function resetTechnicalContent(uid,warn = () => {}) {
+    let sheet;
+    try { sheet = await ensureProjectDataSheet(uid); }
+    catch (error) {
+      if (error.status === 429) throw error;
+      warn('A műszaki adatlap nem érhető el, ezért a mentett fejezetszövegek nem '+
+        'törlődtek ('+(error.message||String(error))+').');
+      return false;
+    }
+    try {
+      const rows = await ensureTechnicalFieldRows(sheet.id);
+      const data = rows.map((row,index) => ({range:`'${FIELD_SHEET}'!B${index+2}`,
+        values:[['']]}));
+      if (data.length) await sheetWrite(() => sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId:sheet.id,requestBody:{valueInputOption:'RAW',data}}));
+      for (const range of [`'Tervezési program'!B2:B17`,'Munkalap2!A2:B500'])
+        await sheetWrite(() => sheets.spreadsheets.values.clear({spreadsheetId:sheet.id,range}));
+      return true;
+    } catch (error) {
+      if (error.status === 429) throw error;
+      warn('A műszaki leírás mentett tartalmát nem sikerült teljesen kiüríteni ('+
+        (error.message||String(error))+'); a piszkozat a korábbi szövegekkel készül el.');
+      return false;
+    }
   }
 
   // A dokumentumindex sorainak törlése alulról felfelé, hogy a sorok eltolódása
@@ -2434,7 +2481,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     listClientSubmissions, markClientSubmissionRead,
     saveMemo, saveExpectedFiles, pdfaExpectedFiles, answerCheck, saveOffer, setStartDate, ensureDocument,
     uploadAudio, summarizeAudio, draftTechnicalText, generateTechnicalDocument, technicalChat,
-    syncProject, reinitializeDraftDocuments, startProject, closeProject,
+    syncProject, reinitializeDraftDocuments, resetTechnicalContent, startProject, closeProject,
     archiveProject,deleteProject,prepareEmail,
     restartProject, getTechnicalFields, saveTechnicalFields, setPhase,auditProjectPdfs};
 }
