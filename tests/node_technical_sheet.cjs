@@ -18,8 +18,11 @@ test('Műszaki adatlap a sablon valódi celláit olvassa, a hiányzó programot 
   });
   assert.equal(technicalProgramLines(program,fields)[0][0],'a) Lke-8');
   program[1][1] = '';
-  const fallback = technicalProgramLines(program,fields);
+  // Az alapértelmezett szöveg a sablonból jön; enélkül a hiányjelölés marad.
+  const defaults = {b:'A telekről részletes tervezési felmérési térkép készült.'};
+  const fallback = technicalProgramLines(program,fields,defaults);
   assert.match(fallback[1][0],/^A telekről részletes tervezési felmérési térkép készült\.$/);
+  assert.match(technicalProgramLines(program,fields,{})[1][0],/KIEGÉSZÍTENDŐ/);
   rows[4][12] = '#ERROR!';
   assert.throws(() => technicalSheetValues(rows),/Munkalap1!M5/);
 });

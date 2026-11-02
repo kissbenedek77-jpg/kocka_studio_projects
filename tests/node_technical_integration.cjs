@@ -64,10 +64,29 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
       textRun:{content:'{{TERVJEGYZEK}}\n'}}]}}]};
   const documentStyle={pageSize:{width:{magnitude:595.28,unit:'PT'}},
     marginLeft:{magnitude:70.85,unit:'PT'},marginRight:{magnitude:70.85,unit:'PT'}};
+  // A beszúrt táblázatok a friss dokumentumban jelennek meg; a kérés utáni
+  // újraolvasáskor a mock ezt utánozza, hogy az elrendezés és a kitöltés is
+  // lefusson.
+  const emptyTable = (startIndex, rows, columns = 2) => ({startIndex,
+    endIndex:startIndex+1,table:{tableRows:Array.from({length:rows},() =>
+      ({tableCells:Array.from({length:columns},(unused,index) =>
+        tableCell('',startIndex+1+index))}))}});
+  let insertedRoom = false, insertedPlan = false;
   const docWrites=[];
-  google.docs=()=>({documents:{get:async()=>({data:{revisionId:'r1',body,
-    namedRanges:{},documentStyle}}),
-    batchUpdate:async options=>{docWrites.push(options);docWrite=options;return {data:{}};}}});
+  google.docs=()=>({documents:{
+    get:async()=>({data:{revisionId:'r1',documentStyle,namedRanges:{},
+      body:{content:[...body.content,
+        ...(insertedRoom?[emptyTable(12,2)]:[]),
+        ...(insertedPlan?[emptyTable(300,1)]:[])]}}}),
+    batchUpdate:async options=>{
+      docWrites.push(options);docWrite=options;
+      for (const request of options.requestBody.requests || []) {
+        if (!request.insertTable) continue;
+        if (request.insertTable.location.index === 300) insertedPlan = true;
+        else insertedRoom = true;
+      }
+      return {data:{}};
+    }}});
   try{
     const client=googleClient({clientId:'test',clientSecret:'test',baseUrl:'https://node.example',
       sheetId:'technical-main',sheetName:'Adatok'});
@@ -83,7 +102,7 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
     // A friss sablon már tartalmazza a helyszín- és koncepciófejezetek helyét,
     // a táblázatból viszont a használatlan „Meglévő” oszlop és az adat nélküli
     // szintterületi sor törlődik.
-    assert.equal(shaping.some(request=>request.insertText),false,
+    assert.equal((docWrites[0].requestBody.requests||[]).some(request=>request.insertText),false,
       'A friss sablonhoz nem kell kiegészítő szöveget beszúrni.');
     const deleted=shaping.filter(request=>request.deleteTableColumn||request.deleteTableRow);
     assert.deepEqual(deleted.map(request=>Object.keys(request)[0]),

@@ -71,7 +71,8 @@
       if(key.startsWith('EPITMENYERTEK:')||key==='SZAMITOTT_EPITMENYERTEK')return 'Építményérték';
       if(key.startsWith('SZERKEZET:'))return 'Épületszerkezetek';
       if(key.startsWith('GEPESZET:')||key.startsWith('VILLAMOS:')||key.startsWith('KORNYEZET:'))return 'Szakági adatok';
-      if(key.includes('NYILATKOZAT')||key.includes('RETEGRENDEK'))return 'Jóváhagyott szövegek';
+      if(key.includes('NYILATKOZAT')||key.includes('RETEGRENDEK')||key.includes('SZERKEZETEK')||
+        key.includes('TUZVEDELMI'))return 'Jóváhagyott szövegek';
       if(key.startsWith('TERVEZESI_PROGRAM:'))return 'Tervezési program és fejezetszövegek';
       return 'Projekt és helyiségek'}
     async function load(){if(!/^[A-Za-z0-9-]{4,64}$/.test(uid)){message('Érvénytelen projektazonosító.','error');return}

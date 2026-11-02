@@ -1,15 +1,42 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {textTemplates,templateDefaults,appendixRequests} = require('../server/technical_texts.cjs');
+const {textTemplates,renderTemplate,sectionTexts,rangeNameFor,sectionReplaceRequests,
+  appendixRequests} = require('../server/technical_texts.cjs');
 const {retegekFromRows,retegekFromText,retegrendFacts,retegrendValues} = require('../server/retegrend.cjs');
-const {programReplacements,programLines,PROGRAM_TEXTS,bedroomCount,exitCount} = require('../server/technical_program.cjs');
+const {programReplacements,programLines,bedroomCount,exitCount} = require('../server/technical_program.cjs');
 const {chatInput,chatPrompt,parseChatResult} = require('../server/technical_chat.cjs');
 
 const para = (start,content) => ({startIndex:start,endIndex:start+content.length,
   paragraph:{elements:[{startIndex:start,textRun:{content}}]}});
 
-test('A sablonszöveg-appendix kiolvasható és a jelölők kitölthetők', () => {
+test('A sablon fejezetszövegei a helyükön, névre szóló tartományban állnak', () => {
+  const fire = 'Tűzszakasz: {{tuzszakasz_m2}} m²';
+  const last = 'Villámvédelem: nem kötelező';
+  const document = {body:{content:[
+    para(1,'Bevezető\n'),
+    para(20,fire+'\n'),
+    para(20+fire.length+1,'\n'),
+    para(20+fire.length+2,last+'\n')
+  ]},namedRanges:{KOCKA_SZOVEG_TUZVEDELMI:{namedRanges:[{ranges:[
+    {startIndex:20,endIndex:20+fire.length+2+last.length}]}]}}};
+  const texts = sectionTexts(document);
+  // Az üres bekezdés (üres sor) is megmarad a tartomány szövegében.
+  assert.equal(texts.TUZVEDELMI_LEIRAS_JOVAHAGYOTT_SZOVEG,fire+'\n\n'+last);
+  assert.equal(rangeNameFor('TUZVEDELMI_LEIRAS_JOVAHAGYOTT_SZOVEG'),'KOCKA_SZOVEG_TUZVEDELMI');
+  assert.equal(rangeNameFor('TERVEZESI_PROGRAM:a'),'KOCKA_SZOVEG_PROGRAM_A');
+  assert.equal(rangeNameFor('ismeretlen kulcs'),'');
+  assert.equal(renderTemplate(fire,{'tuzszakasz_m2':'200,05'}),
+    'Tűzszakasz: 200,05 m²');
+  assert.match(renderTemplate('Fal: {{retegrend:fal_anyag}}.',{}),
+    /\[KIEGÉSZÍTENDŐ: retegrend:fal_anyag\.\]/);
+  const requests = sectionReplaceRequests(document,
+    {TUZVEDELMI_LEIRAS_JOVAHAGYOTT_SZOVEG:'Végleges tűzvédelmi szöveg.'});
+  assert.deepEqual(requests,[{replaceNamedRangeContent:{namedRangeName:'KOCKA_SZOVEG_TUZVEDELMI',
+    text:'Végleges tűzvédelmi szöveg.'}}]);
+});
+
+test('A régi sablonszöveg-appendix továbbra is kiolvasható és törölhető', () => {
   const document = {body:{content:[
     para(1,'Bevezető\n'),
     para(20,'SABLONSZÖVEGEK – a generátor használja\n'),
@@ -23,9 +50,6 @@ test('A sablonszöveg-appendix kiolvasható és a jelölők kitölthetők', () =
   const templates = textTemplates(document);
   assert.equal(templates.TUZVEDELMI_LEIRAS_JOVAHAGYOTT_SZOVEG,'Tűzszakasz: {{tuzszakasz_m2}} m²');
   assert.equal(templates['SZERKEZETEK LEÍRÁSA'],'Fal: {{retegrend:fal_anyag}}.');
-  const defaults = templateDefaults(templates,{'tuzszakasz_m2':'200,05'});
-  assert.equal(defaults.TUZVEDELMI_LEIRAS_JOVAHAGYOTT_SZOVEG,'Tűzszakasz: 200,05 m²');
-  assert.match(defaults['SZERKEZETEK LEÍRÁSA'],/\[KIEGÉSZÍTENDŐ: retegrend:fal_anyag\.\]/);
   const [removal] = appendixRequests(document);
   assert.equal(removal.deleteContentRange.range.startIndex,20);
   assert.equal(removal.deleteContentRange.range.endIndex,document.body.content.at(-1).endIndex-1);
@@ -96,19 +120,31 @@ test('A tervezési program a projekt adatait és a helyiséglistát használja',
   const empty = programReplacements({project:{projekt_varos:'Kaposvár'}});
   assert.match(empty.values.alapterulet_sav,/KIEGÉSZÍTENDŐ/);
   assert.match(empty.warnings.join(' '),/nettó alapterület/);
-  assert.match(PROGRAM_TEXTS.f,/\{\{telepules\}\}|\{\{tervadatok_munkalap:ovezet\}\}/);
-  assert.doesNotMatch(PROGRAM_TEXTS.f,/Balatonfűzfő/);
-  assert.match(PROGRAM_TEXTS.g,/\{\{alapterulet_sav\}\}/);
-  assert.doesNotMatch(PROGRAM_TEXTS.g,/200-230/);
+  // A program alapértelmezett szövege a sablonból jön; a kód csak a {{...}}
+  // jelölőket tölti ki. A sablon szövegét itt rövid mintával helyettesítjük.
+  const defaults = {
+    c:'Az ingatlan {{telepules}} belterületi részén helyezkedik el.',
+    f:'Az ingatlan {{telepules}} belterületi részén helyezkedik el.',
+    g:'Modern, {{szintek}}, közepes méretű családi ház, {{alapterulet_sav}} m².',
+    i:'a telken {{parkolo}} gépjármű elhelyezésére van igény.',
+    p:'a helyszínen nem áll fenn régészeti érintettség.'
+  };
+  assert.doesNotMatch(defaults.f,/Balatonfűzfő/);
+  assert.match(defaults.g,/\{\{alapterulet_sav\}\}/);
   assert.equal(result.facts.bedrooms,3);
   assert.equal(exitCount(roomData),1);
   assert.equal(bedroomCount(roomData),3);
-  const lines = programLines([],result.values);
+  const lines = programLines([],result.values,defaults);
   assert.equal(lines.length,16);
   assert.match(lines[2][0],/Kaposvár belterületi/);
   assert.match(lines[6].join('\n'),/többszintes/);
   assert.doesNotMatch(lines[8].join('\n'),/\{\{/);
-  assert.match(PROGRAM_TEXTS.p,/régészeti/);
+  assert.match(lines[8].join('\n'),/2 gépjármű/);
+  assert.match(lines[15].join('\n'),/régészeti/);
+  // A projekthez mentett (adatlapról jövő) szöveg elsőbbséget élvez.
+  const fromSheet = programLines([['a)','Saját szöveg: {{telepules}}']],result.values,defaults);
+  assert.equal(fromSheet[0][0],'Saját szöveg: Kaposvár');
+  assert.match(programLines([],{},{}).at(-1).join('\n'),/KIEGÉSZÍTENDŐ/);
 });
 
 test('A chat csak szerkeszthető mezőt fogad el és a választ ellenőrzi', () => {

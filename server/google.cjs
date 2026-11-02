@@ -1388,11 +1388,11 @@ function googleClient(config, refreshToken = '', authOverride = null) {
           const marker = findMarker(document, PLAN_MARKER);
           const inserts = insertRequests(marker, rows, 2, {allowSingleRow:true});
           if (inserts.length) {
-            // A táblázat kezdő indexe a jelölő helye, ezért az elrendezés
-            // (oszlopszélesség, keret, padding) ugyanebben a kérésben mehet.
-            const layout = layoutRequests(marker.startIndex, document.documentStyle);
+            // A beszúrás és az elrendezés külön kérésben megy: a Docs API a
+            // frissen beszúrt táblázat helyét még nem ismeri fel ugyanabban a
+            // kérésben, ezért előbb be kell szúrni, utána újraolvasni.
             await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
-              requestBody:{requests:[...inserts,...layout],
+              requestBody:{requests:inserts,
                 ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
             planTableInserted = true;
             document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
@@ -1401,7 +1401,26 @@ function googleClient(config, refreshToken = '', authOverride = null) {
             const table = findEmptyTable(document, rows);
             if (table) {
               const startIndex = table.startIndex;
-              const fill = fillRequests(table, rows, {header:false});
+              // Az elrendezés (oszlopszélesség, keret, padding) külön kérésben
+              // megy, hogy a keret beállításának esetleges hibája ne akadályozza
+              // a táblázat tartalmának beírását.
+              try {
+                const layout = layoutRequests(startIndex, document.documentStyle);
+                if (layout.length) {
+                  await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({
+                    documentId,requestBody:{requests:layout,
+                      ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+                  document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+                    documentId,includeTabsContent:false
+                  }))).data;
+                }
+              } catch (error) {
+                if (error.status === 429) throw error;
+                warn('A tervjegyzék kerete és cellakitöltése nem állítható be ('+
+                  (error.message||String(error))+'); a lista ettől még a táblázatba kerül.');
+              }
+              const fillTable = findTable(document, startIndex) || table;
+              const fill = fillRequests(fillTable, rows, {header:false});
               if (fill.length) {
                 await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
                   requestBody:{requests:fill,
@@ -1411,9 +1430,15 @@ function googleClient(config, refreshToken = '', authOverride = null) {
                 }))).data;
               }
               const align = alignRequests(findTable(document, startIndex));
-              if (align.length) await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({
-                documentId,requestBody:{requests:align,
-                  ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+              if (align.length) {
+                await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({
+                  documentId,requestBody:{requests:align,
+                    ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+                // A következő kérések a friss revízióra hivatkozzanak.
+                document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+                  documentId,includeTabsContent:false
+                }))).data;
+              }
             } else
               warn('A tervjegyzék beszúrt táblázata nem található, ezért a lista a '+
                 'táblázat helyett folyószövegként jelenik meg a dokumentumban.');

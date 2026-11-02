@@ -27,7 +27,7 @@ function mockTechnical({roomContent,fetch:fetchImpl}={}) {
   const roomRows=[['Helyiség','Terület (m²)'],['Földszint',''],['Nappali','30,00'],
     ['Földszint összesen','30,00'],['Teljes összesen','30,00']];
   const folders=['írásos','_Belső','PDFA','DWG','Adat társtervezőktől','PLN','Render'];
-  const state={fieldsWrite:null,docWrite:null,fetchBody:null,fieldRows};
+  const state={fieldsWrite:null,fieldsWrites:[],docWrite:null,fetchBody:null,fieldRows};
   google.sheets=()=>({spreadsheets:{
     get:async options=>options.includeGridData?{data:{sheets:[{data:[{startRow:1,
       rowData:[{values:[{hyperlink:'https://drive.google.com/drive/folders/generate-root'}]}]}]}]}}:
@@ -42,6 +42,7 @@ function mockTechnical({roomContent,fetch:fetchImpl}={}) {
       update:async()=>({data:{}}),
       batchUpdate:async options=>{
         state.fieldsWrite=options;
+        state.fieldsWrites.push(options);
         for(const item of options.requestBody.data || []){
           const match=/!B(\d+)$/.exec(item.range);
           if(!match)continue;
@@ -102,7 +103,18 @@ test('A műszaki leírás egy kéréssel, AI-val elkészül és a fejezetek ment
     assert.equal(result.chapters.length,AUTO_CHAPTERS.length);
     assert.equal(result.chapters[0].value,
       `${AUTO_CHAPTERS[0].title}: a projekt adatai szerint készült szöveg.`);
-    assert.equal(state.fieldsWrite.requestBody.data.length,AUTO_CHAPTERS.length);
+    // A fejezetszövegek a műszaki adatlapra mentődnek, hogy a felületen
+    // szerkeszthetők legyenek; a programszövegek alapértéke is mellé kerül.
+    const savedKeys=new Map();
+    for (const write of state.fieldsWrites)
+      for (const item of write.requestBody.data) {
+        const match=/!B(\d+)$/.exec(item.range);
+        const field=state.fieldRows[Number(match[1])-2];
+        if (field) savedKeys.set(field[0],String(item.values?.[0]?.[0] ?? ''));
+      }
+    for (const chapter of AUTO_CHAPTERS)
+      assert.equal(savedKeys.get(chapter.key),
+        `${chapter.title}: a projekt adatai szerint készült szöveg.`);
     assert.ok(state.docWrite.requestBody.requests.some(item=>item.replaceNamedRangeContent));
     const prompt=JSON.stringify(state.fetchBody);
     assert.equal(prompt.includes('Kiss'),false,'Az ügyfél neve nem kerülhet az AI-hoz.');
@@ -130,7 +142,13 @@ test('AI-hiba esetén is elkészül a nyers műszaki leírás, figyelmeztetésse
     assert.ok(result.warnings.some(text=>text.includes('Az AI-szöveg nem készült el')&&
       text.includes('HTTP 503')),'A hibaüzenetnek meg kell neveznie az okot: '+result.warnings);
     assert.match(result.message,/Figyelem:/);
-    assert.equal(harness.state.fieldsWrite,null,'Sikertelen AI-válaszból nem menthető fejezet.');
+    // Sikertelen AI-válaszból származó fejezetszöveg nem menthető; a sablonból
+    // jövő program-alapértékek ettől függetlenül bekerülhetnek.
+    const savedValues=harness.state.fieldsWrites
+      .flatMap(write=>write.requestBody.data || []).flatMap(item=>item.values || []).flat();
+    assert.equal(savedValues.some(value=>
+      String(value).includes('a projekt adatai szerint készült szöveg.')),false,
+    'Sikertelen AI-válaszból nem menthető fejezet.');
   }finally{
     harness.restore();
   }

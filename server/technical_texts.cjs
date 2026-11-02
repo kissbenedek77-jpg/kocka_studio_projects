@@ -77,29 +77,33 @@ function textTemplates(document) {
   return templates;
 }
 
-// A dokumentum bekezdései indexszel, hogy a névre szóló tartomány tartalmát
-// (esetleg több bekezdésen át) ki lehessen olvasni.
+// A dokumentum bekezdései a nyers szövegükkel (a bekezdésválasztó is benne van),
+// hogy a névre szóló tartomány tartalmát pontosan, az üres bekezdéseket is
+// megtartva lehessen kiolvasni.
 function bodyParagraphs(document) {
-  return (document?.body?.content || []).filter(item => item.paragraph).map(item => ({
-    startIndex:item.startIndex,
-    endIndex:item.endIndex,
-    text:paragraphText(item).replace(/\n$/,'')
-  }));
+  return (document?.body?.content || []).filter(item => item.paragraph).map(item => {
+    const startIndex = Number.isInteger(item.startIndex) ? item.startIndex
+      : item.paragraph.elements?.[0]?.startIndex;
+    return {startIndex, text:paragraphText(item)};
+  }).filter(item => Number.isInteger(item.startIndex));
 }
 
+// A tartomány szövege a bekezdések nyers szövegéből, a bekezdésválasztókkal
+// együtt. Így a szövegben lévő üres sorok (két bekezdésválasztó) megmaradnak,
+// csak a tartomány határán lévő felesleges sorválasztókat vágjuk le.
 function rangeText(paragraphs, range) {
   const start = Number(range?.startIndex);
   const end = Math.max(start,Number(range?.endIndex) || start);
   if (!Number.isFinite(start)) return '';
   const parts = [];
   for (const item of paragraphs) {
-    if (item.endIndex <= start || item.startIndex >= end) continue;
+    if (item.startIndex + item.text.length <= start || item.startIndex >= end) continue;
     const from = Math.max(0,start - item.startIndex);
     const to = Math.min(item.text.length,end - item.startIndex);
-    if (to <= from) continue;
+    if (to < from) continue;
     parts.push(item.text.slice(from,to));
   }
-  return parts.join('\n').trim();
+  return parts.join('').replace(/^\n+/,'').replace(/\s+$/,'');
 }
 
 // A sablonban a helyükön álló alapértelmezett szövegek mezőkulcs szerint.

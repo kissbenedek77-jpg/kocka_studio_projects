@@ -10,10 +10,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const {google} = require('googleapis');
 const {readTrackingCredential} = require('../server/tracking_credential.cjs');
-const {PROGRAM_TEXTS, PROGRAM_LETTERS} = require('../server/technical_program.cjs');
+const {PROGRAM_LETTERS} = require('../server/technical_program.cjs');
+const {sectionTexts} = require('../server/technical_texts.cjs');
 
 const ENV_FILE = path.join(__dirname, '..', '.env');
 const APPLY = process.argv.includes('--apply');
+const TECHNICAL_DOC_ID = process.env.TECHNICAL_TEMPLATE_DOC_ID ||
+  '1TIGIBSACypr0ZvMZ2xXRABEcPArkQTwM_AqfnMNVtoA';
 
 function loadEnvFile() {
   if (!fs.existsSync(ENV_FILE)) return;
@@ -45,7 +48,14 @@ async function main() {
   const spreadsheetId = process.env.PROJECT_DATA_TEMPLATE_ID ||
     '1NZPw7bJAQFfQbTNl3yzObRly1bjyt2hRfQ0QHhCN4Dg';
   const sheets = google.sheets({version:'v4', auth:authorize()});
-  const values = PROGRAM_LETTERS.map(letter => [letter + ') ' + PROGRAM_TEXTS[letter]]);
+  const docs = google.docs({version:'v1', auth:authorize()});
+  // A program a)–p) alapértelmezett szövege a műszaki leírás sablonjában, a
+  // helyén álló névre szóló tartományokban él; innen vesszük át az adatlapra.
+  const document = (await docs.documents.get({documentId:TECHNICAL_DOC_ID,
+    includeTabsContent:false})).data;
+  const sections = sectionTexts(document);
+  const values = PROGRAM_LETTERS.map(letter =>
+    [letter + ') ' + (sections['TERVEZESI_PROGRAM:'+letter] || '')]);
   process.stdout.write(`Adatlap: ${spreadsheetId}\nCél: „Tervezési program”!B2:B${1 + values.length}\n\n`);
   for (const [row] of values) process.stdout.write('  ' + row.split('\n')[0] + '\n');
 

@@ -7,7 +7,7 @@ const path = require('node:path');
 const {google} = require('googleapis');
 const {readTrackingCredential} = require('../server/tracking_credential.cjs');
 
-const DOC_ID = process.env.TECHNICAL_TEMPLATE_DOC_ID ||
+const DOC_ID = process.env.TECHNICAL_DOC_ID || process.env.TECHNICAL_TEMPLATE_DOC_ID ||
   '1TIGIBSACypr0ZvMZ2xXRABEcPArkQTwM_AqfnMNVtoA';
 const ENV_FILE = path.join(__dirname, '..', '.env');
 

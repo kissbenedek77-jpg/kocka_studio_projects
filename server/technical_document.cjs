@@ -34,6 +34,7 @@ const MANUAL_FIELDS = [
   ['EPITMENYERTEK:jogszabaly_es_modszer','Ellenőrzött jogszabály és számítási módszer'],
   ['HELYISEGLISTA','Helyiségek és területek; a PLN/helyiségek.txt alapján ellenőrizve'],
   ['TUZVEDELMI_LEIRAS_JOVAHAGYOTT_SZOVEG','Jóváhagyott tűzvédelmi leírás'],
+  ['SZERKEZETEK LEÍRÁSA','Jóváhagyott szerkezetleírás'],
   ...['alapozas','teherhordo','kemenyek','valaszfalak','aljzatok','teto','badogozas',
     'vizszigeteles','hoszigeteles','vakolatok','homlokzat','nyilaszarok','gipszkarton',
     'feluletkepzes','padloburkolatok','asztalos','lakatos']

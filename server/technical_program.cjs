@@ -1,65 +1,9 @@
 'use strict';
 
-// A tervezési program a)–p) pontjának alapértelmezett szövege a sablon
+// A tervezési program a) - p) pontjának alapértelmezett szövege a sablon
 // dokumentumban, a helyén áll (KOCKA_SZOVEG_PROGRAM_* névre szóló tartomány).
-// A generátor onnan olvassa ki; a kód csak a jelölők kitöltését végzi, saját
-// alapértelmezett fejezetszöveget nem tartalmaz. A PROGRAM_TEXTS kizárólag a
-// sablon egyszeri feltöltéséhez (scripts/update_technical_inline_texts.cjs)
-// maradt meg.
-const PROGRAM_TEXTS = {
-  a: 'A tervezési feladat modern, korszerű, de gazdaságosan kivitelezhető családi otthon '+
-    'építése. Fontos szempont a települési arculat figyelembe vétele úgy, hogy a megbízó '+
-    'igényei maradéktalanul megvalósuljanak.',
-  b: 'A telekről részletes tervezési felmérési térkép készült.',
-  c: 'Az ingatlan {{telepules}} belterületi részén helyezkedik el. A telek az '+
-    '{{tervadatok_munkalap:ovezet}} övezetben található, mely lehetővé teszi lakóingatlan '+
-    'építését.',
-  d: 'A környéken kialakult építészeti arculat nincs. A szomszédos telkeken álló épületek '+
-    'egytől egyig magastetősek, változatos tetőidomokkal, méretekkel. A terv igyekszik a '+
-    'meglévő településszövetnek megfelelő léptékű, korszerű épületeket létrehozni. A terv '+
-    'figyelembe veszi a HÉSZ által támasztott követelményeket.',
-  e: 'A beruházás költségkerete nincs meghatározva.',
-  f: 'Az ingatlan {{telepules}} belterületi részén helyezkedik el. A telek az '+
-    '{{tervadatok_munkalap:ovezet}} övezetben található, mely lehetővé teszi lakóingatlan '+
-    'építését.',
-  g: 'Külső:\n'+
-    'Modern, {{szintek}}, közepes méretű családi ház az elképzelés. A ház leendő bruttó '+
-    'alapterülete cca. {{alapterulet_sav}} m2-t. A ház építésénél az elsődleges szempont a modernség és a '+
-    'költséghatékonyság közti egyensúly megtalálása, legyen modern, környezetbarát, de '+
-    'mindenképpen a környék építészeti arculatát figyelembe véve,\n\n'+
-    'A modern kinézetű legyen, változatos, finom anyaghasználattal (kő, fa, egyéb) – '+
-    'figyelembe véve a rendelkezésre álló pénzügyi keretet.\n\n'+
-    'A belső:\n'+
-    'A ház belseje is legyen modern, világos, nagy ablakokkal és teraszajtókkal oldjuk meg, '+
-    'hogy minél több fény jusson a lakótérbe. A megrendelő egyik legfontosabb igénye a '+
-    'rendelkezésre álló tér/terek maximális kihasználtsága.\n\n'+
-    'Helyiségek:\n{{helyisegek}}'+
-    '\n\nA nappali, a konyha és az étkező legyen egy légtérben, mindkettőből lehessen '+
-    'kimenni a kertbe vagy a teraszra. A konyha legyen nagyon nagy, sok szekrénnyel, '+
-    'kamraszekrényekkel. Az étkező 6-12 személy fogadására, vendéglátására kell, hogy '+
-    'elegendő helyet biztosítson. Ha megoldható, az étkező kapjon erkélyajtót, hogy ki '+
-    'lehessen nyitni, legyen kertkapcsolat.\n\n'+
-    'A nappali legyen funkcionális, tévézős, beszélgetős, játszóhelyiség, kertkapcsolattal, '+
-    'nagy terasszal, ahová ki lehet ülni pihenni, beszélgetni, enni.\n\n'+
-    'Emellett legyen egy {{haloszobak}}, méretük legalább 10-15 m². A gyerekszobákban lehet '+
-    'kis „dolgozó sarok”, ahol leckét írhatnak, rajzolgathat a megrendelő gyermekei.\n\n'+
-    'Fürdőszoba blokkok külön az egyes hálószoba zónákhoz, lehetőség szerint külön wc-vel. '+
-    'Lehetőleg külön mosókonyha is szükséges, itt elhelyezhetők a szükséges gépészeti '+
-    'berendezések.\n\n{{iroda}}',
-  h: 'az építményben üzemelendő technológiák: a lakófunkcióhoz tartozó szokásos háztartási '+
-    'és gépészeti berendezések.',
-  i: 'a telken {{parkolo}} gépjármű elhelyezésére van igény.',
-  j: 'Megújuló energiák hasznosítását a tervezés során figyelembe vesszük. Döntés a '+
-    'tervezési folyamat részeként.',
-  k: 'az akadálymentesítésre igény nem merült fel.',
-  l: 'az építmény nem műemlék.',
-  m: 'a tervezés során statikai, épületgépészeti és épületvillamossági szakági tervező '+
-    'közreműködése szükséges a bejelentéshez szükséges munkarészek elkészítése céljából.',
-  n: 'az egyéb meghatározó követelmény nincs.',
-  o: 'a tervezendő építmény használatának, üzemeltetésének, karbantartásának különleges '+
-    'feltétele nincs.',
-  p: 'a helyszínen nem áll fenn régészeti érintettség.'
-};
+// A generátor onnan olvassa ki; a kód saját alapértelmezett fejezetszöveget nem
+// tartalmaz, csak a {{...}} jelölők kitöltését végzi.
 const PROGRAM_LETTERS = 'abcdefghijklmnop'.split('');
 const GAP = '[KIEGÉSZÍTENDŐ:';
 // A helyiséglista alapján eldönthető, mely helyiségcsoportok szerepeljenek a
@@ -237,7 +181,7 @@ function renderProgramText(text, replacements) {
   });
 }
 
-function programLines(rows, replacements = {}, defaults = PROGRAM_TEXTS) {
+function programLines(rows, replacements = {}, defaults = {}) {
   const output = [];
   for (const [index, letter] of PROGRAM_LETTERS.entries()) {
     const row = rows?.[index] || [];
@@ -251,5 +195,5 @@ function programLines(rows, replacements = {}, defaults = PROGRAM_TEXTS) {
   return output;
 }
 
-module.exports = {PROGRAM_TEXTS,PROGRAM_LETTERS,programReplacements,renderProgramText,
+module.exports = {PROGRAM_LETTERS,programReplacements,renderProgramText,
   programLines,bedroomCount,hasOffice,exitCount,floorCount,roomBullets,normalize};

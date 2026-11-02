@@ -14,7 +14,10 @@ const PT_PER_UNIT = {PT:1,IN:72,CM:72/2.54,MM:72/25.4,PX:0.75};
 const A4_TEXT_WIDTH_PT = 453.57;
 // A lépték oszlopa csak a „M=1:200” típusú szöveget tartalmazza.
 const SCALE_COLUMN_PT = 120;
-const NO_BORDER = {width:{magnitude:0,unit:'PT'},dashStyle:'SOLID'};
+// A keret elrejtése: nulla szélesség. A színt meg kell adni, mert a Docs API a
+// szín nélküli (átlátszó) keretet akkor is elutasítja, ha a szélessége nulla.
+const NO_BORDER = {color:{color:{rgbColor:{red:0,green:0,blue:0}}},
+  width:{magnitude:0,unit:'PT'},dashStyle:'SOLID'};
 const NO_PADDING = {magnitude:0,unit:'PT'};
 
 function toPt(length) {
