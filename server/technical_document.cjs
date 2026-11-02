@@ -4,7 +4,7 @@ const {documentValues} = require('./doc_merge.cjs');
 const {ADDRESSES, SHEET_PREFIX, technicalSheetValues, technicalProgramLines} = require('./technical_sheet.cjs');
 const {programReplacements,exitCount,PROGRAM_LETTERS} = require('./technical_program.cjs');
 const {renderTemplate} = require('./technical_texts.cjs');
-const {planScale, extractPdfScale} = require('./plans.cjs');
+const {planScale} = require('./plans.cjs');
 
 const FIELD_SHEET = 'Műszaki leírás';
 // 245/2006. (XII. 5.) Korm. rendelet 1. melléklet – Egységárak építménytípusonként.
@@ -377,7 +377,11 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     const title = String(file.name || '').replace(/\.pdf$/i,'')
       .replace(/[\r\n\t]/g,' ').trim();
     const pdfBytes = file.bytes ? Buffer.from(file.bytes) : undefined;
-    return {title, scale:planScale(title, pdfBytes)};
+    // A léptéket a hívó a tervlap „M = 1:XXX” feliratából oldja fel (file.scale).
+    // Ha ez hiányzik, a fájlnév kulcsszava ad tartalék becslést.
+    const scale = typeof file.scale === 'string'
+      ? file.scale : planScale(title, pdfBytes);
+    return {title, scale};
   }).filter(item => item.title);
   if (planEntries.length) {
     planEntries.sort((a,b) => a.title.localeCompare(b.title,'hu'));
@@ -386,8 +390,8 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
   }
   if (pdfFiles.length && !planEntries.some(item => item.scale))
     warn('A tervjegyzékben egyetlen tervlaphoz sem ismert a méretarány, ezért a '+
-      'tervlapok lépték nélkül szerepelnek. Egészítsd ki a fájlnevet (például '+
-      '„alaprajz”), vagy a „Tervjegyzék szabályok” munkalapot.');
+      'tervlapok lépték nélkül szerepelnek. A léptéket a tervlap „M = 1:XXX” '+
+      'felirata adja; ellenőrizd, hogy a tervlapon olvasható-e.');
   values.IRATJEGYZEK = ['Építészeti műszaki leírás (jelen dokumentum)',
     ...writtenFiles.filter(file => file.mimeType === 'application/vnd.google-apps.document' ||
       file.mimeType === 'application/pdf').map(file => String(file.name || '').trim())

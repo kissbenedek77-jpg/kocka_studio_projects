@@ -42,8 +42,9 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
       return {data:{files}};},
     copy:async()=>({data:{id:'generated-technical-doc'}})
   }});
-  const tableCell = (text,startIndex) => ({content:[{paragraph:{
-    elements:[{startIndex,textRun:{content:text}}]}}]});
+  const tableCell = (text,startIndex) => ({content:[{startIndex,
+    endIndex:startIndex+text.length+1,paragraph:{elements:[{startIndex,
+      endIndex:startIndex+text.length,textRun:{content:text}}]}}]});
   const dataTable = (startIndex) => ({startIndex,table:{tableRows:[
     {tableCells:[tableCell('',startIndex+1),tableCell('Megengedett:',startIndex+5),
       tableCell('Meglévő',startIndex+20),tableCell('Tervezett:',startIndex+30)]},
@@ -89,7 +90,7 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
     }}});
   try{
     const client=googleClient({clientId:'test',clientSecret:'test',baseUrl:'https://node.example',
-      sheetId:'technical-main',sheetName:'Adatok'});
+      sheetId:'technical-main',sheetName:'Adatok',pdfText:async()=>'M = 1:333'});
     const result=await client.ensureDocument('ABC123','muszakiLeiras');
     assert.equal(result.created,true);
     assert.equal(areaWritten.requestBody.values[0][0],30);
@@ -115,6 +116,13 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
     const inserted=shaping.filter(request=>request.insertTable)
       .find(request=>request.insertTable.location.index===300)?.insertTable;
     assert.deepEqual(inserted,{location:{index:300},rows:1,columns:2});
+    // A lépték a tervlap „M = 1:XXX” feliratából származik, nem a fájlnévből.
+    const insertedTexts=shaping.filter(request=>request.insertText)
+      .map(request=>request.insertText.text);
+    assert.ok(insertedTexts.includes('EK-01 Helyszínrajz'),'Beszúrt cellák: '+
+      JSON.stringify(insertedTexts)+' kulcsok: '+JSON.stringify(shaping.map(item=>Object.keys(item)[0])));
+    assert.ok(insertedTexts.includes('M=1:333'),
+      'A lépték a tervlap feliratából jön: '+insertedTexts);
     const columns=shaping.filter(request=>request.updateTableColumnProperties)
       .map(request=>request.updateTableColumnProperties);
     assert.equal(columns.length,2,'Két oszlop szélessége állítódik.');

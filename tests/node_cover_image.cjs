@@ -123,7 +123,7 @@ test('A műszaki DRAFT címlapképe a legfrissebb Render képből cserélődik',
   }});
   try {
     const client = googleClient({clientId:'test',clientSecret:'test',baseUrl:'https://node.example',
-      sheetId:'technical-cover',sheetName:'Adatok'});
+      sheetId:'technical-cover',sheetName:'Adatok',pdfText:async()=>''});
     await client.ensureDocument('ABC123','muszakiLeiras');
     const cover = docWrites.map(item => item.requestBody.requests[0].replaceImage).find(Boolean);
     assert.ok(cover, 'a replaceImage kérés elmaradt');

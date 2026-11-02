@@ -7,7 +7,7 @@ const {inquiryText,photoType} = require('./inquiry.cjs');
 const {buildClientRow, clientFormUrl} = require('./client_data.cjs');
 const {documentValues, templateMarkers, findMarkers, mergeRequests, unresolvedMarkers} = require('./doc_merge.cjs');
 const {conditionalBlocks,conditionalRequests} = require('./conditional_docs.cjs');
-const {planScale} = require('./plans.cjs');
+const {planScale, resolvePlanScale, planScaleWarning} = require('./plans.cjs');
 const {restartPostfix,appendPostfix,copiedName,expectedPath} = require('./restart.cjs');
 const {technicalSheetValues, technicalProgramLines} = require('./technical_sheet.cjs');
 const {parseRoomText,areaText} = require('./room_data.cjs');
@@ -116,6 +116,8 @@ function googleClient(config, refreshToken = '', authOverride = null) {
   const drive = google.drive({version: 'v3', auth});
   const docs = google.docs({version:'v1',auth});
   const pdfQuality=config.pdfQuality||{convertPdfA,inspectPdf};
+  // A PDF-szövegolvasó tesztben helyettesíthető; élesben a Poppler pdftotext.
+  const readPdfText=config.pdfText||pdfToText;
   const book = config.sheetId;
   const quote = name => `'${String(name).replace(/'/g, "''")}'`;
   const sheetRead = call => googleQuota.run('sheetsRead', 1, call);
@@ -1061,6 +1063,48 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     return retegrendFacts({sheetRows,planTexts});
   }
 
+  // A tervjegyzék léptéke a tervlapon olvasható „M = 1:XXX” feliratból jön. A
+  // PDF szövegét tervlaponként olvassuk ki; ha ez nem sikerül, a fájlnév ad
+  // becslést, és figyelmeztetés nevezi meg a tervlapot a feltételezett léptékkel.
+  const MAX_PLAN_PDF_BYTES = 25*1024*1024;
+  const PLAN_SCALE_TTL_MS = 30*60*1000;
+  // Egy tervlap léptékének feloldása. A PDF letöltése és szövegolvasása drága,
+  // ezért a fájl azonosítója szerint rövid ideig gyorsítótárazzuk; új feltöltés
+  // új azonosítót kap, így frissül.
+  async function planScaleOf(file) {
+    const load = async () => {
+      let text = '', problem = '';
+      if (Number(file.size || 0) > MAX_PLAN_PDF_BYTES)
+        problem = 'a PDF 25 MB-nál nagyobb';
+      else {
+        try {
+          const bytes = file.bytes ? Buffer.from(file.bytes)
+            : Buffer.from((await googleQuota.run('drive',100,() => drive.files.get({
+              fileId:file.id,alt:'media',supportsAllDrives:true},{responseType:'arraybuffer'}))).data);
+          text = await readPdfText(bytes);
+        } catch (error) {
+          if (error.status === 429) throw error;
+          problem = error.message || String(error);
+        }
+      }
+      const resolved = resolvePlanScale(file.title,text);
+      return {...resolved,problem};
+    };
+    return file.id ? googleCache.get('planscale:'+file.id,PLAN_SCALE_TTL_MS,load) : load();
+  }
+  async function planScales(files, warn = () => {}) {
+    const output = [];
+    for (const file of files || []) {
+      const name = String(file.name || '').replace(/[\r\n\t]+/g,' ').trim();
+      const title = name.replace(/\.pdf$/i,'');
+      const resolved = await planScaleOf({...file,name,title});
+      const message = planScaleWarning(title,resolved,resolved.problem);
+      if (message) warn(message);
+      output.push({...file,name,title,scale:resolved.scale,scaleSource:resolved.source});
+    }
+    return output;
+  }
+
   async function ensureDocument(uid, type) {
     const template = DOCUMENT_TEMPLATES[type];
     if (!template) throw new Error('Ismeretlen vagy még nem átültetett dokumentumtípus.');
@@ -1119,6 +1163,8 @@ function googleClient(config, refreshToken = '', authOverride = null) {
           item.mimeType === 'application/vnd.google-apps.folder' && item.name === 'PDFA');
         pdfFiles = pdfFolder ? (await listChildren(pdfFolder.id)).filter(item =>
           item.mimeType === 'application/pdf' || /\.pdf$/i.test(item.name)) : [];
+        // A léptéket a tervlap „M = 1:XXX” felirata adja; a fájlnév csak becslés.
+        pdfFiles = await planScales(pdfFiles, warn);
         const writtenFolder = projectChildren.find(item =>
           item.mimeType === 'application/vnd.google-apps.folder' && /^írásos$/i.test(item.name));
         writtenFiles = writtenFolder ? await listChildren(writtenFolder.id) : [];
@@ -2566,13 +2612,14 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       if (!planCount) addIssue('plans','Nincs PDF tervlap a PDFA mappában.',true);
       for (const pdf of pdfFiles) {
         const title = String(pdf.name || '').replace(/\.pdf$/i,'').replace(/[\r\n\t]+/g,' ').trim();
-        // Ha a fájlnévből nem állapítható meg a méretarány, nem kérdezünk rá:
-        // a tervjegyzékben csak a tervlap neve szerepel.
+        // A léptéket elsődlegesen a tervlap „M = 1:XXX” felirata adja; a fájlnév
+        // csak tartalék. Ezért itt csak azt jelezzük, ha a tartalék sem ismert.
         if (title && !planScale(title)) hasUnknownScale = true;
       }
       if (hasUnknownScale)
-        addIssue('scale','Egy vagy több tervlap méretaránya nem állapítható meg a fájlnévből; '+
-          'a tervjegyzékben csak a tervlap neve szerepel.',false,false);
+        addIssue('scale','Egy vagy több tervlap nevéből nem állapítható meg a lépték. '+
+          'A léptéket a tervlap „M = 1:XXX” felirata adja; ha ez nem olvasható, a '+
+          'tervjegyzék a becsült vagy üres léptéket mutatja.',false,false);
       const expectedName = [data.projekt_varos,data.projekt_kozterulet,
         data.projekt_tipus,data.projekt_hazszam].map(item => String(item || '').trim())
         .filter(Boolean).join(' ').replace(/\s+/g,' ').trim() + (postfix ? ' - '+postfix : '');

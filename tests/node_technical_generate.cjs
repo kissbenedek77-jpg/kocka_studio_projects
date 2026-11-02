@@ -87,7 +87,7 @@ function mockTechnical({roomContent,fetch:fetchImpl}={}) {
 
 function technicalClient(name) {
   return googleClient({clientId:'test',clientSecret:'test',baseUrl:'https://node.example',
-    sheetId:name,sheetName:'Adatok'});
+    sheetId:name,sheetName:'Adatok',pdfText:async()=>''});
 }
 
 test('A műszaki leírás egy kéréssel, AI-val elkészül és a fejezetek mentődnek',async()=>{
