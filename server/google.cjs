@@ -11,11 +11,14 @@ const {planScale, resolvePlanScale, planScaleWarning} = require('./plans.cjs');
 const {restartPostfix,appendPostfix,copiedName,expectedPath} = require('./restart.cjs');
 const {technicalSheetValues, technicalProgramLines} = require('./technical_sheet.cjs');
 const {parseRoomText,areaText} = require('./room_data.cjs');
-const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,fieldSheetRows,validateTechnicalField,manualValues,technicalReplacements} = require('./technical_document.cjs');
+const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,fieldSheetRows,validateTechnicalField,manualValues,technicalReplacements} = require('./technical_document.cjs');
+const {valueTableRequests} = require('./value_table.cjs');
 const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs');
 const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
 const {sectionTexts,sectionReplaceRequests,appendixRequests} = require('./technical_texts.cjs');
-const {findMarker,insertRequests,findEmptyTable,fillRequests} = require('./room_table.cjs');
+const {findMarker,insertRequests,findEmptyTable,fillRequests,
+  layoutRequests:roomLayoutRequests,styleRequests:roomStyleRequests,
+  findTable:findRoomTable} = require('./room_table.cjs');
 const {technicalTableRequests} = require('./technical_table.cjs');
 const {MARKER:PLAN_MARKER,planRows,layoutRequests,alignRequests,findTable} = require('./plan_list.cjs');
 const {retegrendFacts,retegrendValues} = require('./retegrend.cjs');
@@ -1402,7 +1405,26 @@ function googleClient(config, refreshToken = '', authOverride = null) {
           const table = findEmptyTable(document, roomData.tableRows);
           if (table) {
             roomTableInserted = true;
-            const fill = fillRequests(table, roomData.tableRows);
+            const startIndex = table.startIndex;
+            // Elrendezés: a megnevezés oszlop a szövegtükör 7/8-a, a terület
+            // oszlop 1/8-a, minden cella kitöltése 0,1 cm.
+            try {
+              const layout = roomLayoutRequests(startIndex, document.documentStyle);
+              if (layout.length) {
+                await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+                  requestBody:{requests:layout,
+                    ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+                document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+                  documentId,includeTabsContent:false
+                }))).data;
+              }
+            } catch (error) {
+              if (error.status === 429) throw error;
+              warn('A helyiséglista oszlopszélessége és cellakitöltése nem állítható be ('+
+                (error.message||String(error))+'); a lista ettől még a táblázatba kerül.');
+            }
+            const fillTable = findRoomTable(document,startIndex) || table;
+            const fill = fillRequests(fillTable, roomData.tableRows);
             if (fill.length) {
               await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
                 requestBody:{requests:fill,
@@ -1410,6 +1432,24 @@ function googleClient(config, refreshToken = '', authOverride = null) {
               document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
                 documentId,includeTabsContent:false
               }))).data;
+            }
+            // Igazítás (terület jobbra), a helyiségnevek és az alszummák
+            // behúzása, a fejléc és az összesítő sorok kiemelése.
+            try {
+              const styles = roomStyleRequests(findRoomTable(document,startIndex),
+                roomData.tableKinds);
+              if (styles.length) {
+                await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+                  requestBody:{requests:styles,
+                    ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+                document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+                  documentId,includeTabsContent:false
+                }))).data;
+              }
+            } catch (error) {
+              if (error.status === 429) throw error;
+              warn('A helyiséglista igazítása és kiemelése nem állítható be ('+
+                (error.message||String(error))+'); a lista ettől még a táblázatban van.');
             }
           } else
             warn('A helyiséglista beszúrt táblázata nem található, ezért a lista szövegként '+
@@ -1528,6 +1568,36 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       documentId,requestBody:{requests,
         ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}
     }));
+    // Az építményérték-táblázat a minta alapján: a cím és az egységár oszlop,
+    // a terület és az egységár szorzatából az érték, alul a MINDÖSSZESEN sor.
+    // A helyettesítés után olvassuk vissza, mert a terület a cellába már bekerült.
+    if (type === 'muszakiLeiras' && roomData) {
+      try {
+        const valueDocument = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+          documentId,includeTabsContent:false
+        }))).data;
+        const valueTable = valueTableRequests(valueDocument,{fallback:[
+          {label:EPITMENYERTEK_ROWS[1].label,price:EPITMENYERTEK_ROWS[1].price},
+          {label:EPITMENYERTEK_ROWS[5].label,price:EPITMENYERTEK_ROWS[5].price}
+        ]});
+        if (valueTable && !valueTable.rows.length)
+          warn('Az építményérték-táblázatban nincs kitölthető terület, ezért az érték '+
+            'és az összeg üresen maradt. Ellenőrizd a nettó alapterületet.');
+        if (valueTable?.requests?.length) {
+          await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+            requestBody:{requests:valueTable.requests,
+              ...(valueDocument.revisionId
+                ? {writeControl:{requiredRevisionId:valueDocument.revisionId}} : {})}}));
+          document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+            documentId,includeTabsContent:false
+          }))).data;
+        }
+      } catch (error) {
+        if (error.status === 429) throw error;
+        warn('Az építményérték-táblázat nem tölthető ki ('+
+          (error.message||String(error))+'); ellenőrizd a területet és az egységárat.');
+      }
+    }
     if (type === 'muszakiLeiras') await refreshTechnicalCoverImage(uid, documentId);
     const stamp = new Date().toISOString();
     const revision = String(source.revisionId || '').trim();

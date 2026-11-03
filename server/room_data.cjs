@@ -112,24 +112,32 @@ function parseRoomText(content,sourceName='helyiségek.txt') {
   const hasNumber=columns.number>=0,hasCovering=columns.covering>=0;
   const title=hasNumber?'Helyiség száma és neve':'Helyiség';
   const tableRows=[[title,'Terület (m²)']];
+  // A táblázat sorainak fajtája a formázáshoz (fejléc, szint, helyiség,
+  // alszummák, teljes összeg, terasz nélküli összeg).
+  const tableKinds=['header'];
   output.push(title+'\tTerület (m²)');
   for (const [floor,group] of floors) {
     output.push(floor);
     tableRows.push([floor,'']);
+    tableKinds.push('floor');
     for (const room of group.rooms) {
       const label=[room.number,room.name].filter(Boolean).join(' ');
       const finish=hasCovering && room.covering ? `; burkolat: ${room.covering}` : '';
       output.push(`    ${label}\t${areaText(room.area)} m²${finish}`);
       tableRows.push([label,areaText(room.area)]);
+      tableKinds.push('room');
     }
     output.push(`${floor} összesen\t${areaText(group.total)} m²`);
     tableRows.push([floor+' összesen',areaText(group.total)]);
+    tableKinds.push('subtotal');
   }
   output.push(`Mindösszesen\t${areaText(total)} m²`);
   tableRows.push(['Mindösszesen',areaText(total)]);
+  tableKinds.push('total');
   if (external) {
     output.push(`Terasz nélkül\t${areaText(total-external)} m²`);
     tableRows.push(['Terasz nélkül',areaText(total-external)]);
+    tableKinds.push('external');
   }
   if (sourceTotal !== null && sourceTotal !== total)
     output.push(`[ELLENŐRIZENDŐ: a helyiségsorok összege ${areaText(total)} m², `+
@@ -137,7 +145,7 @@ function parseRoomText(content,sourceName='helyiségek.txt') {
   // A tűzszakasz számításához a külső, nem zárt térként számított teraszok
   // (terasz, erkély, tornác) nélküli összeg kell.
   return {rooms,totalCents:total,externalCents:external,sourceTotal,
-    listing:output.join('\n'),tableRows};
+    listing:output.join('\n'),tableRows,tableKinds};
 }
 
 module.exports={areaCents,areaText,parseRoomText};

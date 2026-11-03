@@ -28,6 +28,9 @@ test('A PLN helyiségszámot és burkolatot csak akkor veszi át, ha a forrás t
   assert.match(data.listing,/02 nappali\t21,75 m²; burkolat: parketta/);
   assert.deepEqual(data.tableRows[1],['Földszint','']);
   assert.deepEqual(data.tableRows[2],['01 előtér','8,25']);
+  // A táblázat sorainak fajtája a formázáshoz (fejléc, szint, helyiség,
+  // alszummák, teljes összeg).
+  assert.deepEqual(data.tableKinds,['header','floor','room','room','subtotal','total']);
 });
 
 test('A tabulátoros, pontosvesszős és magyar fejlécváltozat is feldolgozható', () => {

@@ -1,7 +1,8 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {MARKER,findMarker,insertRequests,findEmptyTable,fillRequests} = require('../server/room_table.cjs');
+const {MARKER,findMarker,insertRequests,findEmptyTable,fillRequests,
+  layoutRequests,styleRequests,findTable} = require('../server/room_table.cjs');
 
 const para = (start,content) => ({startIndex:start,endIndex:start+content.length,
   paragraph:{elements:[{startIndex:start,textRun:{content}}]}});
@@ -74,3 +75,4 @@ test('A beszúrt üres táblázat azonosítható és a cellák feltöltése hely
     request.deleteContentRange?.range.startIndex ?? request.updateTextStyle.range.startIndex);
   assert.deepEqual(indexes,[...indexes].sort((a,b) => b-a));
 });
+

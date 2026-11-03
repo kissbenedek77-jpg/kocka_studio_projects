@@ -430,7 +430,8 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     keep.has(key) || String(value ?? '').trim()));
 }
 
-module.exports = {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,validateTechnicalField,fieldSheetRows,
+module.exports = {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,
+  validateTechnicalField,fieldSheetRows,
   manualValues,numberFromSheet,technicalReview,technicalReplacements,displayDate,validIsoDate,
   validHungarianDate,hungarianToday,gapText,DATA_MARKER,tervTargya,rendeltetesiKategoria,
   basementArea};

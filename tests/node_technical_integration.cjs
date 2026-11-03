@@ -53,12 +53,28 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
       tableCell('{{TERVEZESI_ADATOK:Munkalap1!L7}}',startIndex+110),
       tableCell('{{TERVEZESI_ADATOK:Munkalap1!M7}}',startIndex+150)]}
   ]}});
+  // Az építményérték-táblázat a sablonban: a minta adatsor, alatta az összeg.
+  const valueTable = (startIndex) => {
+    let index = startIndex;
+    const row = texts => ({tableCells:texts.map(text => {
+      const tableCellValue = tableCell(text,index);
+      index += text.length + 1;
+      return tableCellValue;
+    })});
+    return {startIndex,endIndex:startIndex+1,table:{tableRows:[
+      row(['1. Lakó, üdülő, kulturális rendeltetésre szolgáló épület, épületrész',
+        'nettó alapterület / m²','600','30.00 m²','']),
+      row(['MINDÖSSZESEN','','','',''])
+    ]}};
+  };
   const body={content:[{paragraph:{elements:[{startIndex:1,textRun:{
     content:'{{TERV_TARGYA}} {{HELYISEGLISTA}} {{TERVEZESI_ADATOK:Munkalap1!B2}}\n'}}]}},
     ...['Tartalomjegyzék','Adatok','Beépítési paraméterek','Épület adatai','Tűzvédelem']
       .map((text,index)=>({startIndex:20+index*20,paragraph:{elements:[
         {startIndex:20+index*20,textRun:{content:text+'\n'}}]}})),
     dataTable(200),
+    // Az építményérték-táblázat: a minta adatsor és a MINDÖSSZESEN sor.
+    valueTable(400),
     // A tervjegyzék jelölője: a helyére keret és cellakitöltés nélküli
     // táblázat kerül, a lépték a lap jobb szélén.
     {startIndex:300,endIndex:315,paragraph:{elements:[{startIndex:300,
@@ -130,6 +146,10 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
     const cellStyle=shaping.find(request=>request.updateTableCellStyle)?.updateTableCellStyle;
     assert.equal(cellStyle.tableCellStyle.borderTop.width.magnitude,0);
     assert.equal(cellStyle.tableCellStyle.paddingLeft.magnitude,0);
+    // Az építményérték-táblázat a minta alapján: a terület magyar alakban, az
+    // érték a terület × egységár szorzata, alul a MINDÖSSZESEN összeg.
+    assert.ok(insertedTexts.includes('30,00 m²'),'Építményérték terület: '+insertedTexts);
+    assert.ok(insertedTexts.includes('18 000 E Ft'),'Építményérték: '+insertedTexts);
     assert.equal(texts.some(text=>String(text).includes('Helyszínrajz')),false,
       'A tervjegyzék nem szövegként kerül a dokumentumba, hanem táblázatként.');
     assert.deepEqual(appended.requestBody.values[0].slice(0,4),
