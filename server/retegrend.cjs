@@ -1,18 +1,37 @@
 'use strict';
 
 // Rétegrend-feldolgozás. A bemenet a „Rétegrend sablonok” munkalap soraiból
-// és/vagy a Metszetek tervlap szövegéből származó blokkok listája. A generátor
-// ebből nyeri a fal-, födém- és fedélszerkezet anyagát és vastagságát; hiányzó
-// adat helyén hiányjelölés marad, anyagot nem találunk ki.
+// és/vagy a Metszetek tervlap „Rétegrendek” szövegblokkjából származik. A
+// generátor ebből nyeri a fal-, födém- és fedélszerkezet anyagát és
+// vastagságát; hiányzó adat helyén hiányjelölés marad, anyagot nem találunk ki.
 //
-// A Metszetek tervlap szövege összefolyó (a rajzi feliratok és a rétegrendek
-// keverednek), ezért csak a whitelistelt blokkfejlécet követő, vastagság + anyag
-// alakú sorokat fogadjuk el. Minden más sor rajzi felirat, és kimarad.
+// A Metszetek tervlapján a rétegrendek egyetlen, jól körülhatárolható
+// szövegblokkban vannak. A blokk a „Rétegrendek:” címsorral kezdődik, és a
+// következő címsorig, az „É” jelölésig vagy a rajzi megjegyzések kezdetéig tart.
+// Ezen kívül eső szöveget nem használunk fel: a rajzi feliratok, a méretek és a
+// tervjegyzék nem lesznek rétegek.
+//
+// A blokkon belül a rétegek sorrendje a nyers pdftotext-kimenetből jön (a
+// vastagság és az anyag egymást követi). A `-layout` kimenet csak arra kell,
+// hogy az egyetlen összefolyó anyagsorból az egyes anyagokat szétválasszuk;
+// az oszlop helyét a leggyakoribb vastagság-token kezdőpozíciója adja meg.
 const GAP = '[KIEGÉSZÍTENDŐ:';
-const CONSTRUCTION = /fal|födém|fodem|fedél|fedel|tető|teto|magastető|magasteto|válaszfal|valaszfal|aljzat|padló|padlo|szerkezet|burkolat/i;
-const HEADER = /^([FMTK])\s*(\d{0,2})\s*[.:–-]?\s*(.{2,90})$/;
-const LAYER = /^(\d+(?:[.,]\d+)?\s*(?:cm|mm|rtg)|\d+\s*rtg)\s+(.+)$/i;
-const DRAWING = /M\s*=\s*1:|lépték|leptek|tervlap|metszet|alaprajz|homlokzat|helyszínrajz|helyszinrajz|^\s*EK-|\d+\s*\/\s*\d+/i;
+
+const TH_SRC = '(?:(?:min\\.?)\\s*)?\\d+(?:\\s*[-–]\\s*\\d+)?(?:[.,]\\d+)?\\s*(?:cm|mm|rtg)|\\d+\\s*\\/\\s*\\d+';
+const TH_G = new RegExp(TH_SRC,'gi');
+const TH_LEAD = new RegExp('^('+TH_SRC+')\\s+(.+)$','i');
+const TH_TRAIL = new RegExp('^(.*?)\\s+((?:(?:'+TH_SRC+')(?:\\s+(?:'+TH_SRC+'))*))$','i');
+
+const CONSTRUCTION = /fal|födém|fodem|fedél|fedel|tető|teto|magastető|magasteto|válaszfal|valaszfal|aljzat|padló|padlo|szerkezet|burkolat|lábazat|labazat|járda|jarda|terasz|pince|lépcső|lepcso|erkély|erkely/i;
+const REGION = /r[eé]tegrendek\s*:?/i;
+const END = /^(?:[ÉE]$|[±+\-]?\d+[.,]\d+\s*=\s*\d|M\s*=\s*1:|Terven jelölt|Az épület|A bútorok|Az egyes szerkezetek|Minden szerkezet|Minden szín|Rajzszám|Rajz léptéke|KOCKA STÚDIÓ)/i;
+const HEADER = /^([FMTPKL])(\d{0,2})([a-z]?)\s+(.+)$/;
+const DRAWING_ID = /^[A-Z]{1,3}\d+[a-z]?$/;
+const CONTINUATION = /^(?:szalaggal|hajlaterősítő|hajlaterosit|folytatva|átlapolva|atlapolva)\b/i;
+const PRIMER = /^(?:hideg\s+bitumenmáz|hideg\s+bitumenmaz|bitumenmáz|bitumenmaz|kellősítés|kellosites|alapozó|alapozo|primer)(?:\s|$)/i;
+const ADJECTIVE_END = /(?:i|ő|ű|ú|ó|tett|ott|ett|ált|elt)$/i;
+// A rajzlap fejlécében és a széljegyzetekben szereplő sorok sosem rétegek.
+const TITLE_BLOCK = /^(?:KOCKA STÚDIÓ|Bőle|Kaposvár|Munka megnevezése|Tervfajta|Rajz név|Rajzszám|Rajz léptéke|Építészet|Statika|Épületgépészet|Épületvillamosság|Kiss László|Márton Attila|Mácsai|Kocsis|M = 1:|Kiviteli terv|Metszetek|\d{4}\.\d{2}\.\d{2}\.|Minden szerkezet|Minden szín|ellenőrizendők!|glettelés és diszperziós festés készül|Terven jelölt|Az épület|A bútorok|Az egyes szerkezetek)/i;
 
 // A szerkezeti réteg kiválasztása típusonként. A hőszigetelés, a vakolat, a
 // glettelés és a burkolat nem szerkezet, ezért kimarad.
@@ -26,6 +45,7 @@ const TYPE_LAYER = {
 };
 
 function text(value) {return String(value ?? '').replace(/\s+/g,' ').trim();}
+function tokensOf(line) {return text(line).match(TH_G) || [];}
 
 function numericThickness(value) {
   const match = /(\d+(?:[.,]\d+)?)\s*(cm|mm)?/i.exec(text(value));
@@ -34,9 +54,15 @@ function numericThickness(value) {
   return match[2] && /mm/i.test(match[2]) ? number/10 : number;
 }
 
+// A blokk besorolása. A pincefal, a lábazat, a járda és a terasz önálló
+// szerkezet, ezért nem versenyez a fő határoló fal / födém / fedélszék hellyel.
 function classify(block) {
   const title = text(block?.title);
   const all = [title,...(block?.layers || []).map(layer => layer.material)].join(' ');
+  if (/terasz/i.test(title)) return 'terrace';
+  if (/járda|jarda/i.test(title)) return 'paving';
+  if (/pincefal/i.test(title)) return 'basement';
+  if (/lábazat|labazat/i.test(title)) return 'plinth';
   // A sorrend fontos: a „Födém” nem határoló fal, a „Magastető” nem födém.
   if (/födém|fodem|födémlemez|fodemlemez/i.test(all)) return 'slab';
   if (/fedél|fedel|magastető|magasteto|tetőhéjalás|tetohejalas|tetőszerkezet|tetoszerkezet/i.test(all))
@@ -46,7 +72,7 @@ function classify(block) {
     return 'wall';
   if (/^T\s*\d*\b/i.test(title)) return 'roof';
   if (/^M\s*\d*\b/i.test(title)) return 'slab';
-  if (/aljzat|padló|padlo/i.test(title)) return 'floor';
+  if (/^P\s*\d*\b/i.test(title) || /aljzat|padló|padlo/i.test(title)) return 'floor';
   return '';
 }
 
@@ -80,7 +106,6 @@ function structuralLayer(block, kind) {
 
 function blockFacts(block) {
   const kind = classify(block);
-  if (!kind) return null;
   const layerKind = kind === 'roof' ? 'roofFrame' : kind;
   const structure = structuralLayer(block, layerKind) ||
     findLayer(block, TYPE_LAYER[layerKind] || /./);
@@ -90,6 +115,7 @@ function blockFacts(block) {
   return {
     kind,
     origin:block.origin || 'sheet',
+    source:block.source || '',
     id:text(block.title).split(/\s/)[0],
     title:text(block.title),
     material:structure ? text(structure.material) : '',
@@ -117,7 +143,7 @@ function retegekFromRows(rows) {
     const a = text(row?.[0]), b = text(row?.[1]);
     if (!a && !b) {current = null; continue;}
     if (a && !b && !/^[\d,.]+\s*(?:cm|mm|rtg)?$/i.test(a) && isHeaderRow(a)) {
-      current = {title:a,layers:[],origin:'sheet'};
+      current = {id:a.split(/\s/)[0], title:a,layers:[],origin:'sheet'};
       blocks.push(current);
       continue;
     }
@@ -128,28 +154,286 @@ function retegekFromRows(rows) {
   return blocks.filter(block => block.layers.length);
 }
 
-// A Metszetek tervlap szövegéből kiolvasott blokkok. Csak a whitelistelt
-// blokkfejléc (F1, M1, T1, K1 stb.) után következő, vastagság + anyag alakú
-// sorok kerülnek be; a rajzi feliratok kimaradnak.
-function retegekFromText(source) {
+// A szövegblokk sorai: a „Rétegrendek:” címsor utáni sorok a következő
+// címsorig / az „É” jelölésig / a rajzi megjegyzések kezdetéig. A blokkon
+// kívüli szöveget nem olvassuk be. Layout módban csak a sor végi whitespace-t
+// vágjuk le, mert a sor eleji szóközök adják az oszlopkoordinátákat.
+function regionsOf(source, layout) {
   const lines = String(source || '').split(/\r?\n/)
-    .map(line => line.replace(/\s+/g,' ').trim()).filter(Boolean);
+    .map(line => layout ? line.replace(/\s+$/,'') : text(line))
+    .filter(line => line.trim());
+  const regions = [];
+  let current = null;
+  for (const line of lines) {
+    const probe = text(line);
+    if (REGION.test(probe)) {current = []; regions.push(current); continue;}
+    if (!current) continue;
+    if (END.test(probe)) {current = null; continue;}
+    current.push(line);
+  }
+  return regions.filter(region => region.length);
+}
+
+function isOnlyThickness(line) {
+  const tokens = tokensOf(line);
+  if (!tokens.length) return false;
+  return tokens.join('').replace(/\s+/g,'') === text(line).replace(/\s+/g,'');
+}
+
+function isMaterialLine(line) {
+  const value = text(line);
+  if (value.length < 3) return false;
+  if (DRAWING_ID.test(value)) return false;
+  if (!/[a-záéíóöőúüű]{3,}/.test(value)) return false;
+  return !HEADER.test(value);
+}
+
+function blockHeader(line) {
+  const match = HEADER.exec(text(line));
+  if (!match) return null;
+  const id = match[1].toUpperCase()+match[2]+match[3];
+  let rest = match[4].trim();
+  let tokens = [];
+  const trailing = TH_TRAIL.exec(rest);
+  if (trailing) {rest = trailing[1].trim(); tokens = tokensOf(trailing[2]);}
+  if (!rest || !CONSTRUCTION.test(rest)) return null;
+  return {id, title:id+' '+rest, tokens};
+}
+
+function leadingThickness(line) {
+  const match = TH_LEAD.exec(text(line));
+  if (!match) return null;
+  if (/^(?:vtg|vastag)\b/i.test(match[2])) return null;
+  return {token:match[1], material:match[2]};
+}
+
+function regionBlocks(lines) {
   const blocks = [];
   let current = null;
   for (const line of lines) {
-    if (line.length > 200 || DRAWING.test(line)) continue;
-    const head = line.match(HEADER);
-    if (head && CONSTRUCTION.test(head[3])) {
-      current = {title:(head[1].toUpperCase()+(head[2]||''))+' '+head[3].trim(),
-        layers:[],origin:'pdf'};
+    const head = blockHeader(line);
+    if (head) {
+      current = {id:head.id, title:head.title, events:[]};
       blocks.push(current);
+      head.tokens.forEach(value => current.events.push({type:'t', value}));
       continue;
     }
     if (!current) continue;
-    const layer = line.match(LAYER);
-    if (layer) current.layers.push({thickness:layer[1], material:layer[2]});
+    if (isOnlyThickness(line)) {
+      tokensOf(line).forEach(value => current.events.push({type:'t', value}));
+      continue;
+    }
+    const lead = leadingThickness(line);
+    if (lead) {
+      current.events.push({type:'t', value:lead.token});
+      current.events.push({type:'m', value:lead.material});
+      continue;
+    }
+    if (isMaterialLine(line)) current.events.push({type:'m', value:line});
   }
+  return blocks;
+}
+
+// A vastagság- és anyagesemények párosítása. A folytató sor és az alapozó nem
+// kap saját vastagságot.
+function pairLayers(block) {
+  const layers = [];
+  const queue = [];
+  for (const event of block.events) {
+    if (event.type === 't') {queue.push(event.value); continue;}
+    const material = text(event.value);
+    if (!material) continue;
+    if (CONTINUATION.test(material) || PRIMER.test(material)) {
+      layers.push({thickness:'', material});
+      continue;
+    }
+    layers.push({thickness:queue.shift() || '', material});
+  }
+  block.layers = layers;
+  return block;
+}
+
+// A layout-kimenet oszlopai. Egy terven belül több rétegrend-oszlop is lehet,
+// ezért oszloponként külön jelöltlistát adunk; a blokkhoz illeszkedő listát
+// a nyers anyagsorral való egyezés választja ki.
+function columnsOf(region) {
+  const counts = new Map();
+  for (const line of region) {
+    TH_G.lastIndex = 0;
+    let match;
+    while ((match = TH_G.exec(line))) {
+      if (match.index === 0 || /\s{2,}$/.test(line.slice(0,match.index)))
+        counts.set(match.index,(counts.get(match.index) || 0)+1);
+    }
+  }
+  return [...counts].filter(([,count]) => count >= 2)
+    .sort((a,b) => b[1]-a[1]).map(([index]) => index).slice(0,4);
+}
+
+function materialAt(line, column, isHeader) {
+  const segments = line.slice(column).replace(/\s+$/,'')
+    .split(/\s{2,}/).map(text).filter(Boolean);
+  if (!segments.length) return '';
+  const start = isHeader || isOnlyThickness(segments[0]) ? 1 : 0;
+  for (let i = start; i < segments.length; i++) {
+    const segment = segments[i];
+    if (isOnlyThickness(segment)) continue;
+    let value = segment;
+    if (i === 0) {
+      const lead = leadingThickness(segment);
+      if (lead) value = lead.material;
+    }
+    if (!isMaterialLine(value) || TITLE_BLOCK.test(value)) continue;
+    return value;
+  }
+  return '';
+}
+
+function layoutCandidateLists(source) {
+  const map = new Map();
+  for (const region of regionsOf(source,true)) {
+    for (const column of columnsOf(region)) {
+      let current = null;
+      for (const line of region) {
+        const cell = text(line.slice(column,column+16));
+        const head = /^([FMTPKL]\d{0,2}[a-z]?)\s+\S/.exec(cell);
+        if (head) {
+          const id = head[1].toUpperCase();
+          if (!map.has(id)) map.set(id,[]);
+          current = [];
+          map.get(id).push(current);
+          const material = materialAt(line,column,true);
+          if (material) current.push(material);
+          continue;
+        }
+        if (!current) continue;
+        const material = materialAt(line,column,false);
+        if (material) current.push(material);
+      }
+    }
+  }
+  for (const [id,lists] of map) {
+    map.set(id,lists.map(filterDuplicates).filter(list => list.length));
+  }
+  return map;
+}
+
+function filterDuplicates(list) {
+  const seen = new Set();
+  return list.filter(value => {
+    const key = text(value).toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function shouldContinue(previous, candidate) {
+  if (!previous) return false;
+  if (CONTINUATION.test(candidate)) return true;
+  if (!/^[a-záéíóöőúüű]/.test(candidate)) return false;
+  const last = text(previous).split(' ').pop().replace(/[,.;:)]+$/,'');
+  return ADJECTIVE_END.test(last);
+}
+
+// Az összefolyó anyagsor bontása. Csak azokat a jelölteket használjuk, amelyek
+// tényleg benne vannak a sorban; a nem található jelölt más blokkhoz tartozik.
+// A sor végén maradó töredék az utolsó réteg folytatása.
+function splitRun(run, candidates) {
+  let rest = text(run);
+  const out = [];
+  for (const raw of candidates || []) {
+    const candidate = text(raw);
+    if (!candidate || !rest) continue;
+    const index = rest.toLowerCase().indexOf(candidate.toLowerCase());
+    if (index < 0) continue;
+    if (index > 0) {
+      if (out.length) out[out.length-1] = text(out[out.length-1]+' '+rest.slice(0,index));
+      else out.push(text(rest.slice(0,index)));
+    }
+    const previous = out.length ? out[out.length-1] : '';
+    if (index === 0 && shouldContinue(previous,candidate))
+      out[out.length-1] = text(previous+' '+candidate);
+    else out.push(candidate);
+    rest = rest.slice(index+candidate.length).trim();
+  }
+  if (rest) {
+    if (out.length) out[out.length-1] = text(out[out.length-1]+' '+rest);
+    else out.push(rest);
+  }
+  return out.filter(Boolean);
+}
+
+// A jelöltlista pontozása: minél több jelölt található a nyers sorban, és
+// minél kevesebb kimaradó töredék keletkezik, annál jobb.
+function candidateScore(run, candidates) {
+  let rest = text(run), matched = 0, fragments = 0, missed = 0;
+  for (const raw of candidates || []) {
+    const candidate = text(raw);
+    if (!candidate || !rest) continue;
+    const index = rest.toLowerCase().indexOf(candidate.toLowerCase());
+    if (index < 0) {missed++; continue;}
+    matched++;
+    fragments += index;
+    rest = rest.slice(index+candidate.length).trim();
+  }
+  return matched*1000 - fragments*5 - missed;
+}
+
+function bestCandidateList(run, lists) {
+  let best = null, bestScore = -Infinity;
+  for (const list of lists || []) {
+    if (!list.length) continue;
+    const score = candidateScore(run,list);
+    if (score > bestScore) {best = list; bestScore = score;}
+  }
+  return best;
+}
+
+// A nyers szövegből és a hozzá tartozó layout-kimenetből készült blokkok.
+function retegekFromText(source, layoutSource, name = '') {
+  const blocks = regionsOf(source,false).flatMap(regionBlocks);
+  const candidates = layoutSource ? layoutCandidateLists(layoutSource) : new Map();
+  for (const block of blocks) {
+    const tokens = block.events.filter(event => event.type === 't').length;
+    const materials = block.events.filter(event => event.type === 'm');
+    if (materials.length === 1 && tokens > 1) {
+      const list = bestCandidateList(materials[0].value,candidates.get(block.id));
+      if (list) {
+        const parts = splitRun(materials[0].value,list);
+        const at = block.events.findIndex(event => event.type === 'm');
+        block.events.splice(at,1,...parts.map(value => ({type:'m', value})));
+      }
+    }
+    block.origin = 'pdf';
+    block.source = text(name).replace(/\.pdf$/i,'');
+  }
+  for (const block of blocks) pairLayers(block);
   return blocks.filter(block => block.layers.length);
+}
+
+// A tervlap ugyanazt a rétegrend-blokkot több szövegrétegben is tartalmazhatja.
+// Ilyenkor az azonosító szerint a legtöbb réteget adó változat marad meg.
+function bestPerPlan(blocks) {
+  const entries = [];
+  const byKey = new Map();
+  for (const block of blocks) {
+    if (block.origin !== 'pdf' || !block.id) {
+      const entry = {block};
+      entries.push(entry);
+      continue;
+    }
+    const key = block.source+'|'+block.id;
+    const previous = byKey.get(key);
+    if (!previous) {
+      const entry = {block};
+      byKey.set(key,entry);
+      entries.push(entry);
+    } else if ((block.layers?.length || 0) > (previous.block.layers?.length || 0)) {
+      previous.block = block;
+    }
+  }
+  return entries.map(entry => entry.block);
 }
 
 function uniqueBlocks(blocks) {
@@ -175,10 +459,21 @@ function scoreBlock(fact) {
   return score;
 }
 
+// A jóváhagyott rétegrend-szöveg egy blokkja: címsor (tervlap nevével) és a
+// kívülről befelé haladó, behúzott rétegsorok.
+function blockText(block) {
+  const title = text(block.title)+(block.source ? ' ('+block.source+')' : '');
+  const layers = (block.layers || []).map(layer => {
+    const value = layerValue(layer);
+    return value ? '  – '+value : '';
+  }).filter(Boolean);
+  return [title,...layers].join('\n');
+}
+
 function retegrendFacts({sheetRows = [], planTexts = []} = {}) {
-  const blocks = uniqueBlocks([...retegekFromRows(sheetRows),
-    ...planTexts.flatMap(entry => retegekFromText(entry.text))]);
-  const facts = blocks.map(blockFacts).filter(Boolean);
+  const blocks = uniqueBlocks(bestPerPlan([...retegekFromRows(sheetRows),
+    ...planTexts.flatMap(entry => retegekFromText(entry.text,entry.layoutText,entry.name))]));
+  const facts = blocks.map(blockFacts);
   const best = kind => {
     const candidates = facts.filter(item => item.kind === kind)
       .sort((a,b) => scoreBlock(b) - scoreBlock(a));
@@ -188,8 +483,7 @@ function retegrendFacts({sheetRows = [], planTexts = []} = {}) {
     blocks,
     facts,
     wall:best('wall'), slab:best('slab'), roof:best('roof'),
-    lines:facts.map(item => [item.title, ...item.layers.map(layerValue).filter(Boolean)]
-      .join('\n')).filter(Boolean)
+    lines:blocks.map(blockText).filter(Boolean)
   };
 }
 
@@ -212,4 +506,4 @@ function retegrendValues(result) {
   };
 }
 
-module.exports = {retegekFromRows,retegekFromText,retegrendFacts,retegrendValues,classify};
+module.exports = {retegekFromRows,retegekFromText,retegrendFacts,retegrendValues,classify,blockText};

@@ -5,18 +5,14 @@
 // A modul csak kéréseket állít elő, a Google Docs hívásokat a hívó végzi.
 
 const MARKER = '{{HELYISEGLISTA}}';
-// A Google Docs hosszúság-egységei PT-ben.
-const PT_PER_UNIT = {PT:1,IN:72,CM:72/2.54,MM:72/25.4,PX:0.75};
-// A4 álló lap szövegtükre a szokásos 2,5 cm-es margókkal, ha a dokumentum
-// stílusa nem ad használható lapszélességet (595,28 − 2 × 70,85 PT).
-const A4_TEXT_WIDTH_PT = 453.57;
-// A cellakitöltés 0,1 cm (1 cm = 28,3465 PT).
+// A helyiséglista oszlopai pontosan 7 cm és 2 cm szélesek, így a teljes
+// táblázat 9 cm (1 cm = 72/2,54 = 28,3465 PT).
+const NAME_COLUMN_PT = 198.43; // 7 cm
+const AREA_COLUMN_PT = 56.69;  // 2 cm
+// A cellakitöltés 0,1 cm.
 const PADDING_PT = 2.83;
 // A helyiségnevek és az alszummák behúzása kb. 1 cm-rel.
 const INDENT_PT = 28.35;
-// A táblázat a szövegtükör felét tölti ki; azon belül a megnevezés 7/8, a
-// terület 1/8.
-const TABLE_WIDTH_RATIO = 0.5;
 // A teljes összeg nagyobb betűvel, a fejléc és az alszummák félkövéren.
 const GRAND_TOTAL_PT = 11;
 
@@ -96,44 +92,20 @@ function fillRequests(table, rows, {header = true} = {}) {
   });
 }
 
-// 4. fázis: a táblázat elrendezése. A táblázat a szövegtükör felét tölti ki:
-// azon belül a megnevezés oszlop 7/8, a terület oszlop 1/8; minden cella
-// kitöltése 0,1 cm.
-function toPt(length) {
-  if (!length) return null;
-  const magnitude = Number(length.magnitude);
-  if (!Number.isFinite(magnitude)) return null;
-  const factor = PT_PER_UNIT[String(length.unit || 'PT').toUpperCase()];
-  return factor ? magnitude * factor : null;
-}
-
-function textWidth(documentStyle) {
-  const width = toPt(documentStyle?.pageSize?.width);
-  const left = toPt(documentStyle?.marginLeft);
-  const right = toPt(documentStyle?.marginRight);
-  const textWidth = width != null && left != null && right != null ? width - left - right : null;
-  return Math.max(60,textWidth != null && textWidth > 60 ? textWidth : A4_TEXT_WIDTH_PT);
-}
-
-function round(value) {
-  return Math.round(value * 100) / 100;
-}
-
-function layoutRequests(tableStartIndex, documentStyle) {
-  const width = textWidth(documentStyle) * TABLE_WIDTH_RATIO;
-  const areaWidth = width / 8;
-  const nameWidth = width - areaWidth;
+// 4. fázis: a táblázat elrendezése. A megnevezés oszlop 7 cm, a terület
+// oszlop 2 cm széles (a táblázat összesen 9 cm); minden cella kitöltése 0,1 cm.
+function layoutRequests(tableStartIndex) {
   const padding = {magnitude:PADDING_PT,unit:'PT'};
   const column = (index,columnWidth) => ({updateTableColumnProperties:{
     tableStartLocation:{index:tableStartIndex},
     columnIndices:[index],
     tableColumnProperties:{widthType:'FIXED_WIDTH',
-      width:{magnitude:round(columnWidth),unit:'PT'}},
+      width:{magnitude:columnWidth,unit:'PT'}},
     fields:'widthType,width'
   }});
   return [
-    column(0,nameWidth),
-    column(1,areaWidth),
+    column(0,NAME_COLUMN_PT),
+    column(1,AREA_COLUMN_PT),
     {updateTableCellStyle:{tableStartLocation:{index:tableStartIndex},
       tableCellStyle:{paddingTop:padding,paddingBottom:padding,
         paddingLeft:padding,paddingRight:padding},

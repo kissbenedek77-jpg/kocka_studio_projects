@@ -32,10 +32,20 @@ test('A „Födém” nem határoló fal, a „Magastető” nem födém', () =>
   assert.equal(classify({title:'P Belső padló',layers:[]}),'floor');
 });
 
-test('A Metszetek szövegéből csak a rétegrend-blokk és a rétegsorok kerülnek be', () => {
+test('A pincefal, a lábazat, a járda és a terasz nem a fő szerkezet', () => {
+  assert.equal(classify({title:'F3 Pincefal',layers:[]}),'basement');
+  assert.equal(classify({title:'L1 Lábazat',layers:[]}),'plinth');
+  assert.equal(classify({title:'K1 Járda',layers:[]}),'paving');
+  assert.equal(classify({title:'T2 Terasz',layers:[]}),'terrace');
+});
+
+test('Csak a „Rétegrendek:” blokk belsejéből lesznek rétegek', () => {
   const text = [
     'ÉPÍTÉSZ MŰSZAKI LEÍRÁS M=1:50',
     'EK-04 Metszetek',
+    'F9 Rajzi felirat nem réteg',
+    '30 cm valami falazat',
+    'Rétegrendek:',
     'F1 Határoló fal',
     '3 rtg diszperziós festés',
     '1,5 cm vakolat',
@@ -50,14 +60,53 @@ test('A Metszetek szövegéből csak a rétegrend-blokk és a rétegsorok kerül
     'kerámia fedés'
   ].join('\n');
   const blocks = retegekFromText(text);
-  assert.deepEqual(blocks.map(block => block.title),
-    ['F1 Határoló fal','M1 Födém','T1 Fedélszék']);
-  // A rajzi feliratok (lépték, tervlap) nem lesznek rétegek.
+  // A blokk a rajzi megjegyzésnél véget ér, az utána következő T1 nem része.
+  assert.deepEqual(blocks.map(block => block.title),['F1 Határoló fal','M1 Födém']);
   assert.equal(blocks.some(block => block.layers.some(layer =>
     /M\s*=\s*1:|tervlap/i.test(layer.material))),false);
-  // Blokkfejléc nélküli sor nem nyit új blokkot.
+  // Címsor nélküli szövegből nem lesz rétegrend.
   const stray = retegekFromText('csak egy mondat a tervről\n30 cm valami falazat');
   assert.deepEqual(stray,[]);
+});
+
+test('Az összefolyó anyagsor a layout-oszlopokból tagolódik', () => {
+  const raw = [
+    'Rétegrendek:',
+    'F3 Pincefal 3 rtg 3 rtg 1,5 cm 30 cm 2 rtg',
+    '15 cm 16 cm 2 cm',
+    'diszperziós festés glettelés vakolat Porotherm 30 kerámia pincefalazó elem '+
+      '4 mm SBS szigetelés hideg bitumenmáz kellősítés zsalukő szigetelés védő fal '+
+      'XPS hőszigetelés geotextília lemez',
+    'É'
+  ].join('\n');
+  const layout = [
+    'Rétegrendek:',
+    'F3 Pincefal    diszperziós festés',
+    '3 rtg          glettelés',
+    '3 rtg          vakolat',
+    '1,5 cm         Porotherm 30 kerámia pincefalazó elem',
+    '30 cm          4 mm SBS szigetelés',
+    '2 rtg          hideg bitumenmáz kellősítés',
+    '               zsalukő szigetelés védő fal',
+    '15 cm          XPS hőszigetelés',
+    '16 cm          geotextília lemez',
+    '2 cm',
+    'É'
+  ].join('\n');
+  const blocks = retegekFromText(raw,layout,'EK-05 Metszetek.pdf');
+  assert.equal(blocks.length,1);
+  assert.deepEqual(blocks[0].layers, [
+    {thickness:'3 rtg',material:'diszperziós festés'},
+    {thickness:'3 rtg',material:'glettelés'},
+    {thickness:'1,5 cm',material:'vakolat'},
+    {thickness:'30 cm',material:'Porotherm 30 kerámia pincefalazó elem'},
+    {thickness:'2 rtg',material:'4 mm SBS szigetelés'},
+    {thickness:'',material:'hideg bitumenmáz kellősítés'},
+    {thickness:'15 cm',material:'zsalukő szigetelés védő fal'},
+    {thickness:'16 cm',material:'XPS hőszigetelés'},
+    {thickness:'2 cm',material:'geotextília lemez'}
+  ]);
+  assert.equal(blocks[0].source,'EK-05 Metszetek');
 });
 
 test('A szerkezeti réteg a vastagság és az anyag, nem a hőszigetelés vagy a vakolat', () => {
@@ -79,10 +128,12 @@ test('A szerkezeti réteg a vastagság és az anyag, nem a hőszigetelés vagy a
     ['8 cm','vasalt aljzatbeton']
   ];
   const planTexts = [{name:'EK-04 Metszetek.pdf',text:[
+    'Rétegrendek:',
     'M1 Födém',
     '20 cm vasbeton födém',
     '4 cm aljzatbeton',
-    '1 rtg párazáró fólia'
+    '1 rtg párazáró fólia',
+    'É'
   ].join('\n')}];
   const facts = retegrendFacts({sheetRows,planTexts});
   assert.equal(facts.wall.material,'Porotherm N+F kerámia falazat');
@@ -95,6 +146,9 @@ test('A szerkezeti réteg a vastagság és az anyag, nem a hőszigetelés vagy a
   assert.equal(facts.slab.origin,'pdf');
   assert.equal(facts.slab.material,'vasbeton födém');
   assert.equal(facts.slab.thickness,'20 cm');
+  // A jóváhagyott szöveg blokkonként tagolt: címsor, majd behúzott rétegsorok.
+  assert.match(facts.lines.join('\n'),/^F Határoló fal\n  – 3 rtg diszperziós festés/m);
+  assert.match(facts.lines.join('\n'),/M1 Födém \(EK-04 Metszetek\)\n  – 20 cm vasbeton födém/);
   const values = retegrendValues(facts);
   assert.equal(values['retegrend:fal_anyag'],'Porotherm N+F kerámia falazat');
   assert.equal(values['retegrend:fal_vastagsag'],'30 cm');

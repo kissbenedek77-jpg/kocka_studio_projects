@@ -939,7 +939,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         roomData,plans,sectionTexts:sectionTexts(templateDoc),
         templateMarkers:templateMarkers(templateDoc),
         extraValues:{...retegrendValues(retegrend),
-          RETEGRENDEK_JOVAHAGYOTT_SZOVEG:(retegrend?.lines || []).join('\n')}},warnings);
+          RETEGRENDEK_JOVAHAGYOTT_SZOVEG:(retegrend?.lines || []).join('\n\n')}},warnings);
       // A végleges (kiértékelt) programszövegek és fejezetszövegek a műszaki
       // adatlapra kerülnek, hogy a felületen szerkeszthetők legyenek. A már
       // mentett szöveget nem írjuk felül.
@@ -1048,8 +1048,11 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       try {
         const response = await googleQuota.run('drive',100,() => drive.files.get({
           fileId:item.id,alt:'media',supportsAllDrives:true},{responseType:'arraybuffer'}));
-        const text = await pdfToText(Buffer.from(response.data));
-        if (text.trim()) texts.push({name:item.name,text});
+        const bytes = Buffer.from(response.data);
+        // A blokkhatárokhoz nyers, az anyagok szétválasztásához layout-kimenet kell.
+        const text = await pdfToText(bytes,{layout:false});
+        const layoutText = await pdfToText(bytes,{layout:true}).catch(() => '');
+        if (text.trim() || layoutText.trim()) texts.push({name:item.name,text,layoutText});
         else warn('A Metszetek tervlapból ('+item.name+') nem olvasható szöveg; a '+
           'rétegrendek a munkalapról készülnek.');
       } catch (error) {
@@ -1255,7 +1258,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
           roomData,plans:pdfFiles,sectionTexts:sectionTexts(source),
           templateMarkers:templateMarkers(source),
           extraValues:{...retegrendValues(retegrend),
-          RETEGRENDEK_JOVAHAGYOTT_SZOVEG:(retegrend?.lines || []).join('\n')}},warnings);
+          RETEGRENDEK_JOVAHAGYOTT_SZOVEG:(retegrend?.lines || []).join('\n\n')}},warnings);
       } catch (error) {
         if (error.status === 429) throw error;
         warn('A műszaki leírás adatainak összeállítása nem sikerült ('+(error.message||String(error))+
@@ -1406,10 +1409,10 @@ function googleClient(config, refreshToken = '', authOverride = null) {
           if (table) {
             roomTableInserted = true;
             const startIndex = table.startIndex;
-            // Elrendezés: a megnevezés oszlop a szövegtükör 7/8-a, a terület
-            // oszlop 1/8-a, minden cella kitöltése 0,1 cm.
+            // Elrendezés: a megnevezés oszlop 7 cm, a terület oszlop 2 cm
+            // széles (a táblázat 9 cm), minden cella kitöltése 0,1 cm.
             try {
-              const layout = roomLayoutRequests(startIndex, document.documentStyle);
+              const layout = roomLayoutRequests(startIndex);
               if (layout.length) {
                 await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
                   requestBody:{requests:layout,

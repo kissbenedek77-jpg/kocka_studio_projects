@@ -12,20 +12,21 @@ function cell(start,text = '') {
   return {content,startIndex:start,endIndex:start+text.length+1};
 }
 
-// A4 álló lap a szokásos margókkal: 595,28 − 2 × 70,85 = 453,58 PT.
-const STYLE = {pageSize:{width:{magnitude:595.28,unit:'PT'}},
-  marginLeft:{magnitude:70.85,unit:'PT'},marginRight:{magnitude:70.85,unit:'PT'}};
+// A helyiséglista oszlopai: 7 cm és 2 cm, a táblázat 9 cm.
+// 1 cm = 72 / 2,54 = 28,3465 PT.
+const CM = 72 / 2.54;
 
-test('A táblázat 50% széles, a megnevezés 7/8, a terület 1/8, a kitöltés 0,1 cm', () => {
-  const requests = layoutRequests(300,STYLE);
+test('A helyiséglista oszlopai 7 cm és 2 cm, a táblázat 9 cm széles', () => {
+  const requests = layoutRequests(300);
   const widths = requests.filter(request => request.updateTableColumnProperties)
     .map(request => request.updateTableColumnProperties.tableColumnProperties.width.magnitude);
   assert.equal(widths.length,2);
-  assert.equal(widths[0],198.44,'A megnevezés a fél szövegtükör 7/8-a: '+widths[0]);
-  assert.equal(widths[1],28.35,'A terület a fél szövegtükör 1/8-a: '+widths[1]);
-  assert.equal(Math.round((widths[0] + widths[1]) * 100) / 100,226.79,
-    'A táblázat a szövegtükör 50%-a.');
-  assert.ok(Math.abs(widths[0] / widths[1] - 7) < 0.01,'Az arány 7:1.');
+  assert.equal(widths[0],198.43,'A megnevezés oszlop 7 cm: '+widths[0]);
+  assert.equal(widths[1],56.69,'A terület oszlop 2 cm: '+widths[1]);
+  assert.equal(Math.round((widths[0] + widths[1]) * 100) / 100,255.12,
+    'A táblázat 9 cm (255,12 PT).');
+  assert.ok(Math.abs(widths[0] - 7 * CM) < 0.01,'7 cm = '+(7 * CM)+' PT');
+  assert.ok(Math.abs(widths[1] - 2 * CM) < 0.01,'2 cm = '+(2 * CM)+' PT');
   const padding = requests.find(request => request.updateTableCellStyle)
     .updateTableCellStyle.tableCellStyle;
   // 0,1 cm = 2,83 PT

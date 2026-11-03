@@ -69,9 +69,11 @@ test('A rétegrend a munkalapról és a Metszetek szövegéből is felismerhető
   ]);
   assert.equal(blocks.length,3);
   const textBlocks = retegekFromText([
+    'Rétegrendek:',
     'M1 Födém',
     '2 cm padlóburkolat',
-    '20 cm vasbeton lemez'
+    '20 cm vasbeton lemez',
+    'É'
   ].join('\n'));
   assert.equal(textBlocks[0].layers.length,2);
   const facts = retegrendFacts({sheetRows:[
