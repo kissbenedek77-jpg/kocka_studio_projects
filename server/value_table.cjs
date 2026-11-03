@@ -97,6 +97,12 @@ function toRequests(edits) {
   }).flat();
 }
 
+// Az érték oszlop mindig „E Ft” utótaggal jelenik meg.
+function ensureValueUnit(text) {
+  const value = String(text ?? '');
+  return /E\s*Ft\s*$/i.test(value.trim()) ? value : value + ' ' + DEFAULT_VALUE_UNIT;
+}
+
 // A táblázat kitöltése. A `fallback` a minta hiányzó celláinak tartaléka
 // (rendeltetési kategória neve és egységára soronként), hogy a cím és az
 // egységár a jogszabályi mintából is bekerülhessen.
@@ -124,18 +130,17 @@ function valueTableRequests(document, {fallback = []} = {}) {
     if (label) setCell(edits,cells[COLUMN.label],label);
     setCell(edits,cells[COLUMN.price],replaceNumber(cellText(cells[COLUMN.price]),price,0));
     setCell(edits,cells[COLUMN.area],replaceNumber(cellText(cells[COLUMN.area]),areaCents/100,2));
-    const valueText = replaceNumber(cellText(cells[COLUMN.value]),value,0);
-    setCell(edits,cells[COLUMN.value],
-      cellText(cells[COLUMN.value]).trim() ? valueText : valueText+' '+DEFAULT_VALUE_UNIT);
+    const valueText = ensureValueUnit(replaceNumber(cellText(cells[COLUMN.value]),value,0));
+    setCell(edits,cells[COLUMN.value],valueText);
     total += value;
     summary.push({label,area:areaCents/100,price,value});
   }
   if (!summary.length) return {requests:[],rows:summary,total:0};
   const totalCells = rows[totalIndex].tableCells || [];
   if (totalCells.length > COLUMN.value) {
-    const totalText = replaceNumber(cellText(totalCells[COLUMN.value]),total,0);
-    setCell(edits,totalCells[COLUMN.value],
-      cellText(totalCells[COLUMN.value]).trim() ? totalText : totalText+' '+DEFAULT_VALUE_UNIT);
+    const totalText = ensureValueUnit(
+      replaceNumber(cellText(totalCells[COLUMN.value]),total,0));
+    setCell(edits,totalCells[COLUMN.value],totalText);
   }
   return {requests:toRequests(edits),rows:summary,total};
 }

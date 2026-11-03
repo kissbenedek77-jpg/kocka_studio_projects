@@ -12,8 +12,11 @@ const PT_PER_UNIT = {PT:1,IN:72,CM:72/2.54,MM:72/25.4,PX:0.75};
 const A4_TEXT_WIDTH_PT = 453.57;
 // A cellakitöltés 0,1 cm (1 cm = 28,3465 PT).
 const PADDING_PT = 2.83;
-// A helyiségnevek és az alszummák behúzása (kb. 0,5 cm).
-const INDENT_PT = 14.17;
+// A helyiségnevek és az alszummák behúzása kb. 1 cm-rel.
+const INDENT_PT = 28.35;
+// A táblázat a szövegtükör felét tölti ki; azon belül a megnevezés 7/8, a
+// terület 1/8.
+const TABLE_WIDTH_RATIO = 0.5;
 // A teljes összeg nagyobb betűvel, a fejléc és az alszummák félkövéren.
 const GRAND_TOTAL_PT = 11;
 
@@ -93,8 +96,9 @@ function fillRequests(table, rows, {header = true} = {}) {
   });
 }
 
-// 4. fázis: a táblázat elrendezése. A megnevezés oszlop a szövegtükör 7/8-a,
-// a terület oszlop 1/8-a; minden cella kitöltése 0,1 cm.
+// 4. fázis: a táblázat elrendezése. A táblázat a szövegtükör felét tölti ki:
+// azon belül a megnevezés oszlop 7/8, a terület oszlop 1/8; minden cella
+// kitöltése 0,1 cm.
 function toPt(length) {
   if (!length) return null;
   const magnitude = Number(length.magnitude);
@@ -116,7 +120,7 @@ function round(value) {
 }
 
 function layoutRequests(tableStartIndex, documentStyle) {
-  const width = textWidth(documentStyle);
+  const width = textWidth(documentStyle) * TABLE_WIDTH_RATIO;
   const areaWidth = width / 8;
   const nameWidth = width - areaWidth;
   const padding = {magnitude:PADDING_PT,unit:'PT'};

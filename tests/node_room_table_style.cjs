@@ -16,14 +16,15 @@ function cell(start,text = '') {
 const STYLE = {pageSize:{width:{magnitude:595.28,unit:'PT'}},
   marginLeft:{magnitude:70.85,unit:'PT'},marginRight:{magnitude:70.85,unit:'PT'}};
 
-test('A megnevezés oszlop 7/8, a terület oszlop 1/8 széles, a kitöltés 0,1 cm', () => {
+test('A táblázat 50% széles, a megnevezés 7/8, a terület 1/8, a kitöltés 0,1 cm', () => {
   const requests = layoutRequests(300,STYLE);
   const widths = requests.filter(request => request.updateTableColumnProperties)
     .map(request => request.updateTableColumnProperties.tableColumnProperties.width.magnitude);
   assert.equal(widths.length,2);
-  assert.equal(widths[0],396.88,'A megnevezés a szövegtükör 7/8-a: '+widths[0]);
-  assert.equal(widths[1],56.7,'A terület a szövegtükör 1/8-a: '+widths[1]);
-  assert.equal(Math.round((widths[0] + widths[1]) * 100) / 100,453.58);
+  assert.equal(widths[0],198.44,'A megnevezés a fél szövegtükör 7/8-a: '+widths[0]);
+  assert.equal(widths[1],28.35,'A terület a fél szövegtükör 1/8-a: '+widths[1]);
+  assert.equal(Math.round((widths[0] + widths[1]) * 100) / 100,226.79,
+    'A táblázat a szövegtükör 50%-a.');
   assert.ok(Math.abs(widths[0] / widths[1] - 7) < 0.01,'Az arány 7:1.');
   const padding = requests.find(request => request.updateTableCellStyle)
     .updateTableCellStyle.tableCellStyle;
@@ -44,8 +45,8 @@ test('A terület jobbra igazított, a helyiségnevek és az alszummák behúzott
   assert.equal(paragraphs.filter(item => item.paragraphStyle.alignment === 'END').length,5);
   // A helyiség és az alszummák behúzottak, a fejléc, a szint és a teljes összeg nem.
   assert.deepEqual(paragraphs.filter(item => item.paragraphStyle.indentStart)
-    .map(item => item.range.startIndex),[100,100],
-    'Csak a helyiség és az alszummák behúzottak.');
+    .map(item => [item.range.startIndex,item.paragraphStyle.indentStart.magnitude]),[[100,28.35],[100,28.35]],
+    'Csak a helyiség és az alszummák behúzottak, kb. 1 cm-rel.');
   const texts = requests.filter(request => request.updateTextStyle);
   assert.equal(texts.length,6,'A fejléc, az alszummák és a teljes összeg mindkét cellája félkövér.');
   const total = texts.filter(item => item.updateTextStyle.textStyle.fontSize);

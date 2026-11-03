@@ -64,6 +64,19 @@ test('Terület nélkül nincs számítás, és a helyiséglista táblázata nem 
   assert.equal(valueTableRequests({body:{content:[{paragraph:{elements:[]}}]}}),null);
 });
 
+test('Az érték oszlop mindig „E Ft” utótagot kap', () => {
+  // A minta értékcellájában csak szám áll: a kitöltés után „E Ft” utótag kell.
+  const table = valueTable(100,['1. Lakó, üdülő rendeltetésre szolgáló épület, épületrész',
+    'nettó alapterület / m²','600','10,00 m²','6 000'],['MINDÖSSZESEN','','','','6 000']);
+  const result = valueTableRequests({body:{content:[table]}});
+  const texts = textOf(result.requests);
+  assert.ok(texts.includes('6 000 E Ft'),'Az érték utótaggal: '+texts.join(' | '));
+  assert.equal(texts.filter(text => /E Ft E Ft/.test(text)).length,0,
+    'Nem duplázódik az utótag.');
+  assert.equal(texts.filter(text => text === '6 000 E Ft').length,2,
+    'A sor és a MINDÖSSZESEN is utótagot kap.');
+});
+
 test('A szám és a cella szövege magyar alakban jelenik meg', () => {
   assert.equal(parseNumber('45,28 m²'),45.28);
   assert.equal(parseNumber('1 234,5'),1234.5);
