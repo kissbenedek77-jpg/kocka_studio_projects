@@ -230,6 +230,13 @@ function regionBlocks(lines) {
       current.events.push({type:'m', value:lead.material});
       continue;
     }
+    // A szóhatáros kimenetben a vastagság néha a sor végére kerül.
+    const trail = TH_TRAIL.exec(text(line));
+    if (trail && /[a-záéíóöőúüű]{3,}/i.test(trail[1])) {
+      current.events.push({type:'t', value:trail[2]});
+      current.events.push({type:'m', value:trail[1]});
+      continue;
+    }
     if (isMaterialLine(line)) current.events.push({type:'m', value:line});
   }
   return blocks;
@@ -391,10 +398,117 @@ function bestCandidateList(run, lists) {
   return best;
 }
 
+// A Poppler a nyers kimenetben a rajz szövegét és a rétegrendet összekeverve
+// adja (a blokk címsorai és a rétegek külön szövegrészekben kerülnek egymás
+// után), ezért ilyenkor a `-layout` kimenet rétegrend-oszlopából olvasunk. Az
+// oszlop bal szélét a „Rétegrendek” címsor pozíciója adja; a mellette lévő
+// rajzi jegyzeteket a sáv szélessége zárja ki.
+const LAYOUT_BAND_WIDTH = 110;
+function layoutRegionBlocks(layoutSource) {
+  const lines = String(layoutSource || '').split(/\r?\n/);
+  let head = -1, left = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const match = /r[eé]tegrendek/i.exec(lines[i]);
+    if (!match) continue;
+    head = i;
+    left = match.index;
+    break;
+  }
+  if (head < 0) return [];
+  const region = [];
+  for (let i = head + 1; i < lines.length; i++) {
+    const segment = lines[i].slice(left, left + LAYOUT_BAND_WIDTH).replace(/\s+$/,'');
+    if (!segment.trim()) continue;
+    const probe = text(segment);
+    if (END.test(probe)) break;
+    region.push(segment);
+  }
+  return regionBlocks(region);
+}
+
+// A Poppler `-bbox-layout` kimenete szóhatárokat ad. A rétegrend-oszlopok a
+// blokk-címsorok (F1, L1, P1, …) x-koordinátái mentén helyezkednek el; a rajzi
+// feliratok más x-en állnak, ezért a címsorok oszlopsávján kívül eső szavakat
+// kihagyjuk. Egy terven több rétegrend-oszlop is lehet egymás mellett.
+function bboxWords(html) {
+  const pages = String(html || '').split(/<page\b/).slice(1);
+  const words = [];
+  pages.forEach((page,index) => {
+    for (const match of page.matchAll(
+      /<word xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)" yMax="([\d.]+)">([^<]*)<\/word>/g))
+      words.push({page:index,x:Number(match[1]),y:Number(match[2]),text:match[5]});
+  });
+  return words;
+}
+
+function bboxVisualLines(html) {
+  const words = bboxWords(html);
+  const heading = words.find(word => /r[eé]tegrendek/i.test(word.text));
+  if (!heading) return {heading:null,lines:[]};
+  const pageWords = words.filter(word => word.page === heading.page && word.y > heading.y + 1)
+    .sort((a,b) => a.y - b.y || a.x - b.x);
+  const lines = [];
+  for (const word of pageWords) {
+    const line = lines[lines.length-1];
+    if (line && Math.abs(word.y - line.y) <= 3) line.words.push(word);
+    else lines.push({y:word.y,words:[word]});
+  }
+  return {heading,lines};
+}
+
+function bboxColumns(lines, heading) {
+  const positions = [heading.x];
+  for (const line of lines) {
+    const words = line.words;
+    for (let i = 0; i < words.length - 1; i++) {
+      const id = words[i];
+      if (!/^[FLPMTK]\d{0,2}[a-z]?$/.test(id.text)) continue;
+      const title = words.slice(i+1).find(word => word.x - id.x <= 100);
+      if (!title || !CONSTRUCTION.test(title.text)) continue;
+      positions.push(id.x);
+    }
+  }
+  const sorted = [...new Set(positions.map(x => Math.round(x)))].sort((a,b) => a-b);
+  const columns = [];
+  for (const x of sorted)
+    if (!columns.length || x - columns[columns.length-1] > 150) columns.push(x);
+  return columns;
+}
+
+function bboxRegionBlocks(html) {
+  const {heading,lines} = bboxVisualLines(html);
+  if (!heading) return [];
+  const columns = bboxColumns(lines,heading);
+  const blocks = [];
+  columns.forEach((left,index) => {
+    const next = columns[index+1];
+    const min = left - 15;
+    // A sáv a következő oszlopig tart, de legfeljebb 240 pt széles: a rajzi
+    // jegyzetek ennél távolabb kezdődnek.
+    const max = Math.min(next ? next - 5 : Infinity, left + 240);
+    const columnLines = [];
+    for (const line of lines) {
+      const value = line.words.filter(word => word.x >= min && word.x < max)
+        .sort((a,b) => a.x - b.x).map(word => word.text).join(' ');
+      if (value.trim()) columnLines.push(value);
+    }
+    blocks.push(...regionBlocks(columnLines));
+  });
+  return blocks;
+}
+
 // A nyers szövegből és a hozzá tartozó layout-kimenetből készült blokkok.
-function retegekFromText(source, layoutSource, name = '') {
-  const blocks = regionsOf(source,false).flatMap(regionBlocks);
-  const candidates = layoutSource ? layoutCandidateLists(layoutSource) : new Map();
+function retegekFromText(source, layoutSource, name = '', bboxSource = '') {
+  // A szóhatáros kimenet a legmegbízhatóbb: a rajzi szöveget az oszlopsáv
+  // zárja ki. Ha nincs, a nyers, majd a layout-kimenet következik.
+  let blocks = bboxSource ? bboxRegionBlocks(bboxSource) : [];
+  let fromLayout = false;
+  if (!blocks.length) blocks = regionsOf(source,false).flatMap(regionBlocks);
+  if (!blocks.length && layoutSource) {
+    blocks = layoutRegionBlocks(layoutSource);
+    fromLayout = blocks.length > 0;
+  }
+  const candidates = layoutSource && !fromLayout ? layoutCandidateLists(layoutSource) : new Map();
   for (const block of blocks) {
     const tokens = block.events.filter(event => event.type === 't').length;
     const materials = block.events.filter(event => event.type === 'm');
@@ -437,15 +551,26 @@ function bestPerPlan(blocks) {
   return entries.map(entry => entry.block);
 }
 
+// Azonos nevű blokk több tervlapon is szerepelhet (például a Metszetek 1 és 2
+// lapon); ilyenkor a legteljesebb változat marad meg, hogy a leírásban ne
+// jelenjen meg ugyanaz a szerkezet kétszer.
 function uniqueBlocks(blocks) {
-  const seen = new Set();
-  return blocks.filter(block => {
-    const key = block.title.replace(/\s+/g,' ').toLowerCase()+'|'+
-      block.layers.map(layer => text(layer.thickness)+' '+text(layer.material)).join(';').toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  const byTitle = new Map();
+  const result = [];
+  for (const block of blocks) {
+    const key = block.title.replace(/\s+/g,' ').toLowerCase();
+    const previous = byTitle.get(key);
+    if (!previous) {
+      byTitle.set(key,block);
+      result.push(block);
+      continue;
+    }
+    if ((block.layers?.length || 0) > (previous.layers?.length || 0)) {
+      result[result.indexOf(previous)] = block;
+      byTitle.set(key,block);
+    }
+  }
+  return result;
 }
 
 // Pontozás: a teljesebb blokk élvez elsőbbséget, a PDF-blokk apró előnnyel,
@@ -473,7 +598,8 @@ function blockText(block) {
 
 function retegrendFacts({sheetRows = [], planTexts = []} = {}) {
   const blocks = uniqueBlocks(bestPerPlan([...retegekFromRows(sheetRows),
-    ...planTexts.flatMap(entry => retegekFromText(entry.text,entry.layoutText,entry.name))]));
+    ...planTexts.flatMap(entry => retegekFromText(entry.text,entry.layoutText,entry.name,
+      entry.bboxText))]));
   const facts = blocks.map(blockFacts);
   const best = kind => {
     const candidates = facts.filter(item => item.kind === kind)

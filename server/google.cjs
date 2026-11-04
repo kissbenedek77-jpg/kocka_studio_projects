@@ -1077,10 +1077,13 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         const response = await googleQuota.run('drive',100,() => drive.files.get({
           fileId:item.id,alt:'media',supportsAllDrives:true},{responseType:'arraybuffer'}));
         const bytes = Buffer.from(response.data);
-        // A blokkhatárokhoz nyers, az anyagok szétválasztásához layout-kimenet kell.
-        const text = await pdfToText(bytes,{layout:false});
+        // A szóhatáros kimenet adja a rétegrend-oszlopot, a nyers és a layout
+        // kimenet a tartalék. A szóhatáros olvasás hibája nem állítja meg.
+        const bboxText = await pdfToText(bytes,{bbox:true}).catch(() => '');
+        const text = await pdfToText(bytes,{layout:false}).catch(() => '');
         const layoutText = await pdfToText(bytes,{layout:true}).catch(() => '');
-        if (text.trim() || layoutText.trim()) texts.push({name:item.name,text,layoutText});
+        if (text.trim() || layoutText.trim() || bboxText.trim())
+          texts.push({name:item.name,text,layoutText,bboxText});
         else warn('A Metszetek tervlapból ('+item.name+') nem olvasható szöveg; a '+
           'rétegrendek a munkalapról készülnek.');
       } catch (error) {
@@ -1098,7 +1101,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     // a „Rétegrend sablonok” munkalap sorait nem használjuk, hogy ne kerüljön
     // be máshonnan származó szöveg.
     const hasPlanBlocks = planTexts.some(entry =>
-      retegekFromText(entry.text,entry.layoutText,entry.name).length > 0);
+      retegekFromText(entry.text,entry.layoutText,entry.name,entry.bboxText).length > 0);
     return retegrendFacts({sheetRows:hasPlanBlocks ? [] : sheetRows,planTexts});
   }
 

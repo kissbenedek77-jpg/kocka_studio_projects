@@ -187,3 +187,18 @@ test('A Mennyezet blokk külön födém, nem olvad a Magastetőbe', () => {
   assert.equal(values['retegrend:teto'].includes('30/50'),false,
     'A héjalásnál a szarufaméret nem kerül a fedés szövegébe.');
 });
+
+test('A szóhatáros kimenetből a rétegrend-oszlop olvasható, a rajzi szöveg nélkül', () => {
+  const word = (x,y,x2,text) => `<word xMin="${x}" yMin="${y}" xMax="${x2}" yMax="${y + 10}">${text}</word>`;
+  const html = '<page width="2000" height="2000">' + [
+    word(100,100,150,'Rétegrendek:'),
+    word(100,120,110,'F1'),word(115,120,180,'Határoló'),word(185,120,200,'fal'),
+    word(100,140,120,'30'),word(125,140,135,'cm'),word(140,140,200,'Porotherm'),
+    word(500,140,520,'M'),word(530,140,540,'='),word(550,140,560,'1:50')
+  ].join('') + '</page>';
+  const blocks = retegekFromText('','','EK-04 Metszetek.pdf',html);
+  assert.equal(blocks.length,1);
+  assert.equal(blocks[0].title,'F1 Határoló fal');
+  assert.deepEqual(blocks[0].layers,[{thickness:'30 cm',material:'Porotherm'}],
+    'A rajzi felirat (M = 1:50) nem kerülhet a rétegrendbe.');
+});

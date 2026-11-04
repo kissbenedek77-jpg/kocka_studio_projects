@@ -70,13 +70,14 @@ function pdftotext(args, {input, timeout = 20000} = {}) {
 // A régebbi kiadások (például a Xpdf 4.00) nem olvassák a szabványos bemenetet,
 // ezért tartalékként ideiglenes fájlból dolgoznak. Élesben (Poppler) már az
 // első, bemenet nélküli hívás sikerül.
-async function pdftotextFromFile(buffer, {timeout = 20000, layout = true} = {}) {
+async function pdftotextFromFile(buffer, {timeout = 20000, layout = true, bbox = false} = {}) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(),'kocka-pdftotext-'));
   const source = path.join(directory,'source.pdf');
   const target = path.join(directory,'output.txt');
   try {
     fs.writeFileSync(source,buffer);
-    await pdftotext([...(layout ? ['-layout'] : []),'-enc','UTF-8',source,target],{timeout});
+    const mode = bbox ? ['-bbox-layout'] : (layout ? ['-layout'] : []);
+    await pdftotext([...mode,'-enc','UTF-8',source,target],{timeout});
     return fs.readFileSync(target);
   } finally {
     fs.rmSync(directory,{recursive:true,force:true});
@@ -84,11 +85,13 @@ async function pdftotextFromFile(buffer, {timeout = 20000, layout = true} = {}) 
 }
 
 // `layout: true` (alapértelmezés) a fizikai elrendezést tartja meg, `layout:
-// false` a nyers, tartalomfolyam-sorrendű szöveget adja. A rétegrendek
-// blokkhatárait a nyers, az egyes anyagok sorait a layout-kimenet adja.
-async function pdfToText(buffer, {timeout = 20000, layout = true} = {}) {
+// false` a nyers, tartalomfolyam-sorrendű szöveget adja, `bbox: true` pedig a
+// szavak koordinátáit tartalmazó HTML-t. A rétegrendekhez a szóhatáros kimenet
+// a legmegbízhatóbb, mert a rajzi feliratok kiszűrhetők.
+async function pdfToText(buffer, {timeout = 20000, layout = true, bbox = false} = {}) {
   if (!buffer?.length) return '';
-  const args = [...(layout ? ['-layout'] : []),'-enc','UTF-8','-','-'];
+  const mode = bbox ? ['-bbox-layout'] : (layout ? ['-layout'] : []);
+  const args = [...mode,'-enc','UTF-8','-','-'];
   let firstError = null;
   try {
     return (await pdftotext(args,{input:buffer,timeout})).toString('utf8');
@@ -97,7 +100,7 @@ async function pdfToText(buffer, {timeout = 20000, layout = true} = {}) {
     firstError = error;
   }
   try {
-    return (await pdftotextFromFile(buffer,{timeout,layout})).toString('utf8');
+    return (await pdftotextFromFile(buffer,{timeout,layout,bbox})).toString('utf8');
   } catch (error) {
     if (error.unavailable) throw error;
     // Ha a fájlos tartalék sem működik, az első hiba az informatívabb.
