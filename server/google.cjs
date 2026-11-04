@@ -21,7 +21,7 @@ const {findMarker,insertRequests,findEmptyTable,fillRequests,
   findTable:findRoomTable,findRoomTableHeader} = require('./room_table.cjs');
 const {technicalTableRequests} = require('./technical_table.cjs');
 const {technicalLineRequests} = require('./technical_lines.cjs');
-const {orphanRequests,duplicateBreakRequests} = require('./page_breaks.cjs');
+const {orphanRequests,duplicateBreakRequests,breakBulletRequests} = require('./page_breaks.cjs');
 const {MARKER:PLAN_MARKER,planRows,layoutRequests,alignRequests,findTable} = require('./plan_list.cjs');
 const {retegekFromText,retegrendFacts,retegrendValues} = require('./retegrend.cjs');
 const {pdfToText} = require('./pdf_text.cjs');
@@ -1192,6 +1192,20 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         } catch (error) {
           if (error.status === 429) throw error;
           warn('A felesleges oldaltörések eltávolítása nem sikerült ('+
+            (error.message||String(error))+').');
+        }
+        continue;
+      }
+      const bullets = breakBulletRequests(current);
+      if (bullets.length) {
+        try {
+          await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+            requestBody:{requests:bullets,
+              ...(current.revisionId
+                ? {writeControl:{requiredRevisionId:current.revisionId}} : {})}}));
+        } catch (error) {
+          if (error.status === 429) throw error;
+          warn('Az oldaltörések felsorolás-jelölésének eltávolítása nem sikerült ('+
             (error.message||String(error))+').');
         }
         continue;

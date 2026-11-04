@@ -23,8 +23,10 @@ test('A fejezet- és alcímjelöltek felismerhetők', () => {
 test('A magányos oldalvégi fejezetcím elé oldaltörés kerül', () => {
   const pdf = 'Első oldal szövege\nTűzvédelem\n\fRétegrendek\nF1 Határoló fal\n';
   const requests = orphanRequests(document,pdf);
-  assert.deepEqual(requests,[{insertPageBreak:{location:{index:1}}}],
-    'A „Tűzvédelem” az első oldal alján maradt, ezért új oldalra kerül.');
+  assert.deepEqual(requests,[
+    {insertPageBreak:{location:{index:1}}},
+    {deleteParagraphBullets:{range:{startIndex:1,endIndex:3}}}
+  ], 'A törés után az üres felsorolás-jelölés nem maradhat meg.');
 });
 
 test('A Rétegrendek fejezet mindig új oldalra kerül', () => {

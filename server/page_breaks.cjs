@@ -94,6 +94,29 @@ function duplicateBreakRequests(document) {
     b.deleteContentRange.range.startIndex - a.deleteContentRange.range.startIndex);
 }
 
+// Ezek a fejezetek mindig új oldalon kezdődnek.
+const NEW_PAGE_CHAPTERS = new Set(['Rétegrendek','Helyiségek']);
+
+function isBulleted(document, startIndex) {
+  for (const item of document?.body?.content || [])
+    if (item.startIndex === startIndex) return Boolean(item.paragraph?.bullet);
+  return false;
+}
+
+// A korábban beszúrt oldaltörés-bekezdések a címsor felsorolás-jelölését
+// örökölhették; az üres szám/bullet eltávolítása.
+function breakBulletRequests(document) {
+  const requests = [];
+  for (const item of document?.body?.content || []) {
+    if (!(item.paragraph?.elements || []).some(element => element.pageBreak)) continue;
+    if (!item.paragraph.bullet) continue;
+    requests.push({deleteParagraphBullets:{range:{
+      startIndex:item.startIndex,endIndex:item.endIndex}}});
+  }
+  return requests.sort((a,b) =>
+    b.deleteParagraphBullets.range.startIndex - a.deleteParagraphBullets.range.startIndex);
+}
+
 function orphanRequests(document, pdfText) {
   const headings = headingCandidates(document);
   const pages = stripPageHeaders(String(pdfText || '').split('\f').map(pageLines));
@@ -103,7 +126,14 @@ function orphanRequests(document, pdfText) {
     if (seen.has(heading.startIndex)) return;
     if (hasBreakBefore(document,heading.startIndex)) return;
     seen.add(heading.startIndex);
-    requests.push({insertPageBreak:{location:{index:heading.startIndex}}});
+    const start = heading.startIndex;
+    // A beszúrt oldaltörés bekezdése a címsor felsorolás-jelölését örökli,
+    // ezért az üres szám/bullet eltávolítjuk.
+    const cleanup = isBulleted(document,start)
+      ? [{deleteParagraphBullets:{range:{startIndex:start,endIndex:start + 2}}}]
+      : [];
+    requests.push({index:start,
+      requests:[{insertPageBreak:{location:{index:start}}},...cleanup]});
   };
   for (const heading of headings) {
     const pageIndex = findPage(pages,heading.text);
@@ -113,7 +143,7 @@ function orphanRequests(document, pdfText) {
     const first = normalize(lines[0]);
     const last = normalize(lines[lines.length-1]);
     const tail = normalize(lines.slice(-2).join(' '));
-    if (heading.text === 'Rétegrendek') {
+    if (NEW_PAGE_CHAPTERS.has(heading.text)) {
       if (first !== heading.text) add(heading);
       continue;
     }
@@ -123,9 +153,8 @@ function orphanRequests(document, pdfText) {
   }
   // A dokumentum végéről visszafelé szúrjuk be az oldaltöréseket, hogy a
   // beszúrás ne tolja el a későbbi indexeket.
-  return requests.sort((a,b) =>
-    b.insertPageBreak.location.index - a.insertPageBreak.location.index);
+  return requests.sort((a,b) => b.index - a.index).flatMap(item => item.requests);
 }
 
-module.exports = {headingCandidates,orphanRequests,duplicateBreakRequests,hasBreakBefore,
-  pageLines,normalize};
+module.exports = {headingCandidates,orphanRequests,duplicateBreakRequests,breakBulletRequests,
+  hasBreakBefore,pageLines,normalize};
