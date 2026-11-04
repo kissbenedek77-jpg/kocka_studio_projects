@@ -15,7 +15,7 @@ const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,fieldSheetRows,
 const {valueTableRequests} = require('./value_table.cjs');
 const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs');
 const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
-const {sectionTexts,sectionReplaceRequests,sectionStyleRequests,hasTemplateSections,appendixRequests} = require('./technical_texts.cjs');
+const {sectionTexts,sectionReplaceRequests,sectionStyleRequests,hasTemplateSections,retegrendStyleRequests,appendixRequests} = require('./technical_texts.cjs');
 const {findMarker,insertRequests,findEmptyTable,fillRequests,
   layoutRequests:roomLayoutRequests,styleRequests:roomStyleRequests,
   findTable:findRoomTable,findRoomTableHeader} = require('./room_table.cjs');
@@ -977,6 +977,12 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       if (target && !target.includes('[KIEGÉSZÍTENDŐ:') &&
           String(manual.EPITES_JELLEGE || '').trim() !== target)
         defaults.EPITES_JELLEGE = target;
+      // A rétegrend a Metszetek tervlapból jön; a korábban elmentett, eltérő
+      // szöveget a friss, tervlap szerinti változatra cseréljük.
+      const retegrendText = String(computed.RETEGRENDEK_JOVAHAGYOTT_SZOVEG || '').trim();
+      if (retegrendText && !retegrendText.includes('[KIEGÉSZÍTENDŐ:') &&
+          String(manual.RETEGRENDEK_JOVAHAGYOTT_SZOVEG || '').trim() !== retegrendText)
+        defaults.RETEGRENDEK_JOVAHAGYOTT_SZOVEG = retegrendText;
       if (Object.keys(defaults).length) await saveTechnicalFields(data.uid,defaults);
     } catch (error) {
       if (error.status === 429) throw error;
@@ -1711,6 +1717,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         }))).data;
         const requests = [
           ...sectionStyleRequests(lineDocument),
+          ...retegrendStyleRequests(lineDocument),
           ...technicalLineRequests(lineDocument, mergeValues)
         ];
         if (requests.length) {

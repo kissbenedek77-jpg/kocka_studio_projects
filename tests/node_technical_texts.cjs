@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {textTemplates,renderTemplate,sectionTexts,rangeNameFor,sectionReplaceRequests,
-  sectionStyleRequests,hasTemplateSections,appendixRequests} = require('../server/technical_texts.cjs');
+  sectionStyleRequests,hasTemplateSections,retegrendStyleRequests,appendixRequests} = require('../server/technical_texts.cjs');
 const {retegekFromRows,retegekFromText,retegrendFacts,retegrendValues} = require('../server/retegrend.cjs');
 const {programReplacements,programLines,bedroomCount,exitCount} = require('../server/technical_program.cjs');
 const {chatInput,chatPrompt,parseChatResult} = require('../server/technical_chat.cjs');
@@ -181,4 +181,21 @@ test('A korábbi sablonból készült DRAFT a fejezet-tartományok hiányáról 
     KOCKA_SZOVEG_SZERKEZETEK:{namedRanges:[{ranges:[{startIndex:1,endIndex:2}]}]}}}),true);
   assert.equal(hasTemplateSections({namedRanges:{KOCKA_MERGE_projekt_cim:{}}}),false);
   assert.equal(hasTemplateSections({}),false);
+});
+
+test('A rétegrend címsora aláhúzott, a rétegsorok tabulátorral tagoltak',()=>{
+  const doc={body:{content:[
+    {startIndex:1,endIndex:12,paragraph:{elements:[{textRun:{content:'Rétegrendek\n'}}]}},
+    {startIndex:12,endIndex:30,paragraph:{elements:[{textRun:{content:'F1 Határoló fal\n'}}]}},
+    {startIndex:30,endIndex:55,paragraph:{elements:[{textRun:{content:'3 rtg\tdiszperziós festés\n'}}]}},
+    {startIndex:55,endIndex:80,paragraph:{elements:[{textRun:{content:'Tervezői nyilatkozat\n'}}],
+      bullet:{listId:'lista'}}}
+  ]}};
+  const requests=retegrendStyleRequests(doc);
+  assert.equal(requests.length,2);
+  assert.deepEqual(requests[0].updateTextStyle.range,{startIndex:12,endIndex:29});
+  assert.equal(requests[0].updateTextStyle.textStyle.underline,true);
+  assert.equal(requests[0].updateTextStyle.fields,'underline');
+  assert.equal(requests[1].updateTextStyle.textStyle.underline,false,
+    'A rétegsorok aláhúzása a sablon helyőrzőjéről öröklődne, ezért kikapcsoljuk.');
 });

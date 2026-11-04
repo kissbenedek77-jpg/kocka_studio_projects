@@ -73,21 +73,22 @@ function roomTable(document) {
   return null;
 }
 
-// A rétegrend-blokkok: a címsor után behúzott „– vastagság anyag” sorok állnak.
+// A rétegrend-blokkok: a címsor után tabulált „mennyiség – megnevezés” sorok.
 function retegrendBlocks(texts) {
   const blocks = [];
   let current = null;
   for (const text of texts) {
     const line = text.replace(/\u00a0/g,' ');
-    if (/^\s{1,4}–\s+/.test(line)) {
-      if (!current) continue;
-      current.layers.push(line.trim().replace(/^–\s*/,''));
+    if (!line.trim()) { current = null; continue; }
+    // A blokk címsora betűjel + sorszám + név (F1 Határoló fal).
+    if (/^[FLPMTK]\d{0,2}[a-z]?\s+\S/.test(line.trim())) {
+      current = {title:line.trim(),layers:[]};
+      blocks.push(current);
       continue;
     }
-    if (!line.trim()) { current = null; continue; }
-    // Nem rétegsor: ha az előző blokk rétegek nélkül maradt, az csak cím volt.
-    current = {title:line.trim(),layers:[]};
-    blocks.push(current);
+    if (!current) continue;
+    const layer = line.replace(/^\t+/,'').trim();
+    if (layer) current.layers.push(layer);
   }
   return blocks.filter(block => block.layers.length);
 }

@@ -587,11 +587,16 @@ function scoreBlock(fact) {
 
 // A jóváhagyott rétegrend-szöveg egy blokkja: címsor (tervlap nevével) és a
 // kívülről befelé haladó, behúzott rétegsorok.
+// A jóváhagyott rétegrend-szöveg: a blokk címsora (a tervlap neve nélkül) és a
+// tervlap tagolását követő, tabulátorral elválasztott rétegsorok. A mennyiség
+// és az egység a bal, a réteg megnevezése a jobb oszlopba kerül.
 function blockText(block) {
-  const title = text(block.title)+(block.source ? ' ('+block.source+')' : '');
+  const title = text(block.title);
   const layers = (block.layers || []).map(layer => {
-    const value = layerValue(layer);
-    return value ? '  – '+value : '';
+    const material = text(layer.material);
+    if (!material) return '';
+    const thickness = text(layer.thickness);
+    return (thickness ? thickness : '')+'\t'+material;
   }).filter(Boolean);
   return [title,...layers].join('\n');
 }

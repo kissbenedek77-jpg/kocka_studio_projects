@@ -326,6 +326,12 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
   // fejezetszöveg viszont mindig elsőbbséget élvez.
   for (const [key,value] of Object.entries(extraValues || {})) {
     if (!String(value ?? '').trim()) continue;
+    // A rétegrend a Metszetek tervlapból jön: a korábban elmentett szöveget
+    // felülírja, hogy a formázás és a tagolás is a tervlapé legyen.
+    if (key === 'RETEGRENDEK_JOVAHAGYOTT_SZOVEG') {
+      values[key] = String(value);
+      continue;
+    }
     if (String(manual[key] || '').trim()) continue;
     values[key] = String(value);
   }

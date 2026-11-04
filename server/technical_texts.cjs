@@ -177,6 +177,41 @@ function hasTemplateSections(document) {
   return Boolean(document?.namedRanges?.[RANGE_PREFIX+'SZERKEZETEK']);
 }
 
+// A rétegrend-szakasz formázása: a blokk címsora aláhúzott. A rétegsorokban a
+// mennyiség és a megnevezés tabulátorral tagolva, a tervlap oszlopai szerint.
+const RETEGREND_TITLE = /^[FLPMTK]\d{0,2}[a-z]?\s+\S/;
+const RETEGREND_SECTION = /^Rétegrendek\b/i;
+const RETEGREND_END = /^(?:Tervezői nyilatkozat|Kitermelt ásványi|Építési hulladék|A kivitelezés|Felhasznált)/i;
+
+function retegrendStyleRequests(document) {
+  const requests = [];
+  let inside = false;
+  for (const item of document?.body?.content || []) {
+    if (!item.paragraph) continue;
+    const value = paragraphText(item).replace(/\r?\n$/,'');
+    if (!inside) {
+      if (RETEGREND_SECTION.test(value)) inside = true;
+      continue;
+    }
+    if (RETEGREND_END.test(value)) break;
+    if (item.paragraph.bullet ||
+        /^HEADING/.test(item.paragraph.paragraphStyle?.namedStyleType || '')) break;
+    const start = Number.isInteger(item.startIndex) ? item.startIndex
+      : item.paragraph.elements?.[0]?.startIndex;
+    const end = Number.isInteger(item.endIndex) ? item.endIndex : null;
+    if (!Number.isInteger(start) || !Number.isInteger(end) || end <= start) continue;
+    if (RETEGREND_TITLE.test(value)) {
+      requests.push({updateTextStyle:{range:{startIndex:start,endIndex:end - 1},
+        textStyle:{underline:true},fields:'underline'}});
+    } else if (value.trim()) {
+      // A sablon helyőrzőjének aláhúzása a beszúrt rétegsorokra is átöröklődik.
+      requests.push({updateTextStyle:{range:{startIndex:start,endIndex:end - 1},
+        textStyle:{underline:false},fields:'underline'}});
+    }
+  }
+  return requests;
+}
+
 module.exports = {HEADING,RANGE_PREFIX,SECTION_RANGES,SECTION_KEYS,textTemplates,renderTemplate,
   sectionTexts,rangeNameFor,sectionReplaceRequests,sectionStyleRequests,hasTemplateSections,
-  appendixRequests};
+  retegrendStyleRequests,appendixRequests};

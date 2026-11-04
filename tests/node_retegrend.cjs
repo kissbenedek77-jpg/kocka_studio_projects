@@ -146,9 +146,9 @@ test('A szerkezeti réteg a vastagság és az anyag, nem a hőszigetelés vagy a
   assert.equal(facts.slab.origin,'pdf');
   assert.equal(facts.slab.material,'vasbeton födém');
   assert.equal(facts.slab.thickness,'20 cm');
-  // A jóváhagyott szöveg blokkonként tagolt: címsor, majd behúzott rétegsorok.
-  assert.match(facts.lines.join('\n'),/^F Határoló fal\n  – 3 rtg diszperziós festés/m);
-  assert.match(facts.lines.join('\n'),/M1 Födém \(EK-04 Metszetek\)\n  – 20 cm vasbeton födém/);
+  // A jóváhagyott szöveg blokkonként tagolt: címsor, majd tabulált rétegsorok.
+  assert.match(facts.lines.join('\n'),/^F Határoló fal\n3 rtg\tdiszperziós festés/m);
+  assert.match(facts.lines.join('\n'),/M1 Födém\n20 cm\tvasbeton födém/);
   const values = retegrendValues(facts);
   assert.equal(values['retegrend:fal_anyag'],'Porotherm N+F kerámia falazat');
   assert.equal(values['retegrend:fal_vastagsag'],'30 cm');

@@ -61,6 +61,8 @@ A rétegrendeket a szerver a Metszetek tervlap PDF-jének „Rétegrendek:” sz
 
 A szerver a rétegrend-oszlopot elsősorban a Poppler `-bbox-layout` szóhatáros kimenetéből olvassa ki: a blokk-címsorok x-koordinátája adja az oszlopokat, a rajzi feliratok más x-en állnak, ezért kimaradnak. Ha a szóhatáros kimenet nem érhető el, a nyers, majd a `-layout` kimenet a tartalék. Egy terven több rétegrend-oszlop is lehet egymás mellett; az azonos nevű blokkok közül a legteljesebb változat marad meg, így a szerkezet nem jelenik meg kétszer.
 
+A dokumentumban a rétegrend címsora a tervlap neve nélkül, aláhúzva jelenik meg; a rétegsorok a tervlap tagolását követik: a mennyiség és az egység, majd tabulátorral a réteg megnevezése. A rétegrend-mezőt a generálás a tervlapból mindig felülírja.
+
 A hiányzó kiegészítő munkalap (például a régebbi adatlapokban még nem létező „Rétegrend sablonok”) nem akasztja meg az adatolvasást: a szerver figyelmeztetést ad, és a többi tervezési adatot továbbra is beolvassa. A csak hiányjelölést tartalmazó, korábban elmentett fejezetszöveg nem számít kitöltött adatnak, ezért a számított vagy a sablonból származó szöveg lép a helyére; a valóban kitöltött, kézi szöveg továbbra is elsőbbséget élvez. Az éles ellenőrzés a `npm run live:retegrend` paranccsal futtatható a tesztprojekten.
 
 A rétegrendek kizárólagos forrása a Metszetek tervlap: ha a PDF-ben van rétegrend-blokk, a „Rétegrend sablonok” munkalap sorai nem kerülnek a leírásba. A korábbi sablonból készült DRAFT-ot a generálás a fejezet-tartományok hiánya miatt a friss sablonból újraépíti, ezért a rétegrendek a régebbi projekteknél is megjelennek.
