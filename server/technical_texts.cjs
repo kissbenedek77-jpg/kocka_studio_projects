@@ -170,5 +170,13 @@ function appendixRequests(document) {
   return end > start ? [{deleteContentRange:{range:{startIndex:start,endIndex:end}}}] : [];
 }
 
+// A sablonból készült DRAFT-ban a fejezet-tartományok (KOCKA_SZOVEG_*) jelen
+// vannak. Ha hiányoznak, a példány korábbi sablonból készült, ezért a
+// rétegrendek és a fejezetszövegek nem frissülnének benne.
+function hasTemplateSections(document) {
+  return Boolean(document?.namedRanges?.[RANGE_PREFIX+'SZERKEZETEK']);
+}
+
 module.exports = {HEADING,RANGE_PREFIX,SECTION_RANGES,SECTION_KEYS,textTemplates,renderTemplate,
-  sectionTexts,rangeNameFor,sectionReplaceRequests,sectionStyleRequests,appendixRequests};
+  sectionTexts,rangeNameFor,sectionReplaceRequests,sectionStyleRequests,hasTemplateSections,
+  appendixRequests};

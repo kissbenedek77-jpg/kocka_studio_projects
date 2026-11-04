@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {textTemplates,renderTemplate,sectionTexts,rangeNameFor,sectionReplaceRequests,
-  sectionStyleRequests,appendixRequests} = require('../server/technical_texts.cjs');
+  sectionStyleRequests,hasTemplateSections,appendixRequests} = require('../server/technical_texts.cjs');
 const {retegekFromRows,retegekFromText,retegrendFacts,retegrendValues} = require('../server/retegrend.cjs');
 const {programReplacements,programLines,bedroomCount,exitCount} = require('../server/technical_program.cjs');
 const {chatInput,chatPrompt,parseChatResult} = require('../server/technical_chat.cjs');
@@ -174,4 +174,11 @@ test('A szerkezetek leírásának bekezdésein kikapcsoljuk a félkövér stílu
   assert.equal(requests[0].updateTextStyle.textStyle.bold,false);
   assert.equal(requests[0].updateTextStyle.fields,'bold');
   assert.deepEqual(sectionStyleRequests({namedRanges:{}}),[]);
+});
+
+test('A korábbi sablonból készült DRAFT a fejezet-tartományok hiányáról ismerhető fel',()=>{
+  assert.equal(hasTemplateSections({namedRanges:{
+    KOCKA_SZOVEG_SZERKEZETEK:{namedRanges:[{ranges:[{startIndex:1,endIndex:2}]}]}}}),true);
+  assert.equal(hasTemplateSections({namedRanges:{KOCKA_MERGE_projekt_cim:{}}}),false);
+  assert.equal(hasTemplateSections({}),false);
 });

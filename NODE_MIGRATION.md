@@ -61,6 +61,8 @@ A rétegrendeket a szerver a Metszetek tervlap PDF-jének „Rétegrendek:” sz
 
 A hiányzó kiegészítő munkalap (például a régebbi adatlapokban még nem létező „Rétegrend sablonok”) nem akasztja meg az adatolvasást: a szerver figyelmeztetést ad, és a többi tervezési adatot továbbra is beolvassa. A csak hiányjelölést tartalmazó, korábban elmentett fejezetszöveg nem számít kitöltött adatnak, ezért a számított vagy a sablonból származó szöveg lép a helyére; a valóban kitöltött, kézi szöveg továbbra is elsőbbséget élvez. Az éles ellenőrzés a `npm run live:retegrend` paranccsal futtatható a tesztprojekten.
 
+A rétegrendek kizárólagos forrása a Metszetek tervlap: ha a PDF-ben van rétegrend-blokk, a „Rétegrend sablonok” munkalap sorai nem kerülnek a leírásba. A korábbi sablonból készült DRAFT-ot a generálás a fejezet-tartományok hiánya miatt a friss sablonból újraépíti, ezért a rétegrendek a régebbi projekteknél is megjelennek.
+
 A „Tervezési adatok” szöveges blokkjában a szintterületi mutató előírás nélkül „nincs előírás” szöveget kap, a „Max. pinceszinti beépíthetőség” sor pedig kimarad, ha nincs igazolt övezeti adat; a táblázatból ugyanekkor a szintterületi mutató sora is törlődik. Az építés jellege a címlapon szereplő terv tárgyát követi, az építményérték jogszabályi alapja pedig maga a 245/2006. (XII. 5.) Korm. rendelet 1. melléklete. A helyiséglista celláiban a helyiség neve 5 szóközzel beljebb kerül, a meglévő DRAFT táblázata újrageneráláskor frissül. A szerkezetek leírása a rétegrend-elemzésből tölti a fal, a födém, a fedélszék és a héjalás adatait; a „Mennyezet” (M1) blokk külön födém, a bekezdések nem félkövérek.
 
 ## PDF/A és tanúsítványos aláírás

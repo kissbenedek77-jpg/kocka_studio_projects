@@ -15,14 +15,14 @@ const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,fieldSheetRows,
 const {valueTableRequests} = require('./value_table.cjs');
 const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs');
 const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
-const {sectionTexts,sectionReplaceRequests,sectionStyleRequests,appendixRequests} = require('./technical_texts.cjs');
+const {sectionTexts,sectionReplaceRequests,sectionStyleRequests,hasTemplateSections,appendixRequests} = require('./technical_texts.cjs');
 const {findMarker,insertRequests,findEmptyTable,fillRequests,
   layoutRequests:roomLayoutRequests,styleRequests:roomStyleRequests,
   findTable:findRoomTable,findRoomTableHeader} = require('./room_table.cjs');
 const {technicalTableRequests} = require('./technical_table.cjs');
 const {technicalLineRequests} = require('./technical_lines.cjs');
 const {MARKER:PLAN_MARKER,planRows,layoutRequests,alignRequests,findTable} = require('./plan_list.cjs');
-const {retegrendFacts,retegrendValues} = require('./retegrend.cjs');
+const {retegekFromText,retegrendFacts,retegrendValues} = require('./retegrend.cjs');
 const {pdfToText} = require('./pdf_text.cjs');
 const {floorCount,bedroomCount,hasOffice,PROGRAM_LETTERS} = require('./technical_program.cjs');
 const {chatInput,chatPrompt,parseChatResult} = require('./technical_chat.cjs');
@@ -1094,7 +1094,12 @@ function googleClient(config, refreshToken = '', authOverride = null) {
 
   async function metszetFacts(children, sheetRows, warn) {
     const planTexts = await metszetTexts(children, warn);
-    return retegrendFacts({sheetRows,planTexts});
+    // A tervlap a hiteles forrás: ha a Metszetek PDF-jében van rétegrend-blokk,
+    // a „Rétegrend sablonok” munkalap sorait nem használjuk, hogy ne kerüljön
+    // be máshonnan származó szöveg.
+    const hasPlanBlocks = planTexts.some(entry =>
+      retegekFromText(entry.text,entry.layoutText,entry.name).length > 0);
+    return retegrendFacts({sheetRows:hasPlanBlocks ? [] : sheetRows,planTexts});
   }
 
   // A tervjegyzék léptéke a tervlapon olvasható „M = 1:XXX” feliratból jön. A
@@ -1360,6 +1365,37 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     let document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
       documentId,includeTabsContent:false
     }))).data;
+    // A korábbi sablonból készült DRAFT-ból hiányoznak a fejezet-tartományok
+    // (KOCKA_SZOVEG_*). Ilyenkor a példányt a friss sablonból újra készítjük,
+    // különben a rétegrendek és a fejezetszövegek nem frissülnének benne.
+    if (type === 'muszakiLeiras' && !hasTemplateSections(document)) {
+      try {
+        await googleQuota.run('drive',100,() => drive.files.update({fileId:documentId,
+          requestBody:{trashed:true},supportsAllDrives:true}));
+        googleCache.clear(`file:${documentId}`);
+        const name = [template.title,[data.projekt_varos,data.projekt_kozterulet,
+          data.projekt_tipus,data.projekt_hazszam].filter(Boolean).join(' ')].filter(Boolean).join(' - ');
+        const existing = (await listChildren(target.id)).find(item => item.name === name &&
+          item.mimeType === 'application/vnd.google-apps.document');
+        if (existing) documentId = existing.id;
+        else {
+          const copy = await googleQuota.run('drive',100,() => drive.files.copy({fileId:template.templateId,
+            requestBody:{name,parents:[target.id]},fields:'id',supportsAllDrives:true}));
+          documentId = copy.data.id;
+          googleCache.clear(`children:${target.id}`);
+        }
+        created = true;
+        warn('A műszaki leírás korábbi sablonból készült, ezért a kukába került, és a '+
+          'dokumentum a friss sablonból újra elkészül.');
+        document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+          documentId,includeTabsContent:false
+        }))).data;
+      } catch (error) {
+        if (error.status === 429) throw error;
+        warn('A korábbi sablonból készült műszaki leírást nem sikerült újraépíteni ('+
+          (error.message||String(error))+'); a dokumentum a meglévő példányban frissül.');
+      }
+    }
     // A sablonszövegek appendixe csak a sablonban marad meg: a kész példányból
     // a fejlécétől a dokumentum végéig töröljük.
     if (type === 'muszakiLeiras') {
