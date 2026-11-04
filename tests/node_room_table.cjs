@@ -76,3 +76,19 @@ test('A beszúrt üres táblázat azonosítható és a cellák feltöltése hely
   assert.deepEqual(indexes,[...indexes].sort((a,b) => b-a));
 });
 
+test('A helyiség neve előtti 5 szóköz behúzásként megmarad', () => {
+  const filled = {startIndex:500,endIndex:501,table:{tableRows:[
+    {tableCells:[cell(510),cell(520)]},
+    {tableCells:[cell(530),cell(540)]}]}};
+  const rows = [['Helyiség','Terület (m²)'],['     nappali','26,07']];
+  const requests = fillRequests(filled,rows,{trim:false});
+  const inserted = requests.filter(request => request.insertText)
+    .map(request => request.insertText.text);
+  assert.ok(inserted.includes('     nappali'),
+    'A cella szövege megőrzi a név előtti 5 szóközt.');
+  const trimmed = fillRequests(filled,rows);
+  assert.equal(trimmed.filter(request => request.insertText)
+    .some(request => request.insertText.text === '     nappali'),false,
+    'A tervjegyzéknél a szöveget továbbra is levágtuk.');
+});
+

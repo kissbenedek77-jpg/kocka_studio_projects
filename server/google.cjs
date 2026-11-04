@@ -15,11 +15,12 @@ const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,fieldSheetRows,
 const {valueTableRequests} = require('./value_table.cjs');
 const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs');
 const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
-const {sectionTexts,sectionReplaceRequests,appendixRequests} = require('./technical_texts.cjs');
+const {sectionTexts,sectionReplaceRequests,sectionStyleRequests,appendixRequests} = require('./technical_texts.cjs');
 const {findMarker,insertRequests,findEmptyTable,fillRequests,
   layoutRequests:roomLayoutRequests,styleRequests:roomStyleRequests,
-  findTable:findRoomTable} = require('./room_table.cjs');
+  findTable:findRoomTable,findRoomTableHeader} = require('./room_table.cjs');
 const {technicalTableRequests} = require('./technical_table.cjs');
+const {technicalLineRequests} = require('./technical_lines.cjs');
 const {MARKER:PLAN_MARKER,planRows,layoutRequests,alignRequests,findTable} = require('./plan_list.cjs');
 const {retegrendFacts,retegrendValues} = require('./retegrend.cjs');
 const {pdfToText} = require('./pdf_text.cjs');
@@ -967,8 +968,15 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       // a következő generálásnál már „kitöltött” mezőként blokkolná a valódi adatot.
       for (const key of defaultKeys)
         if (!String(manual[key] || '').trim() && String(computed[key] || '').trim() &&
-            !placeholderOnly(computed[key]))
+            !placeholderOnly(computed[key]) &&
+            !String(computed[key]).includes('[KIEGÉSZÍTENDŐ:'))
           defaults[key] = computed[key];
+      // Az építés jellege a címlapon szereplő terv tárgyát követi; a korábban
+      // elmentett, eltérő szöveget egyszer felülírjuk.
+      const target = String(computed.TERV_TARGYA || '').trim();
+      if (target && !target.includes('[KIEGÉSZÍTENDŐ:') &&
+          String(manual.EPITES_JELLEGE || '').trim() !== target)
+        defaults.EPITES_JELLEGE = target;
       if (Object.keys(defaults).length) await saveTechnicalFields(data.uid,defaults);
     } catch (error) {
       if (error.status === 429) throw error;
@@ -1443,7 +1451,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
                 (error.message||String(error))+'); a lista ettől még a táblázatba kerül.');
             }
             const fillTable = findRoomTable(document,startIndex) || table;
-            const fill = fillRequests(fillTable, roomData.tableRows);
+            const fill = fillRequests(fillTable, roomData.tableRows, {trim:false});
             if (fill.length) {
               await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
                 requestBody:{requests:fill,
@@ -1478,6 +1486,43 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         if (error.status === 429) throw error;
         warn('A helyiséglista táblázatként nem jeleníthető meg ('+
           (error.message||String(error))+'); ellenőrizd a dokumentumot.');
+      }
+    }
+    // Ha a DRAFT-ban már van helyiséglista-táblázat (a jelölő már kicserélődött),
+    // a meglévő táblázatot töltjük újra, hogy a formázás (5 szóköz, oszlopok) a
+    // meglévő példányon is érvényesüljön.
+    if (type === 'muszakiLeiras' && !roomTableInserted && roomData?.tableRows?.length > 1) {
+      const existing = findRoomTableHeader(document);
+      if (existing && (existing.table.tableRows || []).length === roomData.tableRows.length) {
+        try {
+          const fill = fillRequests(existing, roomData.tableRows, {trim:false});
+          if (fill.length) {
+            await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+              requestBody:{requests:fill,
+                ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+            document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+              documentId,includeTabsContent:false
+            }))).data;
+          }
+          const refreshed = findRoomTableHeader(document);
+          const styles = roomStyleRequests(refreshed, roomData.tableKinds);
+          if (styles.length) {
+            await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+              requestBody:{requests:styles,
+                ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+            document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+              documentId,includeTabsContent:false
+            }))).data;
+          }
+          roomTableInserted = true;
+        } catch (error) {
+          if (error.status === 429) throw error;
+          warn('A meglévő helyiséglista-táblázat frissítése nem sikerült ('+
+            (error.message||String(error))+'); a lista a következő újrageneráláskor frissül.');
+        }
+      } else if (existing) {
+        warn('A helyiséglista sorainak száma megváltozott, ezért a meglévő táblázat '+
+          'nem frissíthető automatikusan; a fájlok újrainicializálásakor újraépül.');
       }
     }
     // Sikeres táblázatbeszúrás után a {{HELYISEGLISTA}} jelölő üresen marad,
@@ -1615,6 +1660,33 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         if (error.status === 429) throw error;
         warn('Az építményérték-táblázat nem tölthető ki ('+
           (error.message||String(error))+'); ellenőrizd a területet és az egységárat.');
+      }
+    }
+    // A szöveges blokk hiányzó övezeti sorai és a szerkezetek bekezdéseinek
+    // stílusa. Egy olvasásból számoljuk mindkettőt: a félkövér stílus kikapcsolása
+    // nem tolja el az indexeket, ezért az mehet előre, utána a sorok törlése.
+    if (type === 'muszakiLeiras') {
+      try {
+        const lineDocument = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+          documentId,includeTabsContent:false
+        }))).data;
+        const requests = [
+          ...sectionStyleRequests(lineDocument),
+          ...technicalLineRequests(lineDocument, mergeValues)
+        ];
+        if (requests.length) {
+          await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+            requestBody:{requests,
+              ...(lineDocument.revisionId
+                ? {writeControl:{requiredRevisionId:lineDocument.revisionId}} : {})}}));
+          document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+            documentId,includeTabsContent:false
+          }))).data;
+        }
+      } catch (error) {
+        if (error.status === 429) throw error;
+        warn('A tervezési adatok szöveges sorai nem igazíthatók ('+
+          (error.message||String(error))+'); ellenőrizd a dokumentumot.');
       }
     }
     if (type === 'muszakiLeiras') await refreshTechnicalCoverImage(uid, documentId);

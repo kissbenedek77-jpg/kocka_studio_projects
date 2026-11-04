@@ -20,6 +20,25 @@ function paragraphText(item) {
   return (item.paragraph?.elements || []).map(part => part.textRun?.content || '').join('');
 }
 
+function cellText(cell) {
+  return (cell?.content || []).map(item => item.paragraph ? paragraphText(item) : '')
+    .join('').replace(/\s+/g,' ').trim();
+}
+
+// A már a dokumentumban lévő helyiséglista-táblázat a fejlécéről ismerhető fel:
+// két oszlop, az első „Helyiség”/„Megnevezés”, a második „Terület”.
+function findRoomTableHeader(document) {
+  for (const item of document?.body?.content || []) {
+    if (!item.table) continue;
+    const rows = item.table.tableRows || [];
+    if (!rows.length || (rows[0]?.tableCells || []).length !== 2) continue;
+    const first = cellText(rows[0].tableCells[0]);
+    const second = cellText(rows[0].tableCells[1]);
+    if (/helyis[ée]g|megnevez/i.test(first) && /ter[üu]let/i.test(second)) return item;
+  }
+  return null;
+}
+
 function findMarker(document, marker = MARKER) {
   for (const item of document?.body?.content || []) {
     if (!item.paragraph) continue;
@@ -59,13 +78,15 @@ function findEmptyTable(document, rows, columns = 2) {
 }
 
 // 3. fázis: a cellák feltöltése és a fejléc félkövérré tétele. A fejléc nélküli
-// táblázatnál (például a tervjegyzék) a félkövér kiemelés elmarad.
-function fillRequests(table, rows, {header = true} = {}) {
+// táblázatnál (például a tervjegyzék) a félkövér kiemelés elmarad. A helyiség-
+// listánál a név előtti 5 szóköz behúzás, ezért ott a szöveget nem vágjuk le.
+function fillRequests(table, rows, {header = true, trim = true} = {}) {
   const values = [];
   const narrow = [];
   (table.table.tableRows || []).forEach((row, rowIndex) => {
     (row.tableCells || []).forEach((cell, columnIndex) => {
-      const text = String(rows[rowIndex]?.[columnIndex] ?? '').trim();
+      const raw = String(rows[rowIndex]?.[columnIndex] ?? '');
+      const text = trim ? raw.trim() : raw.replace(/\s+$/,'');
       if (!text) return;
       const content = cell.content || [];
       const start = content[0]?.startIndex;
@@ -130,7 +151,9 @@ function styleRequests(table, kinds = []) {
       const range = {startIndex:start,endIndex:end};
       const paragraphStyle = {};
       if (columnIndex === 1) paragraphStyle.alignment = 'END';
-      if (columnIndex === 0 && (kind === 'room' || kind === 'subtotal'))
+      // A helyiségnevek behúzását a cella szövege adja (5 szóköz), ezért ott
+      // nincs külön bekezdés-behúzás; az alszummák maradnak 1 cm-rel beljebb.
+      if (columnIndex === 0 && kind === 'subtotal')
         paragraphStyle.indentStart = {magnitude:INDENT_PT,unit:'PT'};
       if (Object.keys(paragraphStyle).length)
         requests.push({updateParagraphStyle:{range,paragraphStyle,
@@ -153,5 +176,5 @@ function findTable(document, startIndex) {
 }
 
 module.exports = {MARKER,findMarker,insertRequests,findEmptyTable,fillRequests,
-  layoutRequests,styleRequests,findTable};
+  layoutRequests,styleRequests,findTable,findRoomTableHeader};
 

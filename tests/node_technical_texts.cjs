@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {textTemplates,renderTemplate,sectionTexts,rangeNameFor,sectionReplaceRequests,
-  appendixRequests} = require('../server/technical_texts.cjs');
+  sectionStyleRequests,appendixRequests} = require('../server/technical_texts.cjs');
 const {retegekFromRows,retegekFromText,retegrendFacts,retegrendValues} = require('../server/retegrend.cjs');
 const {programReplacements,programLines,bedroomCount,exitCount} = require('../server/technical_program.cjs');
 const {chatInput,chatPrompt,parseChatResult} = require('../server/technical_chat.cjs');
@@ -163,4 +163,15 @@ test('A chat csak szerkeszthető mezőt fogad el és a választ ellenőrzi', () 
   assert.equal(parsed.reply,'Rövidítve.');
   assert.deepEqual(Object.keys(parsed.sections),['TUZVEDELMI_LEIRAS_JOVAHAGYOTT_SZOVEG']);
   assert.throws(()=>chatInput({message:'  '},{}),/Írj be/);
+});
+
+test('A szerkezetek leírásának bekezdésein kikapcsoljuk a félkövér stílust',()=>{
+  const document={namedRanges:{KOCKA_SZOVEG_SZERKEZETEK:{namedRanges:[
+    {ranges:[{startIndex:100,endIndex:200}]}]}}};
+  const requests=sectionStyleRequests(document);
+  assert.equal(requests.length,1);
+  assert.deepEqual(requests[0].updateTextStyle.range,{startIndex:100,endIndex:200});
+  assert.equal(requests[0].updateTextStyle.textStyle.bold,false);
+  assert.equal(requests[0].updateTextStyle.fields,'bold');
+  assert.deepEqual(sectionStyleRequests({namedRanges:{}}),[]);
 });

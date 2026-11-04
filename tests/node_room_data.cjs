@@ -27,7 +27,7 @@ test('A PLN helyiségszámot és burkolatot csak akkor veszi át, ha a forrás t
   assert.match(data.listing,/01 előtér\t8,25 m²; burkolat: greslap/);
   assert.match(data.listing,/02 nappali\t21,75 m²; burkolat: parketta/);
   assert.deepEqual(data.tableRows[1],['Földszint','']);
-  assert.deepEqual(data.tableRows[2],['01 előtér','8,25']);
+  assert.deepEqual(data.tableRows[2],['     01 előtér','8,25']);
   // A táblázat sorainak fajtája a formázáshoz (fejléc, szint, helyiség,
   // alszummák, teljes összeg).
   assert.deepEqual(data.tableKinds,['header','floor','room','room','subtotal','total']);
@@ -84,7 +84,8 @@ test('A valós PLN formátum (címsor, „Honszint neve”, szintfejes sorok) fe
   assert.match(data.listing,/Mindösszesen\t49,06 m²/);
   assert.match(data.listing,/ELLENŐRIZENDŐ.*72,06 m²/);
   assert.deepEqual(data.tableRows[1],['Földszint','']);
-  assert.deepEqual(data.tableRows[2],['nappali','26,07']);
+  assert.deepEqual(data.tableRows[2],['     nappali','26,07'],
+    'A táblázatcellában a helyiség neve 5 szóközzel beljebb kerül.');
 });
 
 test('A feldolgozhatatlan helyiséglista hibája megmondja a teendőt és a hibás sort', () => {

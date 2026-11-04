@@ -152,6 +152,34 @@ function fieldSheetRows() {
 const PLACEHOLDER_ONLY = /^\s*\[(?:KIEGÉSZÍTENDŐ|ELLENŐRIZENDŐ)[^\]]*\]\s*$/i;
 function placeholderOnly(value) {return PLACEHOLDER_ONLY.test(String(value ?? ''));}
 
+// A rétegrend-hiányjelölések és a hozzájuk tartozó értékkulcsok. A korábbi
+// generálásból elmentett fejezetszövegben maradt hiányjelölést ezekkel töltjük
+// ki, hogy a rétegrend most kiszámított értéke kerüljön a helyére.
+const RETEGREND_GAP_KEYS = [
+  ['teherhordó fal anyaga','retegrend:fal_anyag'],
+  ['teherhordó fal vastagsága','retegrend:fal_vastagsag'],
+  ['homlokzati hőszigetelés','retegrend:fal_hoszigeteles'],
+  ['födém anyaga és vastagsága','retegrend:fodem'],
+  ['fedélszék anyaga','retegrend:fedelszek'],
+  ['tetőhéjalás','retegrend:teto']
+];
+function fillRetegrendGaps(text, values = {}) {
+  return String(text ?? '').replace(/\[KIEGÉSZÍTENDŐ:\s*([^\]]*)\]/g,(all,note) => {
+    const entry = RETEGREND_GAP_KEYS.find(([prefix]) => note.trim().startsWith(prefix));
+    if (!entry) return all;
+    const value = String(values[entry[1]] ?? '').trim();
+    return value && !value.includes('[KIEGÉSZÍTENDŐ:') ? value : all;
+  });
+}
+
+// A sablon fix szava és a rétegrend neve együtt néha megismétlődik (pl.
+// „Ytong pórusbeton falazóelem falazóelemből”, „kerámia cserép fedés fedéssel”).
+function tidyStructureText(value) {
+  return String(value ?? '')
+    .replace(/\bfalazóelem\s+falazóelemből/gi,'falazóelemből')
+    .replace(/\bfedés\s+fedéssel/gi,'fedéssel');
+}
+
 function manualValues(rows) {
   const result = {};
   for (const row of rows || []) {
@@ -285,6 +313,11 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     const target = tervTargya(project);
     if (target) values.TERV_TARGYA = target;
   }
+  // Az építés jellege a dokumentum címlapján szereplő terv tárgyával egyezik.
+  // Ha a terv tárgya hiányjelölés, a kézzel/AI-val írt szöveg marad.
+  if (String(values.TERV_TARGYA || '').trim() &&
+      !String(values.TERV_TARGYA).includes('[KIEGÉSZÍTENDŐ:'))
+    values.EPITES_JELLEGE = values.TERV_TARGYA;
   // EPITMENYERTEK:rendeltetesi_kategoria a 245/2006. (XII. 5.) Korm. rendelet
   // 1. mellékletéből: a lakóépület 1. sora, pinceszint esetén az 5. sor is.
   if (!String(manual['EPITMENYERTEK:rendeltetesi_kategoria'] || '').trim())
@@ -296,6 +329,15 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     if (String(manual[key] || '').trim()) continue;
     values[key] = String(value);
   }
+  // A korábban elmentett fejezetszövegben maradt rétegrend-hiányjelölést a most
+  // kiszámított értékkel töltjük ki, így a hiányjelölés nem ragad be.
+  for (const key of CHAPTER_KEYS)
+    if (String(values[key] || '').includes('[KIEGÉSZÍTENDŐ:'))
+      values[key] = fillRetegrendGaps(values[key], values);
+  // Az építményérték számításának jogszabályi alapja maga a jogszabály.
+  if (!String(values['EPITMENYERTEK:jogszabaly_es_modszer'] || '').trim())
+    values['EPITMENYERTEK:jogszabaly_es_modszer'] =
+      '245/2006. (XII. 5.) Korm. rendelet 1. melléklet';
   if (manual['DOKUMENTUM:kiadas_datuma']) {
     values['DOKUMENTUM:kiadas_datuma'] =
       displayDate(manual['DOKUMENTUM:kiadas_datuma']);
@@ -340,6 +382,10 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     if (String(values[key] || '').trim()) continue;
     values[key] = renderTemplate(text,context);
   }
+  // A rétegrend neve és a sablon fix szava néha megismétlődik („falazóelem
+  // falazóelemből”, „fedés fedéssel”); a szerkezetleírásban egyszerűsítjük.
+  if (values['SZERKEZETEK LEÍRÁSA'])
+    values['SZERKEZETEK LEÍRÁSA'] = tidyStructureText(values['SZERKEZETEK LEÍRÁSA']);
   const reviewResult = technicalReview(sheet,manual);
   if (reviewResult.comparison) values.BEEPITESI_MERLEG = reviewResult.comparison;
   values.ADAT_EGYEZTETES = reviewResult.issues.length ?
@@ -442,5 +488,5 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
 module.exports = {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,
   validateTechnicalField,fieldSheetRows,
   manualValues,numberFromSheet,technicalReview,technicalReplacements,displayDate,validIsoDate,
-  validHungarianDate,hungarianToday,gapText,placeholderOnly,DATA_MARKER,tervTargya,rendeltetesiKategoria,
+  validHungarianDate,hungarianToday,gapText,placeholderOnly,fillRetegrendGaps,DATA_MARKER,tervTargya,rendeltetesiKategoria,
   basementArea};

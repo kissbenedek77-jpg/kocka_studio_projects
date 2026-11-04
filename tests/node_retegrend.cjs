@@ -165,3 +165,25 @@ test('Hiányzó rétegrend helyén hiányjelölés marad, anyag nem készül kit
     'retegrend:fedelszek','retegrend:teto'])
     assert.match(values[key],/^\[KIEGÉSZÍTENDŐ: /,key);
 });
+
+test('A Mennyezet blokk külön födém, nem olvad a Magastetőbe', () => {
+  const text = [
+    'RÉTEGRENDEK',
+    'T1 Magastető',
+    '30/50 kerámia cserép fedés lécezés ellenléc páraáteresztő fólia szaruzat',
+    'M1 Mennyezet 25 cm 25 cm 1 cm 3 rtg 3 rtg',
+    'kőzetgyapot hőszigetelés fektetve Leier mesterfödém tartószerkezeti terv szerint Vakolat glettelés diszperziós festés',
+    'M=1:50'
+  ].join('\n');
+  const blocks = retegekFromText(text,'','EK-04 Metszetek.pdf');
+  assert.deepEqual(blocks.map(block => block.id),['T1','M1'],
+    'A Mennyezet címsor saját blokk, nem a Magastető folytatása.');
+  const facts = retegrendFacts({planTexts:[{name:'EK-04 Metszetek.pdf',text}]});
+  assert.equal(facts.roof?.id,'T1');
+  assert.equal(facts.slab?.id,'M1');
+  const values = retegrendValues(facts);
+  assert.match(values['retegrend:fodem'],/^25 cm .*mesterfödém/);
+  assert.match(values['retegrend:teto'],/kerámia cserép fedés/);
+  assert.equal(values['retegrend:teto'].includes('30/50'),false,
+    'A héjalásnál a szarufaméret nem kerül a fedés szövegébe.');
+});

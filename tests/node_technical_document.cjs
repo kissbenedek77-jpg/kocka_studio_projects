@@ -274,3 +274,30 @@ test('A korábban elmentett hiányjelölés nem blokkolja a számított fejezets
   assert.equal(values['SZERKEZETEK LEÍRÁSA'],'Kézzel jóváhagyott szerkezetleírás.',
     'A valóban kitöltött, kézi szöveg továbbra is elsőbbséget élvez.');
 });
+
+test('Az építés jellege a címlapon szereplő terv tárgyával egyezik',()=>{
+  const values=technicalReplacements({project:{uid:'ABC123',projektTipus:'Új építés'},
+    sheetRows:[],programRows:[],fieldRows:[]});
+  assert.equal(values.EPITES_JELLEGE,'új lakóépület építése');
+  assert.equal(values.EPITES_JELLEGE,values.TERV_TARGYA);
+});
+
+test('A jogszabályi alap helyén maga a jogszabály szerepel',()=>{
+  const values=technicalReplacements({project:{uid:'ABC123'},sheetRows:[],programRows:[],fieldRows:[]});
+  assert.equal(values['EPITMENYERTEK:jogszabaly_es_modszer'],
+    '245/2006. (XII. 5.) Korm. rendelet 1. melléklet');
+});
+
+test('A mentett szerkezetleírásban maradt rétegrend-hiányjelölést a számított érték tölti ki',()=>{
+  const fields=fieldSheetRows();
+  fields.find(row=>row[0]==='SZERKEZETEK LEÍRÁSA')[1]=
+    'A külső fal [KIEGÉSZÍTENDŐ: teherhordó fal anyaga – F1 rétegrend a Metszetek tervlapról.] '+
+    'falazóelemből, [KIEGÉSZÍTENDŐ: teherhordó fal vastagsága – F1 rétegrend.] vastagságban.';
+  const values=technicalReplacements({project:{uid:'ABC123'},sheetRows:[],programRows:[],
+    fieldRows:fields.slice(1),extraValues:{
+      'retegrend:fal_anyag':'Ytong pórusbeton falazóelem',
+      'retegrend:fal_vastagsag':'37,5 cm'}});
+  assert.match(values['SZERKEZETEK LEÍRÁSA'],/Ytong pórusbeton falazóelemből/);
+  assert.match(values['SZERKEZETEK LEÍRÁSA'],/37,5 cm vastagságban/);
+  assert.equal(values['SZERKEZETEK LEÍRÁSA'].includes('KIEGÉSZÍTENDŐ'),false);
+});

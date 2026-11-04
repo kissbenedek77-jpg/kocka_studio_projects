@@ -143,6 +143,21 @@ function sectionReplaceRequests(document, values = {}) {
   return requests;
 }
 
+// A sablonban a helyőrző bekezdés félkövér stílusát a beszúrt szöveg örökli.
+// A szerkezetek leírásának bekezdései nem félkövérek, ezért a tartományon
+// kikapcsoljuk a félkövér stílust.
+function sectionStyleRequests(document, key = 'SZERKEZETEK LEÍRÁSA') {
+  const name = rangeNameFor(key);
+  if (!name) return [];
+  const ranges = (document?.namedRanges?.[name]?.namedRanges || [])
+    .flatMap(item => item.ranges || []);
+  return ranges.filter(range => Number.isInteger(range.startIndex) &&
+    Number.isInteger(range.endIndex) && range.endIndex > range.startIndex)
+    .map(range => ({updateTextStyle:{
+      range:{startIndex:range.startIndex,endIndex:range.endIndex},
+      textStyle:{bold:false},fields:'bold'}}));
+}
+
 // A régi appendix a dokumentum végén van; a fejlécétől a test végéig töröljük.
 function appendixRequests(document) {
   const content = document?.body?.content || [];
@@ -156,4 +171,4 @@ function appendixRequests(document) {
 }
 
 module.exports = {HEADING,RANGE_PREFIX,SECTION_RANGES,SECTION_KEYS,textTemplates,renderTemplate,
-  sectionTexts,rangeNameFor,sectionReplaceRequests,appendixRequests};
+  sectionTexts,rangeNameFor,sectionReplaceRequests,sectionStyleRequests,appendixRequests};

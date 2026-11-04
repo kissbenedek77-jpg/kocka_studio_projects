@@ -79,3 +79,10 @@ test('A már igazított táblázaton a művelet ismételve sem módosít', () =>
   ]}}]}};
   assert.deepEqual(technicalTableRequests(doc,{[key('B7')]:'0,9'}),[]);
 });
+
+test('Előírás nélkül a szintterületi mutató sora a tervezett értékkel együtt is kimarad', () => {
+  const requests = technicalTableRequests(documentWithTable(),{[key('M7')]:'0,16'});
+  assert.ok(requests.some(request =>
+    request.deleteTableRow?.tableCellLocation.rowIndex === 1),
+    'B7 nélkül a szintterületi mutató sora nem maradhat a táblázatban.');
+});

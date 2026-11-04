@@ -22,7 +22,7 @@ const TH_G = new RegExp(TH_SRC,'gi');
 const TH_LEAD = new RegExp('^('+TH_SRC+')\\s+(.+)$','i');
 const TH_TRAIL = new RegExp('^(.*?)\\s+((?:(?:'+TH_SRC+')(?:\\s+(?:'+TH_SRC+'))*))$','i');
 
-const CONSTRUCTION = /fal|födém|fodem|fedél|fedel|tető|teto|magastető|magasteto|válaszfal|valaszfal|aljzat|padló|padlo|szerkezet|burkolat|lábazat|labazat|járda|jarda|terasz|pince|lépcső|lepcso|erkély|erkely/i;
+const CONSTRUCTION = /fal|födém|fodem|fedél|fedel|tető|teto|magastető|magasteto|mennyezet|válaszfal|valaszfal|aljzat|padló|padlo|szerkezet|burkolat|lábazat|labazat|járda|jarda|terasz|pince|lépcső|lepcso|erkély|erkely/i;
 const REGION = /r[eé]tegrendek\s*:?/i;
 const END = /^(?:[ÉE]$|[±+\-]?\d+[.,]\d+\s*=\s*\d|M\s*=\s*1:|Terven jelölt|Az épület|A bútorok|Az egyes szerkezetek|Minden szerkezet|Minden szín|Rajzszám|Rajz léptéke|KOCKA STÚDIÓ)/i;
 const HEADER = /^([FMTPKL])(\d{0,2})([a-z]?)\s+(.+)$/;
@@ -122,6 +122,7 @@ function blockFacts(block) {
     thickness:structure ? text(structure.thickness) : '',
     insulation:insulation ? layerValue(insulation) : '',
     covering:covering ? layerValue(covering) : '',
+    coveringMaterial:covering ? text(covering.material) : '',
     layers:block.layers
   };
 }
@@ -490,18 +491,26 @@ function retegrendFacts({sheetRows = [], planTexts = []} = {}) {
 // A szerkezetleírás és a tűzvédelmi leírás {{...}} jelölőinek értékei.
 function retegrendValues(result) {
   const wall = result?.wall, slab = result?.slab, roof = result?.roof;
+  // A rétegsor végén maradhat elválasztó (a folytató sor miatt); a mondatba
+  // illesztve ez felesleges.
+  const clean = value => text(value).replace(/[,;]\s*$/,'');
+  // A sablon mondatába illesztve a „falazóelemből”, illetve a „fedéssel” szó
+  // következik, ezért a réteg nevéből a záró azonos szót lehagyjuk.
+  const without = (value,word) => clean(value).replace(new RegExp('\\s*'+word+'\\s*$','i'),'');
   return {
-    'retegrend:fal_anyag': wall?.material ||
+    'retegrend:fal_anyag': without(wall?.material,'falazóelem') ||
       GAP+' teherhordó fal anyaga – F1 rétegrend a Metszetek tervlapról.]',
-    'retegrend:fal_vastagsag': wall?.thickness ||
+    'retegrend:fal_vastagsag': clean(wall?.thickness) ||
       GAP+' teherhordó fal vastagsága – F1 rétegrend.]',
-    'retegrend:fal_hoszigeteles': wall?.insulation ||
+    'retegrend:fal_hoszigeteles': clean(wall?.insulation) ||
       GAP+' homlokzati hőszigetelés – F1 rétegrend.]',
-    'retegrend:fodem': slab ? [slab.thickness,slab.material].filter(Boolean).join(' ') :
+    'retegrend:fodem': slab ? clean([slab.thickness,slab.material].filter(Boolean).join(' ')) :
       GAP+' födém anyaga és vastagsága – M1 rétegrend.]',
-    'retegrend:fedelszek': roof ? [roof.thickness,roof.material].filter(Boolean).join(' ') :
+    'retegrend:fedelszek': roof ? clean([roof.thickness,roof.material].filter(Boolean).join(' ')) :
       GAP+' fedélszék anyaga – T1 rétegrend.]',
-    'retegrend:teto': roof?.covering || roof?.layers?.map(layerValue).filter(Boolean).slice(0,2).join(', ') ||
+    // A héjalásnál a vastagság (pl. szarufaméret) nem tartozik a fedéshez.
+    'retegrend:teto': without(roof?.coveringMaterial,'fedés') ||
+      clean(roof?.layers?.map(layerValue).filter(Boolean).slice(0,2).join(', ')) ||
       GAP+' tetőhéjalás – T1 rétegrend.]'
   };
 }

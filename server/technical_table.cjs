@@ -83,10 +83,17 @@ function technicalTableRequests(document, values = {}) {
   // korábbi sorok indexe érvényben maradjon. A törölt „Meglévő” oszlop tartalma
   // nem számít adatnak, hiszen az a kész dokumentumból eltűnik.
   const skipColumn = deleteColumn ? columnIndex : -1;
-  const emptyRows = [];
+  const emptyRows = new Set();
   for (let rowIndex = 1; rowIndex < table.rows.length; rowIndex++)
-    if (!rowHasData(table.rows[rowIndex],values,skipColumn)) emptyRows.push(rowIndex);
-  emptyRows.sort((a,b) => b-a).forEach(rowIndex => requests.push({deleteTableRow:{
+    if (!rowHasData(table.rows[rowIndex],values,skipColumn)) emptyRows.add(rowIndex);
+  // A szintterületi mutató sora csak akkor marad, ha van rá előírás (B7). A sor
+  // saját „m²/m²” utótagja miatt egyébként adattal rendelkezőnek látszana.
+  if (!hasFloorAreaRatio(values)) {
+    const floorAreaRow = table.rows.findIndex(row =>
+      String(row?.[0] || '').includes(FLOOR_AREA_ROW));
+    if (floorAreaRow > 0) emptyRows.add(floorAreaRow);
+  }
+  [...emptyRows].sort((a,b) => b-a).forEach(rowIndex => requests.push({deleteTableRow:{
     tableCellLocation:{tableStartLocation:{index:table.startIndex},rowIndex,columnIndex:0}}}));
   return requests;
 }

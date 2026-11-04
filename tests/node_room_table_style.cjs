@@ -35,7 +35,7 @@ test('A helyiséglista oszlopai 7 cm és 2 cm, a táblázat 9 cm széles', () =>
   assert.deepEqual(requests[0].updateTableColumnProperties.tableStartLocation,{index:300});
 });
 
-test('A terület jobbra igazított, a helyiségnevek és az alszummák behúzottak', () => {
+test('A terület jobbra igazított, az alszummák behúzottak', () => {
   const rows = ['header','floor','room','subtotal','total']
     .map(kind => ({tableCells:[cell(100,kind),cell(200,'8,25')]}));
   const requests = styleRequests({table:{tableRows:rows}},rows.map(row =>
@@ -44,10 +44,10 @@ test('A terület jobbra igazított, a helyiségnevek és az alszummák behúzott
     .map(request => request.updateParagraphStyle);
   // A terület oszlop minden sorban jobbra igazodik.
   assert.equal(paragraphs.filter(item => item.paragraphStyle.alignment === 'END').length,5);
-  // A helyiség és az alszummák behúzottak, a fejléc, a szint és a teljes összeg nem.
+  // A helyiségnevek behúzását a cella szövege adja (5 szóköz); csak az alszummák 1 cm-rel beljebb.
   assert.deepEqual(paragraphs.filter(item => item.paragraphStyle.indentStart)
-    .map(item => [item.range.startIndex,item.paragraphStyle.indentStart.magnitude]),[[100,28.35],[100,28.35]],
-    'Csak a helyiség és az alszummák behúzottak, kb. 1 cm-rel.');
+    .map(item => [item.range.startIndex,item.paragraphStyle.indentStart.magnitude]),[[100,28.35]],
+    'Csak az alszummák behúzottak, kb. 1 cm-rel.');
   const texts = requests.filter(request => request.updateTextStyle);
   assert.equal(texts.length,6,'A fejléc, az alszummák és a teljes összeg mindkét cellája félkövér.');
   const total = texts.filter(item => item.updateTextStyle.textStyle.fontSize);

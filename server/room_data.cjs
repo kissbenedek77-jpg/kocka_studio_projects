@@ -124,7 +124,8 @@ function parseRoomText(content,sourceName='helyiségek.txt') {
       const label=[room.number,room.name].filter(Boolean).join(' ');
       const finish=hasCovering && room.covering ? `; burkolat: ${room.covering}` : '';
       output.push(`    ${label}\t${areaText(room.area)} m²${finish}`);
-      tableRows.push([label,areaText(room.area)]);
+      // A táblázatcellában a helyiség neve 5 szóközzel beljebb kerül.
+      tableRows.push(['     '+label,areaText(room.area)]);
       tableKinds.push('room');
     }
     output.push(`${floor} összesen\t${areaText(group.total)} m²`);
