@@ -10,7 +10,10 @@
 const GAP = '[KIEGÉSZÍTENDŐ:';
 const FLOOR_AREA = /^Szintterületi mutató:/i;
 const BASEMENT = /^Max\.?\s*pinceszinti beépíthetőség:/i;
+const VALUE_HEADING = /^Építményérték számítása\b/i;
+const VALUE_SOURCE = /^Jogszabályi alap és számítási módszer:/i;
 const FLOOR_AREA_LABEL = 'Szintterületi mutató:';
+const VALUE_HEADING_LABEL = 'Építményérték számítása';
 const NO_RULE = ' nincs előírás';
 
 function paragraphText(item) {
@@ -27,8 +30,18 @@ function requestIndex(request) {
     request.insertText?.location.index ?? 0;
 }
 
+// Az építményérték fejezetcíme a jogszabályt is tartalmazza, a külön
+// „Jogszabályi alap és számítási módszer” sor pedig elmarad.
+function valueHeading(values = {}) {
+  const regulation = String(values['EPITMENYERTEK:jogszabaly_es_modszer'] || '').trim();
+  if (!regulation) return VALUE_HEADING_LABEL;
+  const suffix = /szerint\s*$/i.test(regulation) ? '' : ' szerint';
+  return VALUE_HEADING_LABEL+' ('+regulation+suffix+')';
+}
+
 function technicalLineRequests(document, values = {}) {
   const requests = [];
+  const heading = valueHeading(values);
   for (const item of document?.body?.content || []) {
     if (!item.paragraph) continue;
     const text = paragraphText(item).replace(/\r?\n$/,'');
@@ -39,6 +52,17 @@ function technicalLineRequests(document, values = {}) {
     if (BASEMENT.test(text)) {
       if (!hasValue(values['OVEZET:max_pinceszinti_beepites']))
         requests.push({deleteContentRange:{range:{startIndex:start,endIndex:end}}});
+      continue;
+    }
+    if (VALUE_SOURCE.test(text)) {
+      requests.push({deleteContentRange:{range:{startIndex:start,endIndex:end}}});
+      continue;
+    }
+    if (VALUE_HEADING.test(text)) {
+      if (text.trim() !== heading) {
+        requests.push({deleteContentRange:{range:{startIndex:start,endIndex:end - 1}}});
+        requests.push({insertText:{location:{index:start},text:heading}});
+      }
       continue;
     }
     if (FLOOR_AREA.test(text) &&
@@ -57,4 +81,4 @@ function technicalLineRequests(document, values = {}) {
   return requests.sort((a,b) => requestIndex(b) - requestIndex(a));
 }
 
-module.exports = {technicalLineRequests,hasValue};
+module.exports = {technicalLineRequests,hasValue,valueHeading};

@@ -404,9 +404,14 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
   if (footprint) values['TERVEZESI_ADATOK:tervezett_foldszinti_beepites_m2'] = footprint;
   const required = numberFromSheet(sheet['TERVEZESI_ADATOK:Munkalap1!B9']);
   const planned = numberFromSheet(sheet['TERVEZESI_ADATOK:Munkalap1!F9']);
-  if (required !== null && planned !== null)
-    values.PARKOLOEGYENLEG_ERTEKELES =
-      `Előírt: ${required} db; tervezett: ${planned} db; különbség: ${planned-required} db.`;
+  if (required !== null && planned !== null) {
+    // Megfelelő parkolószámnál csak a rövid minősítés kerül a dokumentumba; a
+    // részletes egyenleg csak eltérés esetén kell.
+    values.PARKOLOEGYENLEG_ERTEKELES = planned >= required
+      ? 'MEGFELEL!'
+      : `NEM FELEL MEG! Előírt: ${required} db; tervezett: ${planned} db; `+
+        `különbség: ${planned-required} db.`;
+  }
   // A tervezési program dinamikus értékei: település, övezet, szintek,
   // hálószobák, helyiségcsoportok, iroda és parkoló.
   const programData = programReplacements({project,sheetValues:sheet,roomData,plans});

@@ -34,3 +34,18 @@ test('Meglévő előírásnál és igazolt pinceszinti adatnál a sorok érintet
   });
   assert.deepEqual(requests,[]);
 });
+
+test('Az építményérték fejezetcíme a jogszabályt tartalmazza, a külön hivatkozás-sor kimarad', () => {
+  const doc = {body:{content:[
+    paragraph(100,'Építményérték számítása'),
+    paragraph(200,'Jogszabályi alap és számítási módszer: 245/2006. (XII. 5.) Korm. rendelet 1. melléklet')
+  ]}};
+  const requests = technicalLineRequests(doc,{
+    'EPITMENYERTEK:jogszabaly_es_modszer':'245/2006. (XII. 5.) Korm. rendelet 1. melléklet'
+  });
+  const insert = requests.find(request => request.insertText);
+  assert.equal(insert.insertText.text,
+    'Építményérték számítása (245/2006. (XII. 5.) Korm. rendelet 1. melléklet szerint)');
+  assert.ok(requests.some(request => request.deleteContentRange?.range.startIndex === 200),
+    'A külön „Jogszabályi alap és számítási módszer” sor nem maradhat a dokumentumban.');
+});

@@ -182,7 +182,8 @@ test('A Mennyezet blokk külön födém, nem olvad a Magastetőbe', () => {
   assert.equal(facts.roof?.id,'T1');
   assert.equal(facts.slab?.id,'M1');
   const values = retegrendValues(facts);
-  assert.match(values['retegrend:fodem'],/^25 cm .*mesterfödém/);
+  assert.equal(values['retegrend:fodem'],'fafödém',
+    'Betonréteg nélkül a födém fafödém.');
   assert.match(values['retegrend:teto'],/kerámia cserép fedés/);
   assert.equal(values['retegrend:teto'].includes('30/50'),false,
     'A héjalásnál a szarufaméret nem kerül a fedés szövegébe.');
@@ -201,4 +202,17 @@ test('A szóhatáros kimenetből a rétegrend-oszlop olvasható, a rajzi szöveg
   assert.equal(blocks[0].title,'F1 Határoló fal');
   assert.deepEqual(blocks[0].layers,[{thickness:'30 cm',material:'Porotherm'}],
     'A rajzi felirat (M = 1:50) nem kerülhet a rétegrendbe.');
+});
+
+test('A födém betonréteg nélkül fafödém, betonnal a betonréteg a szerkezet', () => {
+  const timber = ['Rétegrendek:','M1 Mennyezet','25 cm kőzetgyapot hőszigetelés',
+    '2 cm gipszkarton álmennyezet','É'].join('\n');
+  const timberFacts = retegrendFacts({planTexts:[{name:'EK-04 Metszetek.pdf',text:timber}]});
+  assert.equal(timberFacts.slab.material,'fafödém');
+  assert.equal(timberFacts.slab.thickness,'');
+  const concrete = ['Rétegrendek:','M1 Födém','20 cm vasbeton födém',
+    '4 cm aljzatbeton','É'].join('\n');
+  const concreteFacts = retegrendFacts({planTexts:[{name:'EK-04 Metszetek.pdf',text:concrete}]});
+  assert.match(concreteFacts.slab.material,/vasbeton/);
+  assert.equal(concreteFacts.slab.thickness,'20 cm');
 });

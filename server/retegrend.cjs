@@ -112,14 +112,19 @@ function blockFacts(block) {
   const insulation = findLayer(block,
     /eps|xps|kőzetgyapot|kozetgyapot|hőszigetelés|hoszigeteles|üveggyapot|uveggyapot/i);
   const covering = kind === 'roof' ? findLayer(block, TYPE_LAYER.roofCover) : null;
+  // A födém/mennyezet szerkezete akkor beton, ha a rétegekben szerepel a beton
+  // szó; egyébként fafödémnek tekintjük.
+  const concrete = kind === 'slab' ? findLayer(block, /beton/i) : null;
+  const timberSlab = kind === 'slab' && !concrete;
+  const slabLayer = concrete || structure;
   return {
     kind,
     origin:block.origin || 'sheet',
     source:block.source || '',
     id:text(block.title).split(/\s/)[0],
     title:text(block.title),
-    material:structure ? text(structure.material) : '',
-    thickness:structure ? text(structure.thickness) : '',
+    material:timberSlab ? 'fafödém' : (slabLayer ? text(slabLayer.material) : ''),
+    thickness:timberSlab ? '' : (slabLayer ? text(slabLayer.thickness) : ''),
     insulation:insulation ? layerValue(insulation) : '',
     covering:covering ? layerValue(covering) : '',
     coveringMaterial:covering ? text(covering.material) : '',

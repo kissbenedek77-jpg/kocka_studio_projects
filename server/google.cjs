@@ -15,12 +15,13 @@ const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,fieldSheetRows,
 const {valueTableRequests} = require('./value_table.cjs');
 const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs');
 const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
-const {sectionTexts,sectionReplaceRequests,sectionStyleRequests,hasTemplateSections,retegrendStyleRequests,appendixRequests} = require('./technical_texts.cjs');
+const {sectionTexts,sectionReplaceRequests,sectionStyleRequests,hasTemplateSections,retegrendStyleRequests,structureHeadingRequests,appendixRequests} = require('./technical_texts.cjs');
 const {findMarker,insertRequests,findEmptyTable,fillRequests,
   layoutRequests:roomLayoutRequests,styleRequests:roomStyleRequests,
   findTable:findRoomTable,findRoomTableHeader} = require('./room_table.cjs');
 const {technicalTableRequests} = require('./technical_table.cjs');
 const {technicalLineRequests} = require('./technical_lines.cjs');
+const {orphanRequests,duplicateBreakRequests} = require('./page_breaks.cjs');
 const {MARKER:PLAN_MARKER,planRows,layoutRequests,alignRequests,findTable} = require('./plan_list.cjs');
 const {retegekFromText,retegrendFacts,retegrendValues} = require('./retegrend.cjs');
 const {pdfToText} = require('./pdf_text.cjs');
@@ -1153,6 +1154,64 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     return output;
   }
 
+  // A fejezet- és alcímek nem maradhatnak magányosan az oldal alján. A dokumentum
+  // PDF-exportjából állapítjuk meg, melyik oldal utolsó tartalmi sora cím, és
+  // oda oldaltörést szúrunk. A „Rétegrendek” fejezet mindig új oldalon kezdődik.
+  // Legfeljebb három körben, mert az oldaltörés újabb tördelést okozhat.
+  async function ensureNoOrphanHeadings(documentId, warn) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let current;
+      try {
+        current = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+          documentId,includeTabsContent:false
+        }))).data;
+      } catch (error) {
+        if (error.status === 429) throw error;
+        warn('Az oldaltördelés ellenőrzése nem sikerült ('+(error.message||String(error))+
+          '); a címek oldalvégi helyzete kézi ellenőrzést igényelhet.');
+        return;
+      }
+      let text = '';
+      try {
+        const response = await googleQuota.run('drive',100,() => drive.files.export({
+          fileId:documentId,mimeType:'application/pdf'},{responseType:'arraybuffer'}));
+        text = await pdfToText(Buffer.from(response.data),{layout:false});
+      } catch (error) {
+        if (error.status === 429) throw error;
+        warn('Az oldaltördelés ellenőrzése nem sikerült ('+(error.message||String(error))+
+          '); a címek oldalvégi helyzete kézi ellenőrzést igényelhet.');
+        return;
+      }
+      const duplicates = duplicateBreakRequests(current);
+      if (duplicates.length) {
+        try {
+          await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+            requestBody:{requests:duplicates,
+              ...(current.revisionId
+                ? {writeControl:{requiredRevisionId:current.revisionId}} : {})}}));
+        } catch (error) {
+          if (error.status === 429) throw error;
+          warn('A felesleges oldaltörések eltávolítása nem sikerült ('+
+            (error.message||String(error))+').');
+        }
+        continue;
+      }
+      const requests = orphanRequests(current,text);
+      if (!requests.length) return;
+      try {
+        await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+          requestBody:{requests,
+            ...(current.revisionId
+              ? {writeControl:{requiredRevisionId:current.revisionId}} : {})}}));
+      } catch (error) {
+        if (error.status === 429) throw error;
+        warn('A magányos oldalvégi címek áthelyezése nem sikerült ('+
+          (error.message||String(error))+'); ellenőrizd a dokumentum tördelését.');
+        return;
+      }
+    }
+  }
+
   async function ensureDocument(uid, type) {
     const template = DOCUMENT_TEMPLATES[type];
     if (!template) throw new Error('Ismeretlen vagy még nem átültetett dokumentumtípus.');
@@ -1717,6 +1776,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         }))).data;
         const requests = [
           ...sectionStyleRequests(lineDocument),
+          ...structureHeadingRequests(lineDocument),
           ...retegrendStyleRequests(lineDocument),
           ...technicalLineRequests(lineDocument, mergeValues)
         ];
@@ -1736,6 +1796,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       }
     }
     if (type === 'muszakiLeiras') await refreshTechnicalCoverImage(uid, documentId);
+    if (type === 'muszakiLeiras') await ensureNoOrphanHeadings(documentId, warn);
     const stamp = new Date().toISOString();
     const revision = String(source.revisionId || '').trim();
     if (!record) await sheetWrite(() => sheets.spreadsheets.values.append({spreadsheetId:book,

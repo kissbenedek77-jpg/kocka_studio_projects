@@ -158,6 +158,39 @@ function sectionStyleRequests(document, key = 'SZERKEZETEK LEÍRÁSA') {
       textStyle:{bold:false},fields:'bold'}}));
 }
 
+// A szerkezetek leírásának alpontjai (Alapozás, Teherhordó szerkezetek, …)
+// dőlten jelennek meg. Alpontnak a rövid, mondatvégi írásjelet nem tartalmazó,
+// nagybetűvel kezdődő bekezdést tekintjük, amelyet hosszabb szöveg követ.
+function isStructureSubheading(text, next) {
+  const value = String(text || '').trim();
+  if (!value || value.length > 60) return false;
+  if (/[.!?:;,]$/.test(value)) return false;
+  if (value.includes('\t')) return false;
+  if (!/^[A-ZÁÉÍÓÖŐÚÜŰ]/.test(value)) return false;
+  return String(next || '').trim().length > value.length;
+}
+
+function structureHeadingRequests(document) {
+  const name = rangeNameFor('SZERKEZETEK LEÍRÁSA');
+  const ranges = (document?.namedRanges?.[name]?.namedRanges || [])
+    .flatMap(item => item.ranges || []);
+  if (!ranges.length) return [];
+  const paragraphs = (document?.body?.content || []).filter(item => item.paragraph);
+  const requests = [];
+  for (let i = 0; i < paragraphs.length; i++) {
+    const item = paragraphs[i];
+    const text = paragraphText(item).replace(/\r?\n$/,'');
+    const start = item.startIndex, end = item.endIndex;
+    if (!Number.isInteger(start) || !Number.isInteger(end)) continue;
+    if (!ranges.some(range => start >= range.startIndex && end <= range.endIndex)) continue;
+    const next = paragraphs[i+1] ? paragraphText(paragraphs[i+1]) : '';
+    if (!isStructureSubheading(text,next)) continue;
+    requests.push({updateTextStyle:{range:{startIndex:start,endIndex:end - 1},
+      textStyle:{italic:true},fields:'italic'}});
+  }
+  return requests;
+}
+
 // A régi appendix a dokumentum végén van; a fejlécétől a test végéig töröljük.
 function appendixRequests(document) {
   const content = document?.body?.content || [];
@@ -214,4 +247,4 @@ function retegrendStyleRequests(document) {
 
 module.exports = {HEADING,RANGE_PREFIX,SECTION_RANGES,SECTION_KEYS,textTemplates,renderTemplate,
   sectionTexts,rangeNameFor,sectionReplaceRequests,sectionStyleRequests,hasTemplateSections,
-  retegrendStyleRequests,appendixRequests};
+  retegrendStyleRequests,structureHeadingRequests,appendixRequests};

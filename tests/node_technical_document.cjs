@@ -288,6 +288,13 @@ test('A jogszabályi alap helyén maga a jogszabály szerepel',()=>{
     '245/2006. (XII. 5.) Korm. rendelet 1. melléklet');
 });
 
+test('Megfelelő parkolószámnál csak a MEGFELEL! kerül a dokumentumba',()=>{
+  const sheetRows=Array.from({length:20},()=>Array(13).fill(''));
+  sheetRows[8][1]='1'; sheetRows[8][5]='1';
+  const values=technicalReplacements({project:{uid:'ABC123'},sheetRows,programRows:[],fieldRows:[]});
+  assert.equal(values.PARKOLOEGYENLEG_ERTEKELES,'MEGFELEL!');
+});
+
 test('A mentett szerkezetleírásban maradt rétegrend-hiányjelölést a számított érték tölti ki',()=>{
   const fields=fieldSheetRows();
   fields.find(row=>row[0]==='SZERKEZETEK LEÍRÁSA')[1]=

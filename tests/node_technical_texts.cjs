@@ -2,7 +2,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {textTemplates,renderTemplate,sectionTexts,rangeNameFor,sectionReplaceRequests,
-  sectionStyleRequests,hasTemplateSections,retegrendStyleRequests,appendixRequests} = require('../server/technical_texts.cjs');
+  sectionStyleRequests,hasTemplateSections,retegrendStyleRequests,structureHeadingRequests,
+  appendixRequests} = require('../server/technical_texts.cjs');
 const {retegekFromRows,retegekFromText,retegrendFacts,retegrendValues} = require('../server/retegrend.cjs');
 const {programReplacements,programLines,bedroomCount,exitCount} = require('../server/technical_program.cjs');
 const {chatInput,chatPrompt,parseChatResult} = require('../server/technical_chat.cjs');
@@ -198,4 +199,20 @@ test('A rétegrend címsora aláhúzott, a rétegsorok tabulátorral tagoltak',(
   assert.equal(requests[0].updateTextStyle.fields,'underline');
   assert.equal(requests[1].updateTextStyle.textStyle.underline,false,
     'A rétegsorok aláhúzása a sablon helyőrzőjéről öröklődne, ezért kikapcsoljuk.');
+});
+
+test('A szerkezetek alpontjai dőlten jelennek meg',()=>{
+  const document={namedRanges:{KOCKA_SZOVEG_SZERKEZETEK:{namedRanges:[
+    {ranges:[{startIndex:10,endIndex:300}]}]}},
+  body:{content:[
+    {startIndex:10,endIndex:25,paragraph:{elements:[{textRun:{content:'Alapozás\n'}}]}},
+    {startIndex:25,endIndex:120,paragraph:{elements:[{textRun:{
+      content:'Az épület alatt sávalap készül, méretezett alapgerendákkal.\n'}}]}},
+    {startIndex:120,endIndex:145,paragraph:{elements:[{textRun:{content:'Teherhordó szerkezetek\n'}}]}},
+    {startIndex:145,endIndex:260,paragraph:{elements:[{textRun:{
+      content:'Az épület tartószerkezete teherhordó falakból áll.\n'}}]}}
+  ]}};
+  const requests=structureHeadingRequests(document);
+  assert.equal(requests.length,2);
+  assert.ok(requests.every(request=>request.updateTextStyle.textStyle.italic===true));
 });
