@@ -11,7 +11,7 @@ const {planScale, resolvePlanScale, planScaleWarning} = require('./plans.cjs');
 const {restartPostfix,appendPostfix,copiedName,expectedPath} = require('./restart.cjs');
 const {technicalSheetValues, technicalProgramLines} = require('./technical_sheet.cjs');
 const {parseRoomText,areaText} = require('./room_data.cjs');
-const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,fieldSheetRows,validateTechnicalField,manualValues,technicalReplacements} = require('./technical_document.cjs');
+const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,fieldSheetRows,validateTechnicalField,manualValues,placeholderOnly,technicalReplacements} = require('./technical_document.cjs');
 const {valueTableRequests} = require('./value_table.cjs');
 const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs');
 const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
@@ -125,6 +125,27 @@ function googleClient(config, refreshToken = '', authOverride = null) {
   const quote = name => `'${String(name).replace(/'/g, "''")}'`;
   const sheetRead = call => googleQuota.run('sheetsRead', 1, call);
   const sheetWrite = call => googleQuota.run('sheetsWrite', 1, call);
+  // Egy hiányzó kiegészítő munkalap (a régebbi adatlapokban még nincs
+  // „Rétegrend sablonok”) miatt a batchGet teljes egészében elhasal, és ezzel
+  // az összes tervezési adat elveszne. Ilyenkor a kötelező tartományokat külön
+  // olvassuk; a kiegészítő tartomány mindig az utolsó, ezért a többi eredmény
+  // helye nem csúszik el.
+  async function sheetParts(spreadsheetId, ranges, warn = () => {}) {
+    const read = async list => (await sheetRead(() => sheets.spreadsheets.values.batchGet({
+      spreadsheetId, ranges: list, valueRenderOption: 'FORMATTED_VALUE'
+    }))).data.valueRanges || [];
+    try {
+      return await read(ranges);
+    } catch (error) {
+      if (error.status === 429) throw error;
+      if (ranges.length < 2 || !/unable to parse range/i.test(String(error.message || '')))
+        throw error;
+      const parts = await read(ranges.slice(0, -1));
+      warn('A(z) '+ranges[ranges.length - 1]+' tartomány nem olvasható ('+
+        (error.message || String(error))+'); a dokumentum a többi adattal készül el.');
+      return parts;
+    }
+  }
   const driveRead = (cost, call) => googleQuota.run('drive', cost, call);
   const values = async range => (await sheetRead(() => sheets.spreadsheets.values.get({
     spreadsheetId: book, range, valueRenderOption: 'FORMATTED_VALUE'
@@ -832,13 +853,9 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     try {
       const sheet = await ensureProjectDataSheet(data.uid);
       await ensureTechnicalFieldRows(sheet.id);
-      const inputs = await sheetRead(() => sheets.spreadsheets.values.batchGet({
-        spreadsheetId:sheet.id,
-        ranges:["'Munkalap1'!A1:M20","'Tervezési program'!A2:B17",`'${FIELD_SHEET}'!A2:B`,
-          "'Rétegrend sablonok'!A1:C400"],
-        valueRenderOption:'FORMATTED_VALUE'
-      }));
-      parts = inputs.data.valueRanges || [];
+      const inputs = await sheetParts(sheet.id,["'Munkalap1'!A1:M20","'Tervezési program'!A2:B17",
+        `'${FIELD_SHEET}'!A2:B`,"'Rétegrend sablonok'!A1:C400"],warn);
+      parts = inputs;
     } catch (error) {
       if (error.status === 429) throw error;
       warn('A tervezési adatlap adatai nem olvashatók: '+error.message);
@@ -946,8 +963,11 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       const defaultKeys = [...CHAPTER_KEYS,
         ...PROGRAM_LETTERS.map(letter => `TERVEZESI_PROGRAM:${letter}`)];
       const defaults = {};
+      // A csak hiányjelölést tartalmazó számított szöveget nem mentjük el: különben
+      // a következő generálásnál már „kitöltött” mezőként blokkolná a valódi adatot.
       for (const key of defaultKeys)
-        if (!String(manual[key] || '').trim() && String(computed[key] || '').trim())
+        if (!String(manual[key] || '').trim() && String(computed[key] || '').trim() &&
+            !placeholderOnly(computed[key]))
           defaults[key] = computed[key];
       if (Object.keys(defaults).length) await saveTechnicalFields(data.uid,defaults);
     } catch (error) {
@@ -1141,14 +1161,10 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       try {
         dataSheet = await ensureProjectDataSheet(uid);
         await ensureTechnicalFieldRows(dataSheet.id);
-        const inputs = await sheetRead(() => sheets.spreadsheets.values.batchGet({
-          spreadsheetId:dataSheet.id,
-          ranges:["'Munkalap1'!A1:M20","'Tervezési program'!A2:B17",
-            `'${FIELD_SHEET}'!A2:B`,"'Munkalap2'!A1:B500",
-            "'Rétegrend sablonok'!A1:C400"],
-          valueRenderOption:'FORMATTED_VALUE'
-        }));
-        parts = inputs.data.valueRanges || [];
+        const inputs = await sheetParts(dataSheet.id,["'Munkalap1'!A1:M20","'Tervezési program'!A2:B17",
+          `'${FIELD_SHEET}'!A2:B`,"'Munkalap2'!A1:B500",
+          "'Rétegrend sablonok'!A1:C400"],warn);
+        parts = inputs;
       } catch (error) {
         if (error.status === 429) throw error;
         dataSheet = null;

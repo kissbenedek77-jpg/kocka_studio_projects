@@ -260,3 +260,17 @@ test('A régi DRAFT bővítése megőrzi az eredeti tartalmat és ismételhető'
     textRun:{content:additions.map(item=>item.insertText.text).join('\n')}}]}}]}};
   assert.deepEqual(technicalSupplementRequests(upgraded),[]);
 });
+
+test('A korábban elmentett hiányjelölés nem blokkolja a számított fejezetszöveget',()=>{
+  const fields=fieldSheetRows();
+  const placeholder='[KIEGÉSZÍTENDŐ: a(z) „RETEGRENDEK_JOVAHAGYOTT_SZOVEG” adat.]';
+  fields.find(row=>row[0]==='RETEGRENDEK_JOVAHAGYOTT_SZOVEG')[1]=placeholder;
+  fields.find(row=>row[0]==='SZERKEZETEK LEÍRÁSA')[1]='Kézzel jóváhagyott szerkezetleírás.';
+  const computed='F1 Határoló fal (EK-04 Metszetek)\n  – 37,5 cm Ytong pórusbeton falazóelem';
+  const values=technicalReplacements({project:{uid:'ABC123'},sheetRows:[],programRows:[],
+    fieldRows:fields.slice(1),extraValues:{RETEGRENDEK_JOVAHAGYOTT_SZOVEG:computed}});
+  assert.equal(values.RETEGRENDEK_JOVAHAGYOTT_SZOVEG,computed,
+    'A hiányjelölés helyére a Metszetek tervlapból számított szöveg kerül.');
+  assert.equal(values['SZERKEZETEK LEÍRÁSA'],'Kézzel jóváhagyott szerkezetleírás.',
+    'A valóban kitöltött, kézi szöveg továbbra is elsőbbséget élvez.');
+});

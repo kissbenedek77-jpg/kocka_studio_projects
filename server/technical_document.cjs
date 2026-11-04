@@ -147,6 +147,11 @@ function fieldSheetRows() {
     ...MANUAL_FIELDS.map(([key,help]) => [key,'',help])];
 }
 
+// Csak hiányjelölést tartalmazó szöveg (pl. „[KIEGÉSZÍTENDŐ: …]”) nem számít
+// kitöltött adatnak: a helyére a számított vagy a sablonból származó szöveg lép.
+const PLACEHOLDER_ONLY = /^\s*\[(?:KIEGÉSZÍTENDŐ|ELLENŐRIZENDŐ)[^\]]*\]\s*$/i;
+function placeholderOnly(value) {return PLACEHOLDER_ONLY.test(String(value ?? ''));}
+
 function manualValues(rows) {
   const result = {};
   for (const row of rows || []) {
@@ -154,7 +159,11 @@ function manualValues(rows) {
     if (!FIELD_KEYS.has(key)) continue;
     let value = String(row?.[1] ?? '').trim();
     if (value.length > 50000) throw new Error('Túl hosszú műszaki adat: '+key);
-    if (value && !/\{\{[^{}]+\}\}/.test(value)) result[key] = value;
+    // A csak hiányjelölést tartalmazó mező nem kitöltött adat: a számított vagy
+    // a sablonból származó szöveg lép a helyére. Így egy korábban elmentett
+    // hiányjelölés nem ragad be a műszaki adatlapra.
+    if (value && !/\{\{[^{}]+\}\}/.test(value) && !placeholderOnly(value))
+      result[key] = value;
   }
   return result;
 }
@@ -433,5 +442,5 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
 module.exports = {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,
   validateTechnicalField,fieldSheetRows,
   manualValues,numberFromSheet,technicalReview,technicalReplacements,displayDate,validIsoDate,
-  validHungarianDate,hungarianToday,gapText,DATA_MARKER,tervTargya,rendeltetesiKategoria,
+  validHungarianDate,hungarianToday,gapText,placeholderOnly,DATA_MARKER,tervTargya,rendeltetesiKategoria,
   basementArea};

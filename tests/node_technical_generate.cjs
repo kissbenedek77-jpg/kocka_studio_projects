@@ -71,7 +71,7 @@ function mockTechnical({roomContent,fetch:fetchImpl}={}) {
     copy:async()=>({data:{id:'generated-technical-doc'}})
   }});
   const body={content:[{paragraph:{elements:[{startIndex:1,textRun:{
-    content:'{{TERV_TARGYA}} {{HELYSZIN:meglevo_allapot}} {{HELYISEGLISTA}}\n'}}]}}]};
+    content:'{{TERV_TARGYA}} {{HELYSZIN:meglevo_allapot}} {{HELYISEGLISTA}} {{TERVEZESI_PROGRAM:b}}\n'}}]}}]};
   google.docs=()=>({documents:{get:async()=>({data:{revisionId:'r1',body,namedRanges:{}}}),
     batchUpdate:async options=>{state.docWrite=options;return {data:{}};}}});
   process.env.GEMINI_API_KEY='test-key';process.env.GEMINI_TECHNICAL_MODEL='gemini-2.5-flash';
@@ -212,4 +212,45 @@ test('Projektmappa nélkül az AI műszaki leírás nem indul el',async()=>{
       sheetId:'technical-generate-nofolder',sheetName:'Adatok'});
     await assert.rejects(client.generateTechnicalDocument('ABC123'),/projektmappát/);
   }finally{google.sheets=originalSheets;}
+});
+
+test('Hiányzó „Rétegrend sablonok” munkalap nem viszi el a többi tervezési adatot',async()=>{
+  const harness=mockTechnical({roomContent:[
+    '| Helyiség szintjének neve | Helyiség neve | Mért terület',
+    '1 | Földszint | nappali | 30,00'].join('\n')});
+  const sheetsFactory=google.sheets;
+  let batchCalls=0;
+  google.sheets=(...args)=>{
+    const api=sheetsFactory(...args);
+    const batchGet=api.spreadsheets.values.batchGet;
+    api.spreadsheets.values.batchGet=async options=>{
+      batchCalls+=1;
+      if(batchCalls===1){
+        // A Google ezt a hibát adja, ha a kért munkalap nem létezik.
+        const error=new Error("Unable to parse range: 'Rétegrend sablonok'!A1:C400");
+        error.status=400;
+        throw error;
+      }
+      const result=await batchGet(options);
+      result.data.valueRanges=(result.data.valueRanges||[]).slice(0,options.ranges.length);
+      return result;
+    };
+    return api;
+  };
+  try{
+    const result=await technicalClient('technical-generate-missing-sheet')
+      .generateTechnicalDocument('ABC123');
+    assert.ok(batchCalls>=2,'A hiányzó munkalap után a kötelező tartományokat újra kell olvasni.');
+    assert.ok(result.warnings.some(text=>text.includes('Rétegrend sablonok')),
+      'A figyelmeztetésnek meg kell neveznie a hiányzó munkalapot: '+result.warnings);
+    assert.equal(result.warnings.some(text=>text.includes('A tervezési adatlap adatai nem olvashatók')),
+      false,'A hiányzó kiegészítő munkalap nem teheti tönkre az összes adat olvasását.');
+    const texts=harness.state.docWrite.requestBody.requests
+      .filter(item=>item.replaceNamedRangeContent)
+      .map(item=>item.replaceNamedRangeContent.text).join('\n');
+    assert.match(texts,/Kitöltött program/,
+      'A program a hiányzó munkalap ellenére is bekerül a dokumentumba.');
+  }finally{
+    harness.restore();
+  }
 });
