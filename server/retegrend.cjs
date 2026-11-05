@@ -24,7 +24,7 @@ const TH_TRAIL = new RegExp('^(.*?)\\s+((?:(?:'+TH_SRC+')(?:\\s+(?:'+TH_SRC+'))*
 
 const CONSTRUCTION = /fal|födém|fodem|fedél|fedel|tető|teto|magastető|magasteto|mennyezet|válaszfal|valaszfal|aljzat|padló|padlo|szerkezet|burkolat|lábazat|labazat|járda|jarda|terasz|pince|lépcső|lepcso|erkély|erkely/i;
 const REGION = /r[eé]tegrendek\s*:?/i;
-const END = /^(?:[ÉE]$|[±+\-]?\d+[.,]\d+\s*=\s*\d|M\s*=\s*1:|Terven jelölt|Az épület|A bútorok|Az egyes szerkezetek|Minden szerkezet|Minden szín|Rajzszám|Rajz léptéke|KOCKA STÚDIÓ)/i;
+const END = /^(?:[ÉE]$|[±+\-]?\d+[.,]\d+\s*=\s*\d|M\s*=\s*1:|Terven jelölt|Az épület|A bútorok|Az egyes szerkezetek|Minden szerkezet|Minden szín|Rajzszám|Rajz léptéke|KOCKA STÚDIÓ|[—–-]{3,}$)/i;
 const HEADER = /^([FMTPKL])(\d{0,2})([a-z]?)\s+(.+)$/;
 const DRAWING_ID = /^[A-Z]{1,3}\d+[a-z]?$/;
 const CONTINUATION = /^(?:szalaggal|hajlaterősítő|hajlaterosit|folytatva|átlapolva|atlapolva)\b/i;
@@ -448,9 +448,19 @@ function bboxWords(html) {
 
 function bboxVisualLines(html) {
   const words = bboxWords(html);
-  const heading = words.find(word => /r[eé]tegrendek/i.test(word.text));
-  if (!heading) return {heading:null,lines:[]};
-  const pageWords = words.filter(word => word.page === heading.page && word.y > heading.y + 1)
+  const headings = words.filter(word => /r[eé]tegrendek/i.test(word.text));
+  if (!headings.length) return {heading:null,lines:[]};
+  // A szövegblokk a „Rétegrendek” címsorral kezdődik és a „---” jellel végződik.
+  // Azt a címsort választjuk, amely után ugyanazon az oldalon van a záró jel.
+  let heading = headings[headings.length-1], marker = null;
+  for (const candidate of headings) {
+    const found = words.find(word => word.page === candidate.page && word.y > candidate.y &&
+      /^[—–-]{3,}$/.test(word.text));
+    if (found) {heading = candidate; marker = found; break;}
+  }
+  const limit = marker ? marker.y : Infinity;
+  const pageWords = words.filter(word => word.page === heading.page &&
+    word.y > heading.y + 1 && word.y < limit)
     .sort((a,b) => a.y - b.y || a.x - b.x);
   const lines = [];
   for (const word of pageWords) {

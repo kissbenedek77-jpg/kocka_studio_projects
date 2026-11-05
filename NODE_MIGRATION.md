@@ -61,6 +61,8 @@ A rétegrendeket a szerver a Metszetek tervlap PDF-jének „Rétegrendek:” sz
 
 A szerver a rétegrend-oszlopot elsősorban a Poppler `-bbox-layout` szóhatáros kimenetéből olvassa ki: a blokk-címsorok x-koordinátája adja az oszlopokat, a rajzi feliratok más x-en állnak, ezért kimaradnak. Ha a szóhatáros kimenet nem érhető el, a nyers, majd a `-layout` kimenet a tartalék. Egy terven több rétegrend-oszlop is lehet egymás mellett; az azonos nevű blokkok közül a legteljesebb változat marad meg, így a szerkezet nem jelenik meg kétszer.
 
+A rétegrend szövegblokkja a „Rétegrendek” címsorral kezdődik és a „---” jellel végződik; a feldolgozó csak az e kettő közötti szöveget veszi, a záró jel utáni rajzi felirat nem kerül a leírásba.
+
 A dokumentumban a rétegrend címsora a tervlap neve nélkül, aláhúzva jelenik meg; a rétegsorok a tervlap tagolását követik: a mennyiség és az egység, majd tabulátorral a réteg megnevezése. A rétegrend-mezőt a generálás a tervlapból mindig felülírja.
 
 A parkolóegyenleg megfelelő tervezett mennyiségnél csak „MEGFELEL!” szöveget kap; eltérésnél a részletes egyenleg jelenik meg. Az építményérték fejezetcíme a jogszabályt is tartalmazza („Építményérték számítása (245/2006. (XII. 5.) Korm. rendelet 1. melléklet szerint)”), a külön „Jogszabályi alap és számítási módszer” sor elmarad. A födém/mennyezet rétegrendje akkor beton szerkezet, ha a rétegekben szerepel a beton szó, egyébként „fafödém”. A szerkezetek leírásának alpontjai (Alapozás, Teherhordó szerkezetek, …) dőlten jelennek meg. A tördelést (a fejezetek új oldalon kezdése, a címek oldalvégi helyzete) a dokumentumsablon szabályozza; a generálás nem szúr be utólag oldaltörést.

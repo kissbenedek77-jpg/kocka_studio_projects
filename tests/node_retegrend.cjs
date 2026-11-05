@@ -204,6 +204,22 @@ test('A szóhatáros kimenetből a rétegrend-oszlop olvasható, a rajzi szöveg
     'A rajzi felirat (M = 1:50) nem kerülhet a rétegrendbe.');
 });
 
+test('A rétegrend blokk a „---” jelnél véget ér', () => {
+  const word = (x,y,text) => `<word xMin="${x}" yMin="${y}" xMax="${x + 60}" yMax="${y + 10}">${text}</word>`;
+  const html = '<page width="2000" height="2000">' + [
+    word(100,100,'Rétegrendek'),
+    word(100,120,'F1'),word(115,120,'Határoló'),word(185,120,'fal'),
+    word(100,140,'30'),word(125,140,'cm'),word(140,140,'Porotherm'),
+    word(100,160,'---'),
+    word(100,180,'Rajzi'),word(115,180,'felirat')
+  ].join('') + '</page>';
+  const blocks = retegekFromText('','','EK-04 Metszetek.pdf',html);
+  assert.equal(blocks.length,1);
+  assert.equal(blocks[0].title,'F1 Határoló fal');
+  assert.deepEqual(blocks[0].layers,[{thickness:'30 cm',material:'Porotherm'}],
+    'A „---” utáni rajzi felirat nem kerülhet a rétegrendbe.');
+});
+
 test('A födém betonréteg nélkül fafödém, betonnal a betonréteg a szerkezet', () => {
   const timber = ['Rétegrendek:','M1 Mennyezet','25 cm kőzetgyapot hőszigetelés',
     '2 cm gipszkarton álmennyezet','É'].join('\n');
