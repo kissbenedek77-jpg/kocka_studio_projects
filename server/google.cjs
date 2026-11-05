@@ -1190,6 +1190,38 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     return markers.some(marker => marker.key === 'TERVJEGYZEK') && !hasPlanTable(document);
   }
 
+  // A helyiséglista-táblázat egy oldalon marad: a „Helyiségek” fejezetet új
+  // oldalon kezdjük, ha még nincs előtte oldaltörés. A beszúrt törés bekezdése
+  // örökli a címsor felsorolás-jelölését, ezért azt eltávolítjuk.
+  async function ensureRoomTablePage(documentId, document, warn) {
+    const items = document?.body?.content || [];
+    const index = items.findIndex(item => item.paragraph &&
+      /^Helyiségek$/.test((item.paragraph.elements || [])
+        .map(element => element.textRun?.content || '').join('').trim()));
+    if (index < 0) return document;
+    const previous = items[index-1];
+    if (previous && (previous.paragraph?.elements || []).some(element => element.pageBreak))
+      return document;
+    const start = items[index].startIndex;
+    if (!Number.isInteger(start)) return document;
+    const requests = [{insertPageBreak:{location:{index:start}}}];
+    if (items[index].paragraph.bullet)
+      requests.push({deleteParagraphBullets:{range:{startIndex:start,endIndex:start + 2}}});
+    try {
+      await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+        requestBody:{requests,
+          ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+      return (await googleQuota.run('docsRead',1,() => docs.documents.get({
+        documentId,includeTabsContent:false
+      }))).data;
+    } catch (error) {
+      if (error.status === 429) throw error;
+      warn('A helyiséglista új oldalon kezdése nem sikerült ('+
+        (error.message||String(error))+'); a táblázat több oldalra szakadhat.');
+      return document;
+    }
+  }
+
   async function ensureDocument(uid, type) {
     const template = DOCUMENT_TEMPLATES[type];
     if (!template) throw new Error('Ismeretlen vagy még nem átültetett dokumentumtípus.');
@@ -1534,6 +1566,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     // helyettesítés előtt kell beszúrni.
     let roomTableInserted = false;
     if (type === 'muszakiLeiras' && roomData?.tableRows?.length > 1) {
+      document = await ensureRoomTablePage(documentId,document,warn);
       try {
         const marker = findMarker(document);
         const inserts = insertRequests(marker, roomData.tableRows);

@@ -5,6 +5,7 @@ const {ADDRESSES, SHEET_PREFIX, technicalSheetValues, technicalProgramLines} = r
 const {programReplacements,exitCount,PROGRAM_LETTERS} = require('./technical_program.cjs');
 const {renderTemplate} = require('./technical_texts.cjs');
 const {planScale} = require('./plans.cjs');
+const {teruletrendezesiNyilatkozat} = require('./teruletrendezes.cjs');
 
 const FIELD_SHEET = 'Műszaki leírás';
 // 245/2006. (XII. 5.) Korm. rendelet 1. melléklet – Egységárak építménytípusonként.
@@ -388,6 +389,11 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     if (String(values[key] || '').trim()) continue;
     values[key] = renderTemplate(text,context);
   }
+  // A területrendezési törvényre vonatkozó nyilatkozat csak a kiemelt térségi
+  // településeken jelenik meg; más településnél a bekezdés kimarad.
+  if (values['TERVEZOI_NYILATKOZAT_JOVAHAGYOTT_SZOVEG'])
+    values['TERVEZOI_NYILATKOZAT_JOVAHAGYOTT_SZOVEG'] = teruletrendezesiNyilatkozat(
+      values['TERVEZOI_NYILATKOZAT_JOVAHAGYOTT_SZOVEG'], project.projekt_varos);
   // A rétegrend neve és a sablon fix szava néha megismétlődik („falazóelem
   // falazóelemből”, „fedés fedéssel”); a szerkezetleírásban egyszerűsítjük.
   if (values['SZERKEZETEK LEÍRÁSA'])
