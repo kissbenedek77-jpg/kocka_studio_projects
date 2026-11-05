@@ -18,8 +18,13 @@
     #chat label{display:block;font-weight:600;margin-bottom:.35rem}
     #chat textarea{width:100%;min-height:5.2rem;resize:vertical;border:1px solid #9fb3bb;border-radius:8px;padding:.7rem;font:inherit;line-height:1.45;background:#fff;color:#19313c}
     #chat textarea:focus{outline:3px solid #9ed2dc;border-color:#287b82}
-    .doc-section{background:white;border:1px solid #d8e1e4;border-radius:12px;padding:1.25rem 1.5rem;margin:1rem 0}
-    .doc-section-title{margin:0 0 .7rem;font-size:1.22rem;border-bottom:1px solid #e3eaec;padding-bottom:.45rem}
+    .doc-section{background:white;border:1px solid #d8e1e4;border-radius:12px;margin:1rem 0;overflow:hidden}
+    .doc-section>summary.doc-section-title{list-style:none;cursor:pointer;padding:1rem 1.4rem;font-size:1.22rem;font-weight:700;color:#163746;display:flex;align-items:center;gap:.55rem;border-bottom:1px solid transparent}
+    .doc-section[open]>summary.doc-section-title{border-bottom-color:#e3eaec}
+    .doc-section>summary.doc-section-title::-webkit-details-marker{display:none}
+    .doc-section>summary.doc-section-title::before{content:'▸';font-size:.9em;color:#8f7748}
+    .doc-section[open]>summary.doc-section-title::before{content:'▾'}
+    .doc-section-body{padding:.9rem 1.4rem 1.2rem}
     .doc-heading{width:100%;border:0;background:transparent;font:inherit;font-size:1.22rem;font-weight:700;color:#163746;padding:.2rem 0}
     .doc-heading:focus{outline:none;background:#f4fafb;box-shadow:0 0 0 3px #9ed2dc33;border-radius:6px}
     .doc-block{margin:.5rem 0;position:relative}
@@ -69,7 +74,7 @@
     .chat-log p{margin:0;padding:.7rem .9rem;border-radius:10px;background:#eef4f5;white-space:pre-wrap}
     .chat-log p.me{background:#e2edf0;border-left:4px solid #287b82}
     .chat-actions{display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;margin-top:.6rem}
-    @media(max-width:700px){.doc-section{padding:1rem}header{padding:1rem}.actions{padding:.8rem 0 max(.8rem,env(safe-area-inset-bottom))}}
+    @media(max-width:700px){.doc-section>summary.doc-section-title{padding:1rem}.doc-section-body{padding:0 1rem 1rem}header{padding:1rem}.actions{padding:.8rem 0 max(.8rem,env(safe-area-inset-bottom))}}
     @media(max-width:480px){main{padding:.75rem}.actions{display:grid;grid-template-columns:minmax(0,1fr);gap:.6rem}.actions button{width:100%;min-height:44px}.notice,.doc-section{overflow-wrap:anywhere}}
   </style>
 </head>
@@ -129,7 +134,11 @@
       if(last<text.length)root.append(document.createTextNode(text.slice(last)));
       return root;
     }
-    function autoSize(input){if(input.tagName!=='TEXTAREA'||input.rows>8)return;input.style.height='auto';input.style.height=input.scrollHeight+'px'}
+    function autoSize(input){
+      if(input.tagName!=='TEXTAREA'||input.rows>8)return;
+      if(!input.scrollHeight){input.style.height='';return}
+      input.style.height='auto';input.style.height=input.scrollHeight+'px';
+    }
     function contextText(text){return String(text||'').replace(/\{\{[^{}]+\}\}/g,'').trim().length>0}
     function fieldInput(field){
       let input;
@@ -317,21 +326,26 @@
       const outline=Array.isArray(data.outline)?data.outline:[];
       const missingSet=new Set(data.missingFields||[]);
       let current=null,seenHeading=false;
-      const section=title=>{const node=document.createElement('section');node.className='doc-section';
-        if(title){const h=document.createElement('h2');h.className='doc-section-title';h.textContent=title;node.append(h)}
-        root.append(node);current=node;return node};
+      const section=title=>{
+        const node=document.createElement('details');node.className='doc-section';
+        const summary=document.createElement('summary');summary.className='doc-section-title';
+        summary.textContent=title||'';
+        const body=document.createElement('div');body.className='doc-section-body';
+        node.append(summary,body);
+        node.addEventListener('toggle',()=>{if(node.open)body.querySelectorAll('textarea').forEach(autoSize)});
+        root.append(node);current=body;return body;
+      };
       for(const entry of outline){
         if(entry.type==='heading'){
           if(entry.level==='chapter'){
-            const node=section();const h=document.createElement('h2');h.className='doc-section-title';h.textContent=entry.text;node.append(h);
-            current=node;seenHeading=true;
+            section(entry.text);seenHeading=true;
           }else{
-            if(!current)current=section(seenHeading?'Műszaki leírás':'Címlap és tartalomjegyzék');
+            if(!current)section(seenHeading?'Műszaki leírás':'Címlap és tartalomjegyzék');
             const h=document.createElement('h3');h.className='doc-subheading';h.textContent=entry.text;current.append(h);
           }
           continue;
         }
-        if(!current)current=section(seenHeading?'Műszaki leírás':'Címlap és tartalomjegyzék');
+        if(!current)section(seenHeading?'Műszaki leírás':'Címlap és tartalomjegyzék');
         if(entry.type==='text'){
           if(entry.readonly)renderReadonlyText(current,entry.text);
           else renderBlock(current,blocks.get(entry.id)||entry);

@@ -133,6 +133,9 @@ test('A /technical oldal a dokumentum sorrendjében, szerkeszthető blokkokkal j
     textOf(node).includes('Lovas Krisztián')),
     'Az automatikus szöveg előnézete hiányzik.');
   assert.ok(all.some(node => node.className === 'doc-table-note'));
+  assert.ok(all.some(node => node.className === 'doc-section'),'Hiányzik az accordion-szekció.');
+  assert.ok(all.filter(node => node.className === 'doc-section').every(node => !node.open),
+    'A szekciók alapból zárva legyenek.');
   const area1 = all.find(node => node.dataset?.key === 'EPITMENYERTEK:terulet_1_m2');
   assert.ok(area1,'Hiányzik az építményérték 1. sorának területmezője.');
   assert.equal(area1.value,'100');
