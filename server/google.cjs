@@ -1154,7 +1154,22 @@ function googleClient(config, refreshToken = '', authOverride = null) {
   }
 
   // A DRAFT akkor készült korábbi sablonból, ha a sablon jelölői (vagy a
-  // műszaki leírás fejezet-tartományai) hiányoznak belőle.
+  // műszaki leírás fejezet-tartományai) hiányoznak belőle. Ha a sablon
+  // tervjegyzéket kér, de a dokumentumban még csak szöveges lista van, szintén
+  // újraépítjük, hogy a tervjegyzék táblázatként jelenjen meg.
+  function hasPlanTable(document) {
+    for (const item of document?.body?.content || []) {
+      if (!item.table) continue;
+      for (const row of item.table.tableRows || [])
+        for (const cell of row.tableCells || []) {
+          const value = (cell.content || []).map(part => (part.paragraph?.elements || [])
+            .map(element => element.textRun?.content || '').join('')).join('');
+          if (/EK-\d|M\s*=\s*1:/i.test(value)) return true;
+        }
+    }
+    return false;
+  }
+
   function templateStale(document, source, type) {
     if (type === 'muszakiLeiras') return !hasTemplateSections(document);
     const names = new Set(Object.keys(document?.namedRanges || {}));
@@ -1167,8 +1182,11 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       }
     };
     scan(document?.body?.content);
-    return templateMarkers(source).some(marker =>
+    const markers = templateMarkers(source);
+    const missing = markers.some(marker =>
       !names.has('KOCKA_MERGE_'+marker.key) && !raw.includes('{{'+marker.key+'}}'));
+    if (missing) return true;
+    return markers.some(marker => marker.key === 'TERVJEGYZEK') && !hasPlanTable(document);
   }
 
   async function ensureDocument(uid, type) {
@@ -1620,9 +1638,11 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     // különben a szöveges lista is bekerülne a táblázat mellé.
     if (type === 'muszakiLeiras' && roomTableInserted) mergeValues.HELYISEGLISTA = '';
     // A tervjegyzék szintén táblázat: bal oldalon a tervlap címe, jobb oldalon a
-    // lépték a lap széléhez igazítva, keret és cellakitöltés nélkül.
+    // lépték a lap széléhez igazítva, keret és cellakitöltés nélkül. A műszaki
+    // leírás mellett minden olyan dokumentumban, amelynek sablonja tartalmazza a
+    // {{TERVJEGYZEK}} jelölőt (például az aláírólap).
     let planTableInserted = false;
-    if (type === 'muszakiLeiras') {
+    if (type === 'muszakiLeiras' || mergeValues.TERVJEGYZEK) {
       const rows = planRows(mergeValues.TERVJEGYZEK);
       if (rows.length) {
         try {
