@@ -20,8 +20,9 @@ function harness(project){
   const buttons=[],textareas=[],sections=[],paragraphs=[],notices=[],rpcCalls=[];
   const actions=node();
   const panel=node();
+  const actionGroup=()=>{const grid=node();actions.append(grid);return grid};
   const context=vm.createContext({
-    step:5,actions,panel,project,technicalDraft:null,
+    step:5,actions,panel,project,technicalDraft:null,actionGroup,
     document:{body:{dataset:{runtime:'node'}}},
     element(tag,className,text){const item=node(tag,className,text);
       if(tag==='textarea')textareas.push(item);return item;},
