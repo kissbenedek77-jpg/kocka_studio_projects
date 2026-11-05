@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('node:crypto');
 const {documentValues} = require('./doc_merge.cjs');
 const {ADDRESSES, SHEET_PREFIX, technicalSheetValues, technicalProgramLines} = require('./technical_sheet.cjs');
 const {programReplacements,exitCount,PROGRAM_LETTERS} = require('./technical_program.cjs');
@@ -144,8 +145,14 @@ function validateTechnicalField(key,value) {
 }
 
 function fieldSheetRows() {
-  return [['Mező','Érték','Kitöltési útmutató'],
-    ...MANUAL_FIELDS.map(([key,help]) => [key,'',help])];
+  return [['Mező','Érték','Kitöltési útmutató','Utolsó generált érték (hash)'],
+    ...MANUAL_FIELDS.map(([key,help]) => [key,'',help,''])];
+}
+
+// A mező utolsó generált értékének lenyomata. Ha a lapon tárolt lenyomat
+// megegyezik a jelenlegi értékkel, az érték generált; ha eltér, kézzel írták át.
+function fieldHash(value) {
+  return crypto.createHash('sha256').update(String(value ?? ''),'utf8').digest('hex');
 }
 
 // Csak hiányjelölést tartalmazó szöveg (pl. „[KIEGÉSZÍTENDŐ: …]”) nem számít
@@ -188,6 +195,10 @@ function manualValues(rows) {
     if (!FIELD_KEYS.has(key)) continue;
     let value = String(row?.[1] ?? '').trim();
     if (value.length > 50000) throw new Error('Túl hosszú műszaki adat: '+key);
+    // A generált érték lenyomata egyezik: nem kézi beírás, ezért a számított
+    // érték felülírhatja. Eltérő lenyomat (vagy hiányzó lenyomat) kézi szöveg.
+    const hash = String(row?.[3] ?? '').trim();
+    if (hash && hash === fieldHash(value)) continue;
     // A csak hiányjelölést tartalmazó mező nem kitöltött adat: a számított vagy
     // a sablonból származó szöveg lép a helyére. Így egy korábban elmentett
     // hiányjelölés nem ragad be a műszaki adatlapra.
@@ -327,12 +338,6 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
   // fejezetszöveg viszont mindig elsőbbséget élvez.
   for (const [key,value] of Object.entries(extraValues || {})) {
     if (!String(value ?? '').trim()) continue;
-    // A rétegrend a Metszetek tervlapból jön: a korábban elmentett szöveget
-    // felülírja, hogy a formázás és a tagolás is a tervlapé legyen.
-    if (key === 'RETEGRENDEK_JOVAHAGYOTT_SZOVEG') {
-      values[key] = String(value);
-      continue;
-    }
     if (String(manual[key] || '').trim()) continue;
     values[key] = String(value);
   }
@@ -503,7 +508,7 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
 }
 
 module.exports = {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,
-  validateTechnicalField,fieldSheetRows,
+  validateTechnicalField,fieldSheetRows,fieldHash,
   manualValues,numberFromSheet,technicalReview,technicalReplacements,displayDate,validIsoDate,
   validHungarianDate,hungarianToday,gapText,placeholderOnly,fillRetegrendGaps,DATA_MARKER,tervTargya,rendeltetesiKategoria,
   basementArea};

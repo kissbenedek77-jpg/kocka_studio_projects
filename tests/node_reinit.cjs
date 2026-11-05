@@ -135,10 +135,12 @@ test('A műszaki leírás mentett tartalma teljesen kiürül',async()=>{
     // A program és a helyiséglista-táblázat teljes tartománya törlődik.
     assert.deepEqual(mock.state.cleared,
       ["'Tervezési program'!B2:B17",'Munkalap2!A2:B500']);
-    // A fejezetmezők minden sora üres értéket kap (a fejléc nem).
-    assert.equal(mock.state.fieldWrites.length,mock.state.fieldRows.length);
-    assert.ok(mock.state.fieldWrites.every(item =>
-      /^'Műszaki leírás'!B\d+$/.test(item.range) && item.values[0][0]===''));
-    assert.ok(mock.state.fieldWrites.every(item => item.range!==`'Műszaki leírás'!B1`));
+    // A fejezetmezők minden sora üres értéket kap (a fejléc nem). A lenyomat-
+    // oszlop írásait itt nem számítjuk.
+    const fieldWrites=mock.state.fieldWrites.filter(item =>
+      /^'Műszaki leírás'!B\d+$/.test(item.range));
+    assert.equal(fieldWrites.length,mock.state.fieldRows.length);
+    assert.ok(fieldWrites.every(item => item.values[0][0]===''));
+    assert.ok(fieldWrites.every(item => item.range!==`'Műszaki leírás'!B1`));
   }finally{mock.restore();}
 });

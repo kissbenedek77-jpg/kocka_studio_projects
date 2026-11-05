@@ -16,6 +16,8 @@
     h2{font-size:1.12rem;margin:.1rem 0 1rem}h3{font-size:1rem;margin:0 0 .4rem}
     .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
     label{display:block;font-weight:600;margin-bottom:.35rem}small{display:block;color:#526873;margin-bottom:.45rem;overflow-wrap:anywhere}
+    .manual-badge{display:inline-block;margin-left:.4rem;padding:.05rem .45rem;border-radius:999px;background:#fff3cd;color:#7a5b00;font-size:.72rem;font-weight:700;vertical-align:middle}
+    .reset-field{margin-top:.35rem;font-size:.8rem;padding:.28rem .65rem;border:1px solid #c9d4da;border-radius:.4rem;background:#fff;color:#24506b;cursor:pointer}
     textarea{width:100%;min-height:5.2rem;resize:vertical;border:1px solid #9fb3bb;border-radius:8px;padding:.7rem;font:inherit;line-height:1.45;background:#fff;color:#19313c}
     select,input[type=date]{width:100%;min-height:44px;border:1px solid #9fb3bb;border-radius:8px;padding:.7rem;font:inherit;background:#fff;color:#19313c}
     textarea:focus{outline:3px solid #9ed2dc;border-color:#287b82}button{border:0;border-radius:8px;background:#17667d;color:white;padding:.8rem 1.3rem;font:inherit;font-weight:650;cursor:pointer}
@@ -98,7 +100,10 @@
           }
           input.id='field-'+data.fields.indexOf(field);input.dataset.key=field.key;input.value=field.value;
           label.htmlFor=input.id;label.textContent=field.help;
-          wrapper.append(label,input);grid.append(wrapper)});
+          if(field.manual){const badge=document.createElement('span');badge.className='manual-badge';badge.textContent='Kézi';label.append(' ',badge)}
+          wrapper.append(label,input);
+          if(field.manual){const reset=document.createElement('button');reset.type='button';reset.className='reset-field';reset.textContent='Visszaállítás';reset.title='A mező törlése; a következő generálás újra kitölti.';reset.addEventListener('click',()=>{input.value='';form.requestSubmit()});wrapper.append(reset)}
+          grid.append(wrapper)});
         draftButton.disabled=!data.aiConfigured;draftButton.title=data.aiConfigured?'':'A GEMINI_API_KEY nincs beállítva.';
         autoDraftButton.disabled=!data.aiConfigured;autoDraftButton.title=data.aiConfigured?'A projekt tényadataiból minden fejezetet megír, elment, majd létrehozza a DRAFT dokumentumot.':'A GEMINI_API_KEY nincs beállítva.';
         aiReady=Boolean(data.aiConfigured);

@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {technicalReplacements,technicalReview,validateTechnicalField,fieldSheetRows,
-  tervTargya,rendeltetesiKategoria} = require('../server/technical_document.cjs');
+  fieldHash,manualValues,tervTargya,rendeltetesiKategoria} = require('../server/technical_document.cjs');
 const {mergeRequests,unresolvedMarkers} = require('../server/doc_merge.cjs');
 const {technicalSupplementRequests} = require('../server/technical_upgrade.cjs');
 
@@ -307,4 +307,17 @@ test('A mentett szerkezetleírásban maradt rétegrend-hiányjelölést a szám�
   assert.match(values['SZERKEZETEK LEÍRÁSA'],/Ytong pórusbeton falazóelemből/);
   assert.match(values['SZERKEZETEK LEÍRÁSA'],/37,5 cm vastagságban/);
   assert.equal(values['SZERKEZETEK LEÍRÁSA'].includes('KIEGÉSZÍTENDŐ'),false);
+});
+
+test('A generált érték lenyomata alapján a kézi módosítás felismerhető',()=>{
+  const row=fieldSheetRows().find(item=>item[0]==='TERV_TARGYA');
+  const generated='generált szöveg';
+  row[1]=generated;row[3]=fieldHash(generated);
+  assert.equal(manualValues([row]).TERV_TARGYA,undefined,
+    'A generált értéket a számított érték felülírhatja.');
+  row[1]='kézi szöveg';
+  assert.equal(manualValues([row]).TERV_TARGYA,'kézi szöveg',
+    'A lenyomattól eltérő érték kézi módosítás.');
+  row[1]='másik szöveg';row[3]=fieldHash('eltérő');
+  assert.equal(manualValues([row]).TERV_TARGYA,'másik szöveg');
 });

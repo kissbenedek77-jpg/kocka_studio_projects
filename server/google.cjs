@@ -11,7 +11,7 @@ const {planScale, resolvePlanScale, planScaleWarning} = require('./plans.cjs');
 const {restartPostfix,appendPostfix,copiedName,expectedPath} = require('./restart.cjs');
 const {technicalSheetValues, technicalProgramLines} = require('./technical_sheet.cjs');
 const {parseRoomText,areaText} = require('./room_data.cjs');
-const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,fieldSheetRows,validateTechnicalField,manualValues,placeholderOnly,technicalReplacements} = require('./technical_document.cjs');
+const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,fieldSheetRows,fieldHash,validateTechnicalField,manualValues,placeholderOnly,technicalReplacements} = require('./technical_document.cjs');
 const {valueTableRequests} = require('./value_table.cjs');
 const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs');
 const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
@@ -697,28 +697,36 @@ function googleClient(config, refreshToken = '', authOverride = null) {
   async function getTechnicalFields(uid) {
     const sheet = await ensureProjectDataSheet(uid);
     const rows = await ensureTechnicalFieldRows(sheet.id);
-    const current = new Map(rows.map(row =>
-      [String(row[0] || '').trim(),String(row[1] || '')]));
+    const current = new Map(rows.map(row => [String(row[0] || '').trim(), {
+      value:String(row[1] || ''),
+      hash:String(row[3] || '').trim()
+    }]));
     return {sheetUrl:sheet.url,aiConfigured:Boolean(process.env.GEMINI_API_KEY),
       autoChapters:AUTO_CHAPTERS,
-      fields:MANUAL_FIELDS.map(([key,help]) => ({
-      key,help,value:current.get(key) || ''
-    }))};
+      fields:MANUAL_FIELDS.map(([key,help]) => {
+        const entry = current.get(key) || {value:'',hash:''};
+        // Kézi: az érték eltér az utoljára generálttól (vagy nincs lenyomat).
+        const manual = Boolean(entry.value.trim()) &&
+          (!entry.hash || entry.hash !== fieldHash(entry.value));
+        return {key,help,value:entry.value,manual};
+      })};
   }
 
   async function ensureTechnicalFieldRows(sheetId) {
     const read = async () => (await sheetRead(() => sheets.spreadsheets.values.get({
-      spreadsheetId:sheetId,range:`'${FIELD_SHEET}'!A2:C`,
+      spreadsheetId:sheetId,range:`'${FIELD_SHEET}'!A2:D`,
       valueRenderOption:'FORMATTED_VALUE'
     }))).data.values || [];
-    const rows = await read();
+    let rows = await read();
     const existing = new Set(rows.map(row => String(row[0] || '').trim()));
     const missing = MANUAL_FIELDS.filter(([key]) => !existing.has(key));
-    if (!missing.length) return rows;
-    await sheetWrite(() => sheets.spreadsheets.values.append({spreadsheetId:sheetId,
-      range:`'${FIELD_SHEET}'!A:C`,valueInputOption:'RAW',insertDataOption:'INSERT_ROWS',
-      requestBody:{values:missing.map(([key,help]) => [key,'',help])}}));
-    return read();
+    if (missing.length) {
+      await sheetWrite(() => sheets.spreadsheets.values.append({spreadsheetId:sheetId,
+        range:`'${FIELD_SHEET}'!A:D`,valueInputOption:'RAW',insertDataOption:'INSERT_ROWS',
+        requestBody:{values:missing.map(([key,help]) => [key,'',help,''])}}));
+      rows = await read();
+    }
+    return rows;
   }
 
   // A műszaki adatlapon mentett szöveg azonnal bekerül a DRAFT dokumentumba,
@@ -759,6 +767,11 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         throw new Error('Érvénytelen vagy túl hosszú műszaki adat: '+key);
       validateTechnicalField(key,value);
       data.push({range:`'${FIELD_SHEET}'!B${positions.get(key)}`,values:[[value]]});
+      // Generáláskor a lenyomatot is frissítjük; kézi mentésnél nem, így a
+      // következő generálás felismeri a kézi módosítást.
+      if (options.generated)
+        data.push({range:`'${FIELD_SHEET}'!D${positions.get(key)}`,
+          values:[[fieldHash(value)]]});
     }
     if (data.length) await sheetWrite(() => sheets.spreadsheets.values.batchUpdate({
       spreadsheetId:sheet.id,requestBody:{valueInputOption:'RAW',data}
@@ -940,7 +953,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     }
     let saved = null;
     if (Object.keys(sections).length) {
-      try { saved = await saveTechnicalFields(data.uid,sections); }
+      try { saved = await saveTechnicalFields(data.uid,sections,{generated:true}); }
       catch (error) {
         if (error.status === 429) throw error;
         warn('A fejezetszövegek mentése nem sikerült: '+error.message);
@@ -978,13 +991,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       if (target && !target.includes('[KIEGÉSZÍTENDŐ:') &&
           String(manual.EPITES_JELLEGE || '').trim() !== target)
         defaults.EPITES_JELLEGE = target;
-      // A rétegrend a Metszetek tervlapból jön; a korábban elmentett, eltérő
-      // szöveget a friss, tervlap szerinti változatra cseréljük.
-      const retegrendText = String(computed.RETEGRENDEK_JOVAHAGYOTT_SZOVEG || '').trim();
-      if (retegrendText && !retegrendText.includes('[KIEGÉSZÍTENDŐ:') &&
-          String(manual.RETEGRENDEK_JOVAHAGYOTT_SZOVEG || '').trim() !== retegrendText)
-        defaults.RETEGRENDEK_JOVAHAGYOTT_SZOVEG = retegrendText;
-      if (Object.keys(defaults).length) await saveTechnicalFields(data.uid,defaults);
+      if (Object.keys(defaults).length) await saveTechnicalFields(data.uid,defaults,{generated:true});
     } catch (error) {
       if (error.status === 429) throw error;
       warn('A fejezetszövegek alapértékének előállítása nem sikerült: '+

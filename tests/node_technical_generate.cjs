@@ -109,6 +109,7 @@ test('A műszaki leírás egy kéréssel, AI-val elkészül és a fejezetek ment
     for (const write of state.fieldsWrites)
       for (const item of write.requestBody.data) {
         const match=/!B(\d+)$/.exec(item.range);
+        if (!match) continue;
         const field=state.fieldRows[Number(match[1])-2];
         if (field) savedKeys.set(field[0],String(item.values?.[0]?.[0] ?? ''));
       }
