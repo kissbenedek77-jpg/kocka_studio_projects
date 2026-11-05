@@ -193,12 +193,30 @@ test('A rétegrend címsora aláhúzott, a rétegsorok tabulátorral tagoltak',(
       bullet:{listId:'lista'}}}
   ]}};
   const requests=retegrendStyleRequests(doc);
-  assert.equal(requests.length,2);
-  assert.deepEqual(requests[0].updateTextStyle.range,{startIndex:12,endIndex:29});
-  assert.equal(requests[0].updateTextStyle.textStyle.underline,true);
-  assert.equal(requests[0].updateTextStyle.fields,'underline');
-  assert.equal(requests[1].updateTextStyle.textStyle.underline,false,
+  const styles=requests.filter(request=>request.updateTextStyle);
+  const spacing=requests.filter(request=>request.updateParagraphStyle);
+  assert.equal(styles.length,2);
+  assert.deepEqual(styles[0].updateTextStyle.range,{startIndex:12,endIndex:29});
+  assert.equal(styles[0].updateTextStyle.textStyle.underline,true);
+  assert.equal(styles[0].updateTextStyle.fields,'underline');
+  assert.equal(styles[1].updateTextStyle.textStyle.underline,false,
     'A rétegsorok aláhúzása a sablon helyőrzőjéről öröklődne, ezért kikapcsoljuk.');
+  assert.equal(spacing.length,2);
+  assert.ok(spacing.every(request=>
+    request.updateParagraphStyle.paragraphStyle.keepWithNext===true));
+  assert.ok(spacing.every(request=>request.updateParagraphStyle.fields==='keepWithNext'));
+});
+
+test('Az elválasztó üres sor nem kap együtt a következővel beállítást',()=>{
+  const doc={body:{content:[
+    {startIndex:1,endIndex:12,paragraph:{elements:[{textRun:{content:'Rétegrendek\n'}}]}},
+    {startIndex:12,endIndex:14,paragraph:{elements:[{textRun:{content:'\n'}}]}},
+    {startIndex:14,endIndex:34,paragraph:{elements:[{textRun:{content:'F1 Határoló fal\n'}}]}}
+  ]}};
+  const requests=retegrendStyleRequests(doc);
+  assert.equal(requests.some(request=>request.updateParagraphStyle?.range.startIndex===12),
+    false,'Az üres sor nem kaphat beállítást.');
+  assert.equal(requests.some(request=>request.updateParagraphStyle?.range.startIndex===14),true);
 });
 
 test('A szerkezetek alpontjai dőlten jelennek meg',()=>{

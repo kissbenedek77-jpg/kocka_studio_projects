@@ -243,10 +243,15 @@ function retegrendStyleRequests(document) {
       : item.paragraph.elements?.[0]?.startIndex;
     const end = Number.isInteger(item.endIndex) ? item.endIndex : null;
     if (!Number.isInteger(start) || !Number.isInteger(end) || end <= start) continue;
+    if (!value.trim()) continue;
+    // Minden szöveges sor együtt marad a következővel; az elválasztó üres
+    // sorok nem kapják meg ezt a beállítást.
+    requests.push({updateParagraphStyle:{range:{startIndex:start,endIndex:end},
+      paragraphStyle:{keepWithNext:true},fields:'keepWithNext'}});
     if (RETEGREND_TITLE.test(value)) {
       requests.push({updateTextStyle:{range:{startIndex:start,endIndex:end - 1},
         textStyle:{underline:true},fields:'underline'}});
-    } else if (value.trim()) {
+    } else {
       // A sablon helyőrzőjének aláhúzása a beszúrt rétegsorokra is átöröklődik.
       requests.push({updateTextStyle:{range:{startIndex:start,endIndex:end - 1},
         textStyle:{underline:false},fields:'underline'}});
