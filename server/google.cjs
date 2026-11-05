@@ -1153,6 +1153,24 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     return output;
   }
 
+  // A DRAFT akkor készült korábbi sablonból, ha a sablon jelölői (vagy a
+  // műszaki leírás fejezet-tartományai) hiányoznak belőle.
+  function templateStale(document, source, type) {
+    if (type === 'muszakiLeiras') return !hasTemplateSections(document);
+    const names = new Set(Object.keys(document?.namedRanges || {}));
+    let raw = '';
+    const scan = contents => {
+      for (const item of contents || []) {
+        raw += (item.paragraph?.elements || []).map(part => part.textRun?.content || '').join('');
+        if (item.table) for (const row of item.table.tableRows || [])
+          for (const cell of row.tableCells || []) scan(cell.content);
+      }
+    };
+    scan(document?.body?.content);
+    return templateMarkers(source).some(marker =>
+      !names.has('KOCKA_MERGE_'+marker.key) && !raw.includes('{{'+marker.key+'}}'));
+  }
+
   async function ensureDocument(uid, type) {
     const template = DOCUMENT_TEMPLATES[type];
     if (!template) throw new Error('Ismeretlen vagy még nem átültetett dokumentumtípus.');
@@ -1174,6 +1192,32 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       const text = String(message || '').trim().slice(0,500);
       if (text && !warnings.includes(text)) warnings.push(text);
     };
+    // Az aláírólap és a többi dokumentum a műszaki leírással azonos tervjegyzéket
+    // kaphat; csak akkor számoljuk, ha a sablon tartalmazza a jelölőt.
+    if (type !== 'muszakiLeiras' &&
+        templateMarkers(source).some(marker => marker.key === 'TERVJEGYZEK')) {
+      try {
+        const projectFolder = await ensureProjectFolder(data.uid);
+        const children = await listChildren(projectFolder.id);
+        const pdfFolder = children.find(item =>
+          item.mimeType === 'application/vnd.google-apps.folder' && /^pdfa$/i.test(item.name));
+        let files = pdfFolder
+          ? (await listChildren(pdfFolder.id)).filter(item => /\.pdf$/i.test(item.name)) : [];
+        files = await planScales(files,warn);
+        mergeValues.TERVJEGYZEK = files.map(file => {
+          const title = String(file.name || '').replace(/\.pdf$/i,'')
+            .replace(/[\r\n\t]/g,' ').trim();
+          const scale = typeof file.scale === 'string' ? file.scale : planScale(title);
+          return {title,scale};
+        }).filter(item => item.title)
+          .sort((a,b) => a.title.localeCompare(b.title,'hu'))
+          .map(item => item.scale ? item.title+'\t'+item.scale : item.title).join('\n');
+      } catch (error) {
+        if (error.status === 429) throw error;
+        warn('A tervjegyzék nem állítható össze ('+(error.message||String(error))+
+          '); a tervlapok lépték nélkül jelennek meg.');
+      }
+    }
     // A helyiséglista a dokumentum elkészítése után, a táblázat beszúrásakor is
     // kell, ezért a blokkon kívül, a függvény szintjén tartjuk.
     let roomData = null, pdfFiles = [], writtenFiles = [];
@@ -1341,19 +1385,20 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     // véglegesített példányt ez nem érinti (fentebb már megálltunk).
     const storedRevision = String(record?.[5] || '').trim();
     const templateRevision = String(source.revisionId || '').trim();
-    if (documentId && type === 'muszakiLeiras' && templateRevision &&
-        storedRevision !== templateRevision) {
+    // A sablonváltozás minden dokumentumtípusnál új példányt igényel: a régi
+    // másolatból hiányozhatnak az új jelölők, ezért a DRAFT-ot újraépítjük.
+    if (documentId && templateRevision && storedRevision !== templateRevision) {
       try {
         await googleQuota.run('drive',100,() => drive.files.update({fileId:documentId,
           requestBody:{trashed:true},supportsAllDrives:true}));
         googleCache.clear(`file:${documentId}`);
-        warn('A korábbi műszaki leírás a régi sablonból készült, ezért a kukába került, és '+
-          'a dokumentum a friss sablonból újra elkészül.');
+        warn('A korábbi '+template.title.toLowerCase()+' a régi sablonból készült, ezért a '+
+          'kukába került, és a dokumentum a friss sablonból újra elkészül.');
         documentId = '';
       } catch (error) {
         if (error.status === 429) throw error;
-        warn('A régi sablonból készült műszaki leírást nem sikerült a kukába tenni ('+
-          (error.message||String(error))+'); a dokumentum a meglévő példányban frissül.');
+        warn('A régi sablonból készült '+template.title.toLowerCase()+' nem sikerült a kukába '+
+          'tenni ('+(error.message||String(error))+'); a dokumentum a meglévő példányban frissül.');
       }
     }
     if (!documentId) {
@@ -1374,10 +1419,11 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     let document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
       documentId,includeTabsContent:false
     }))).data;
-    // A korábbi sablonból készült DRAFT-ból hiányoznak a fejezet-tartományok
-    // (KOCKA_SZOVEG_*). Ilyenkor a példányt a friss sablonból újra készítjük,
-    // különben a rétegrendek és a fejezetszövegek nem frissülnének benne.
-    if (type === 'muszakiLeiras' && !hasTemplateSections(document)) {
+    // A korábbi sablonból készült DRAFT-ból hiányozhatnak a sablon jelölői vagy
+    // a fejezet-tartományok (KOCKA_SZOVEG_*). Ilyenkor a példányt a friss
+    // sablonból újra készítjük, különben a rétegrendek, a fejezetszövegek és az
+    // új jelölők nem frissülnének benne.
+    if (templateStale(document,source,type)) {
       try {
         await googleQuota.run('drive',100,() => drive.files.update({fileId:documentId,
           requestBody:{trashed:true},supportsAllDrives:true}));
@@ -1394,15 +1440,15 @@ function googleClient(config, refreshToken = '', authOverride = null) {
           googleCache.clear(`children:${target.id}`);
         }
         created = true;
-        warn('A műszaki leírás korábbi sablonból készült, ezért a kukába került, és a '+
-          'dokumentum a friss sablonból újra elkészül.');
+        warn('A(z) '+template.title.toLowerCase()+' korábbi sablonból készült, ezért a kukába '+
+          'került, és a dokumentum a friss sablonból újra elkészül.');
         document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
           documentId,includeTabsContent:false
         }))).data;
       } catch (error) {
         if (error.status === 429) throw error;
-        warn('A korábbi sablonból készült műszaki leírást nem sikerült újraépíteni ('+
-          (error.message||String(error))+'); a dokumentum a meglévő példányban frissül.');
+        warn('A korábbi sablonból készült '+template.title.toLowerCase()+' dokumentumot nem '+
+          'sikerült újraépíteni ('+(error.message||String(error))+'); a dokumentum a meglévő példányban frissül.');
       }
     }
     // A sablonszövegek appendixe csak a sablonban marad meg: a kész példányból

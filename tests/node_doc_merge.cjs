@@ -6,6 +6,8 @@ const {mergeRequests, documentValues} = require('../server/doc_merge.cjs');
 test('Docs sablonmezők névvel jelölt tartományként frissülnek', () => {
   const values = documentValues({uid:'ABC123',vezeteknev:'Kiss',keresztnev:'Anna',
     projektTipus:'Új építés'});
+  assert.equal(values.TERV_TARGYA,'új lakóépület építése',
+    'Az aláírólap a műszaki leírással azonos terv tárgyat kap.');
   const document = {body:{content:[{paragraph:{elements:[{startIndex:1,
     textRun:{content:'Ügyfél: {{Teljes név}}\n'}}]}}]},
     namedRanges:{KOCKA_MERGE_UID:{name:'KOCKA_MERGE_UID',namedRanges:[]}}};

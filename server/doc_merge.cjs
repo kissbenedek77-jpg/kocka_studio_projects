@@ -2,6 +2,11 @@
 const PREFIX = 'KOCKA_MERGE_';
 
 function documentValues(data, extras = {}) {
+  // A terv tárgya a műszaki leírással azonos módon az építés jellegéből.
+  const projectType = String(data.projektTipus || '').trim();
+  const tervTargya = /^új\s+építés$/i.test(projectType) ? 'új lakóépület építése'
+    : /^(?:bővítés|átépítés)$/i.test(projectType)
+      ? 'meglévő lakóépület bővítése/átépítése' : '';
   const values = {
     UID:data.uid || '', 'Vezetéknév':data.vezeteknev || '',
     Keresztnév:data.keresztnev || '',
@@ -14,6 +19,7 @@ function documentValues(data, extras = {}) {
     'Anyja neve':data.anyjaNeve || '', 'Születési hely':data.szuletesiHely || '',
     'Születési idő':data.szuletesiIdo || '',
     Neve:data.projektTipus === 'Egyéb' ? data.projektTipusEgyeb || '' : data.projektTipus || '',
+    TERV_TARGYA:tervTargya,
     'projekt Irányítószám':data.projekt_irsz || '',
     'projekt Város':data.projekt_varos || '',
     'projekt Közterület':data.projekt_kozterulet || '',
