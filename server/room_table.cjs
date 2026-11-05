@@ -134,6 +134,17 @@ function layoutRequests(tableStartIndex) {
   ];
 }
 
+// A táblázat sorai nem törhetnek át az oldalhatáron.
+function rowStyleRequests(tableStartIndex, rowCount) {
+  if (!Number.isInteger(tableStartIndex) || !Number.isInteger(rowCount) || rowCount < 1) return [];
+  return [{updateTableRowStyle:{
+    tableStartLocation:{index:tableStartIndex},
+    rowIndices:Array.from({length:rowCount},(_,index)=>index),
+    tableRowStyle:{preventOverflow:true},
+    fields:'preventOverflow'
+  }}];
+}
+
 // 5. fázis: a terület oszlop jobbra igazítása, a helyiségnevek és az alszummák
 // behúzása, a fejléc és az összesítő sorok kiemelése. A teljes összeg nagyobb
 // betűt kap, hogy a többi szummától is elváljon.
@@ -176,5 +187,5 @@ function findTable(document, startIndex) {
 }
 
 module.exports = {MARKER,findMarker,insertRequests,findEmptyTable,fillRequests,
-  layoutRequests,styleRequests,findTable,findRoomTableHeader};
+  layoutRequests,rowStyleRequests,styleRequests,findTable,findRoomTableHeader};
 

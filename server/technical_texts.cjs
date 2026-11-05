@@ -184,9 +184,19 @@ function structureHeadingRequests(document) {
     if (!Number.isInteger(start) || !Number.isInteger(end)) continue;
     if (!ranges.some(range => start >= range.startIndex && end <= range.endIndex)) continue;
     const next = paragraphs[i+1] ? paragraphText(paragraphs[i+1]) : '';
-    if (!isStructureSubheading(text,next)) continue;
-    requests.push({updateTextStyle:{range:{startIndex:start,endIndex:end - 1},
-      textStyle:{italic:true},fields:'italic'}});
+    if (isStructureSubheading(text,next)) {
+      // Az alpont címe dőlt, 8 pt térközzel fent és lent.
+      requests.push({updateTextStyle:{range:{startIndex:start,endIndex:end - 1},
+        textStyle:{italic:true},fields:'italic'}});
+      requests.push({updateParagraphStyle:{range:{startIndex:start,endIndex:end},
+        paragraphStyle:{spaceAbove:{magnitude:8,unit:'PT'},
+          spaceBelow:{magnitude:8,unit:'PT'}},
+        fields:'spaceAbove,spaceBelow'}});
+    } else if (text.trim()) {
+      // A leírások normál (nem dőlt) stílusúak.
+      requests.push({updateTextStyle:{range:{startIndex:start,endIndex:end - 1},
+        textStyle:{italic:false},fields:'italic'}});
+    }
   }
   return requests;
 }

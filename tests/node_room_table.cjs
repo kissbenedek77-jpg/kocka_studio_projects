@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {MARKER,findMarker,insertRequests,findEmptyTable,fillRequests,
-  layoutRequests,styleRequests,findTable} = require('../server/room_table.cjs');
+  layoutRequests,rowStyleRequests,styleRequests,findTable} = require('../server/room_table.cjs');
 
 const para = (start,content) => ({startIndex:start,endIndex:start+content.length,
   paragraph:{elements:[{startIndex:start,textRun:{content}}]}});
@@ -90,5 +90,16 @@ test('A helyiség neve előtti 5 szóköz behúzásként megmarad', () => {
   assert.equal(trimmed.filter(request => request.insertText)
     .some(request => request.insertText.text === '     nappali'),false,
     'A tervjegyzéknél a szöveget továbbra is levágtuk.');
+});
+
+test('A helyiséglista sorai nem törhetnek át az oldalhatáron', () => {
+  const requests = rowStyleRequests(300,5);
+  assert.equal(requests.length,1);
+  const style = requests[0].updateTableRowStyle;
+  assert.deepEqual(style.tableStartLocation,{index:300});
+  assert.deepEqual(style.rowIndices,[0,1,2,3,4]);
+  assert.equal(style.tableRowStyle.preventOverflow,true);
+  assert.equal(style.fields,'preventOverflow');
+  assert.deepEqual(rowStyleRequests(300,0),[]);
 });
 

@@ -18,6 +18,7 @@ const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technica
 const {sectionTexts,sectionReplaceRequests,sectionStyleRequests,hasTemplateSections,retegrendStyleRequests,structureHeadingRequests,appendixRequests} = require('./technical_texts.cjs');
 const {findMarker,insertRequests,findEmptyTable,fillRequests,
   layoutRequests:roomLayoutRequests,styleRequests:roomStyleRequests,
+  rowStyleRequests:roomRowStyleRequests,
   findTable:findRoomTable,findRoomTableHeader} = require('./room_table.cjs');
 const {technicalTableRequests} = require('./technical_table.cjs');
 const {technicalLineRequests} = require('./technical_lines.cjs');
@@ -1403,10 +1404,14 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     // véglegesített példányt ez nem érinti (fentebb már megálltunk).
     const storedRevision = String(record?.[5] || '').trim();
     const templateRevision = String(source.revisionId || '').trim();
+    // A kukába tett példány azonnali újralistázáskor még megjelenhet; az
+    // azonosítóját kizárjuk, hogy ne a kukázott példányt használjuk újra.
+    let trashedId = '';
     // A sablonváltozás minden dokumentumtípusnál új példányt igényel: a régi
     // másolatból hiányozhatnak az új jelölők, ezért a DRAFT-ot újraépítjük.
     if (documentId && templateRevision && storedRevision !== templateRevision) {
       try {
+        trashedId = documentId;
         await googleQuota.run('drive',100,() => drive.files.update({fileId:documentId,
           requestBody:{trashed:true},supportsAllDrives:true}));
         googleCache.clear(`file:${documentId}`);
@@ -1423,7 +1428,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       const name = [template.title,[data.projekt_varos,data.projekt_kozterulet,
         data.projekt_tipus,data.projekt_hazszam].filter(Boolean).join(' ')].filter(Boolean).join(' - ');
       const existing = (await listChildren(target.id)).filter(item => item.name === name &&
-        item.mimeType === 'application/vnd.google-apps.document');
+        item.mimeType === 'application/vnd.google-apps.document' && item.id !== trashedId);
       if (existing.length > 1) throw new Error('Több azonos nevű dokumentum található: ' + name);
       if (existing.length) documentId = existing[0].id;
       else {
@@ -1443,13 +1448,14 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     // új jelölők nem frissülnének benne.
     if (templateStale(document,source,type)) {
       try {
+        const staleId = documentId;
         await googleQuota.run('drive',100,() => drive.files.update({fileId:documentId,
           requestBody:{trashed:true},supportsAllDrives:true}));
         googleCache.clear(`file:${documentId}`);
         const name = [template.title,[data.projekt_varos,data.projekt_kozterulet,
           data.projekt_tipus,data.projekt_hazszam].filter(Boolean).join(' ')].filter(Boolean).join(' - ');
         const existing = (await listChildren(target.id)).find(item => item.name === name &&
-          item.mimeType === 'application/vnd.google-apps.document');
+          item.mimeType === 'application/vnd.google-apps.document' && item.id !== staleId);
         if (existing) documentId = existing.id;
         else {
           const copy = await googleQuota.run('drive',100,() => drive.files.copy({fileId:template.templateId,
@@ -1545,7 +1551,10 @@ function googleClient(config, refreshToken = '', authOverride = null) {
             // Elrendezés: a megnevezés oszlop 7 cm, a terület oszlop 2 cm
             // széles (a táblázat 9 cm), minden cella kitöltése 0,1 cm.
             try {
-              const layout = roomLayoutRequests(startIndex);
+              const layout = [
+                ...roomLayoutRequests(startIndex),
+                ...roomRowStyleRequests(startIndex, roomData.tableRows.length)
+              ];
               if (layout.length) {
                 await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
                   requestBody:{requests:layout,
@@ -1614,7 +1623,11 @@ function googleClient(config, refreshToken = '', authOverride = null) {
             }))).data;
           }
           const refreshed = findRoomTableHeader(document);
-          const styles = roomStyleRequests(refreshed, roomData.tableKinds);
+          const styles = [
+            ...roomStyleRequests(refreshed, roomData.tableKinds),
+            ...(refreshed
+              ? roomRowStyleRequests(refreshed.startIndex, roomData.tableRows.length) : [])
+          ];
           if (styles.length) {
             await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
               requestBody:{requests:styles,

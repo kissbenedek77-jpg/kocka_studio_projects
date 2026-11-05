@@ -213,6 +213,15 @@ test('A szerkezetek alpontjai dőlten jelennek meg',()=>{
       content:'Az épület tartószerkezete teherhordó falakból áll.\n'}}]}}
   ]}};
   const requests=structureHeadingRequests(document);
-  assert.equal(requests.length,2);
-  assert.ok(requests.every(request=>request.updateTextStyle.textStyle.italic===true));
+  const italics=requests.filter(request=>request.updateTextStyle);
+  assert.equal(italics.filter(request=>request.updateTextStyle.textStyle.italic===true).length,2,
+    'Az alpontok címei dőltek.');
+  assert.equal(italics.filter(request=>request.updateTextStyle.textStyle.italic===false).length,2,
+    'A leírások normál stílusúak.');
+  const spacing=requests.filter(request=>request.updateParagraphStyle);
+  assert.equal(spacing.length,2);
+  assert.deepEqual(spacing[0].updateParagraphStyle.paragraphStyle.spaceAbove,
+    {magnitude:8,unit:'PT'});
+  assert.deepEqual(spacing[0].updateParagraphStyle.paragraphStyle.spaceBelow,
+    {magnitude:8,unit:'PT'});
 });
