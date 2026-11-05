@@ -190,8 +190,8 @@ function structureHeadingRequests(document) {
         textStyle:{italic:true},fields:'italic'}});
       requests.push({updateParagraphStyle:{range:{startIndex:start,endIndex:end},
         paragraphStyle:{spaceAbove:{magnitude:8,unit:'PT'},
-          spaceBelow:{magnitude:8,unit:'PT'}},
-        fields:'spaceAbove,spaceBelow'}});
+          spaceBelow:{magnitude:8,unit:'PT'},keepWithNext:true},
+        fields:'spaceAbove,spaceBelow,keepWithNext'}});
     } else if (text.trim()) {
       // A leírások normál (nem dőlt) stílusúak.
       requests.push({updateTextStyle:{range:{startIndex:start,endIndex:end - 1},

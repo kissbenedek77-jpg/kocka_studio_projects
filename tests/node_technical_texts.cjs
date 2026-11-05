@@ -224,4 +224,7 @@ test('A szerkezetek alpontjai dőlten jelennek meg',()=>{
     {magnitude:8,unit:'PT'});
   assert.deepEqual(spacing[0].updateParagraphStyle.paragraphStyle.spaceBelow,
     {magnitude:8,unit:'PT'});
+  assert.equal(spacing[0].updateParagraphStyle.paragraphStyle.keepWithNext,true,
+    'Az alcím együtt marad a következő bekezdéssel.');
+  assert.match(spacing[0].updateParagraphStyle.fields,/keepWithNext/);
 });
