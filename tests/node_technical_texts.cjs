@@ -202,21 +202,29 @@ test('A rétegrend címsora aláhúzott, a rétegsorok tabulátorral tagoltak',(
   assert.equal(styles[1].updateTextStyle.textStyle.underline,false,
     'A rétegsorok aláhúzása a sablon helyőrzőjéről öröklődne, ezért kikapcsoljuk.');
   assert.equal(spacing.length,2);
-  assert.ok(spacing.every(request=>
-    request.updateParagraphStyle.paragraphStyle.keepWithNext===true));
-  assert.ok(spacing.every(request=>request.updateParagraphStyle.fields==='keepWithNext'));
+  assert.equal(spacing[0].updateParagraphStyle.range.startIndex,12);
+  assert.equal(spacing[0].updateParagraphStyle.paragraphStyle.keepWithNext,true);
+  assert.equal(spacing[0].updateParagraphStyle.fields,'keepWithNext');
+  assert.equal(spacing[1].updateParagraphStyle.range.startIndex,30);
+  assert.equal(spacing[1].updateParagraphStyle.paragraphStyle.keepWithNext,false,
+    'A legutolsó rétegsor nem marad együtt a következővel.');
 });
 
 test('Az elválasztó üres sor nem kap együtt a következővel beállítást',()=>{
   const doc={body:{content:[
     {startIndex:1,endIndex:12,paragraph:{elements:[{textRun:{content:'Rétegrendek\n'}}]}},
     {startIndex:12,endIndex:14,paragraph:{elements:[{textRun:{content:'\n'}}]}},
-    {startIndex:14,endIndex:34,paragraph:{elements:[{textRun:{content:'F1 Határoló fal\n'}}]}}
+    {startIndex:14,endIndex:34,paragraph:{elements:[{textRun:{content:'F1 Határoló fal\n'}}]}},
+    {startIndex:34,endIndex:60,paragraph:{elements:[{textRun:{content:'3 rtg\tdiszperziós festés\n'}}]}}
   ]}};
   const requests=retegrendStyleRequests(doc);
   assert.equal(requests.some(request=>request.updateParagraphStyle?.range.startIndex===12),
     false,'Az üres sor nem kaphat beállítást.');
   assert.equal(requests.some(request=>request.updateParagraphStyle?.range.startIndex===14),true);
+  const last=requests.find(request=>request.updateParagraphStyle?.range.startIndex===34);
+  assert.ok(last,'A legutolsó sor beállítást kap, de kikapcsolva.');
+  assert.equal(last.updateParagraphStyle.paragraphStyle.keepWithNext,false,
+    'A legutolsó szöveges sor nem marad együtt a következővel.');
 });
 
 test('A szerkezetek alpontjai dőlten jelennek meg',()=>{

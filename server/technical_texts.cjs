@@ -227,7 +227,7 @@ const RETEGREND_SECTION = /^Rétegrendek\b/i;
 const RETEGREND_END = /^(?:Tervezői nyilatkozat|Kitermelt ásványi|Építési hulladék|A kivitelezés|Felhasznált)/i;
 
 function retegrendStyleRequests(document) {
-  const requests = [];
+  const lines = [];
   let inside = false;
   for (const item of document?.body?.content || []) {
     if (!item.paragraph) continue;
@@ -244,19 +244,19 @@ function retegrendStyleRequests(document) {
     const end = Number.isInteger(item.endIndex) ? item.endIndex : null;
     if (!Number.isInteger(start) || !Number.isInteger(end) || end <= start) continue;
     if (!value.trim()) continue;
-    // Minden szöveges sor együtt marad a következővel; az elválasztó üres
-    // sorok nem kapják meg ezt a beállítást.
-    requests.push({updateParagraphStyle:{range:{startIndex:start,endIndex:end},
-      paragraphStyle:{keepWithNext:true},fields:'keepWithNext'}});
-    if (RETEGREND_TITLE.test(value)) {
-      requests.push({updateTextStyle:{range:{startIndex:start,endIndex:end - 1},
-        textStyle:{underline:true},fields:'underline'}});
-    } else {
-      // A sablon helyőrzőjének aláhúzása a beszúrt rétegsorokra is átöröklődik.
-      requests.push({updateTextStyle:{range:{startIndex:start,endIndex:end - 1},
-        textStyle:{underline:false},fields:'underline'}});
-    }
+    lines.push({value,start,end});
   }
+  const requests = [];
+  lines.forEach((line,index) => {
+    // Minden szöveges sor együtt marad a következővel, kivéve a legutolsót; az
+    // elválasztó üres sorok pedig nem kapják meg ezt a beállítást. A legutolsó
+    // soron a korábbi beállítást is kikapcsoljuk.
+    const last = index === lines.length - 1;
+    requests.push({updateParagraphStyle:{range:{startIndex:line.start,endIndex:line.end},
+      paragraphStyle:{keepWithNext:!last},fields:'keepWithNext'}});
+    requests.push({updateTextStyle:{range:{startIndex:line.start,endIndex:line.end - 1},
+      textStyle:{underline:RETEGREND_TITLE.test(line.value)},fields:'underline'}});
+  });
   return requests;
 }
 
