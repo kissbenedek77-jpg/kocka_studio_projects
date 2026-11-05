@@ -543,12 +543,15 @@
           const field=element('div','field');
           const id='technical-'+String(item.key).replace(/[^A-Za-z0-9_-]/g,'-');
           const label=element('label','',item.title);label.htmlFor=id;
+          if(item.manual){const badge=element('span','','Kézi');badge.style.cssText='margin-left:.4rem;padding:.05rem .45rem;border-radius:999px;background:#fff3cd;color:#7a5b00;font-size:.72rem;font-weight:700;vertical-align:middle';label.append(' ',badge)}
           const input=element('textarea');input.id=id;input.rows=4;input.maxLength=4000;
           input.value=item.value||'';
           field.append(label);
           if(/\[KIEGÉSZÍTENDŐ:/.test(input.value))
             field.append(element('div','note','Hiányzó adatot jelöl – a véglegesítés előtt pótolni kell.'));
-          field.append(input);group.append(field);
+          field.append(input);
+          if(item.manual){const reset=button(field,'Visszaállítás',async()=>{busyState(true,'Mező visszaállítása…');try{await rpc('dashboardSaveTechnicalFields',project.uid,{[item.key]:''});item.value='';item.manual=false;input.value='';render();notice('A mező törölve; a következő AI-szövegezés újra kitölti.','success')}catch(error){notice(error.message||String(error),'error')}finally{busyState(false)}},'secondary small');reset.title='A mező törlése; a következő AI-szövegezés újra kitölti.'}
+          group.append(field);
           fields.push({key:item.key,input});
         });
         root.append(group);
@@ -759,14 +762,13 @@
         if(techDoc.url)button(actions,'Dokumentum frissítése a mentett szövegekkel',()=>callAction('document:muszakiLeiras'),'secondary');
         if(techDoc.url)link(actions,'Műszaki leírás megnyitása',techDoc.url,'secondary');
         if(document.body.dataset.runtime==='node'){const reinit=button(actions,'Fájlok újra inicializálása',()=>confirm('Fájlok újra inicializálása','A DRAFT dokumentumok a kukába kerülnek, a dokumentumindex soraik törlődnek, majd a rendszer a friss sablonokból újra létrehozza őket, mintha most indítanád a projektet. A műszaki leírás mentett fejezetszövegei, az a–p tervezési program sorai és a helyiséglista-táblázat is törlődnek, így a piszkozat üres sablonból indul. A tervezési paraméterek (Munkalap1), a feltöltött tervlapok és a PLN-fájlok megmaradnak; a DRAFT dokumentumokban kézzel végzett módosítások elvesznek.',()=>callAction('reinit','reinit:'+project.uid)),'secondary');reinit.disabled=project.stage==='closed'||!project.folderUrl;reinit.title=reinit.disabled?'Lezárt projektnél vagy projektmappa nélkül nem inicializálhatók újra a DRAFT fájlok.':'A piszkozatok üres sablonból, a friss sablonok szerint jönnek létre; a műszaki leírás mentett szövegei törlődnek.'}
-        if(document.body.dataset.runtime==='node')link(actions,'Műszaki paraméterek űrlapja','/technical?uid='+encodeURIComponent(project.uid),'secondary');
+        if(document.body.dataset.runtime==='node')link(actions,'Műszaki leírás szerkesztése (kézi mezők)','/technical?uid='+encodeURIComponent(project.uid),'secondary');
         link(actions,'Tervezési adatlap megnyitása',project.dataSheetUrl,'secondary');
         paragraph(panel,'Az AI a projekt tényadataiból készíti el a fejezetszövegeket, majd létrehozza a DRAFT dokumentumot. A szerkezeteket, az ellenőrzött övezeti forrást és a jóváhagyandó szövegeket a műszaki űrlapon pontosíthatod. Számot, mértékegységet és terv szerinti állapotot az AI nem talál ki: hiányzó adat helyén [KIEGÉSZÍTENDŐ: …] jelölés marad.');
         if(!technicalDraft)button(actions,'Mentett fejezetszövegek szerkesztése',async()=>{
           busyState(true,'Fejezetszövegek betöltése…');
           try{const data=await rpc('dashboardGetTechnicalFields',project.uid);
-            technicalDraft=(data.autoChapters||[]).map(item=>({key:item.key,title:item.title,
-              value:data.fields.find(field=>field.key===item.key)?.value||''}));
+            technicalDraft=(data.autoChapters||[]).map(item=>{const field=data.fields.find(entry=>entry.key===item.key);return {key:item.key,title:item.title,value:field?.value||'',manual:Boolean(field?.manual)}});
             render();notice('A mentett fejezetszövegek betöltve szerkesztésre.','success')
           }catch(error){notice(error.message||String(error),'error')}
           finally{busyState(false)}
