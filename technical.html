@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Műszaki paraméterek · Kocka Stúdió</title>
+  <title>Műszaki leírás szerkesztése · Kocka Stúdió</title>
   <style>
     :root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#19313c;background:#f2f5f5}
     *{box-sizing:border-box}body{margin:0}header{background:#163746;color:white;padding:1.25rem max(1rem,calc((100vw - 1060px)/2))}
@@ -12,32 +12,60 @@
     .links{display:flex;gap:1rem;flex-wrap:wrap;margin:.8rem 0 1.4rem}.notice{background:#e9f3f3;border-left:4px solid #287b82;padding:1rem;margin-bottom:1rem}
     .error{background:#fff0ed;border-left-color:#bb4b41}.success{background:#e8f4e9;border-left-color:#43844c}
     .warning{background:#fff7e6;border-left-color:#a9782a}
-    section{background:white;border:1px solid #d8e1e4;border-radius:12px;padding:1.2rem;margin:1rem 0}
-    h2{font-size:1.12rem;margin:.1rem 0 1rem}h3{font-size:1rem;margin:0 0 .4rem}
-    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
-    label{display:block;font-weight:600;margin-bottom:.35rem}small{display:block;color:#526873;margin-bottom:.45rem;overflow-wrap:anywhere}
+    .document{max-width:900px;margin:auto}
+    #chat,#draftPreview{background:white;border:1px solid #d8e1e4;border-radius:12px;padding:1.2rem;margin:1rem 0}
+    #chat h2,#draftPreview h2{font-size:1.12rem;margin:.1rem 0 1rem}
+    #chat label{display:block;font-weight:600;margin-bottom:.35rem}
+    #chat textarea{width:100%;min-height:5.2rem;resize:vertical;border:1px solid #9fb3bb;border-radius:8px;padding:.7rem;font:inherit;line-height:1.45;background:#fff;color:#19313c}
+    #chat textarea:focus{outline:3px solid #9ed2dc;border-color:#287b82}
+    .doc-section{background:white;border:1px solid #d8e1e4;border-radius:12px;padding:1.25rem 1.5rem;margin:1rem 0}
+    .doc-section-title{margin:0 0 .7rem;font-size:1.22rem;border-bottom:1px solid #e3eaec;padding-bottom:.45rem}
+    .doc-heading{width:100%;border:0;background:transparent;font:inherit;font-size:1.22rem;font-weight:700;color:#163746;padding:.2rem 0}
+    .doc-heading:focus{outline:none;background:#f4fafb;box-shadow:0 0 0 3px #9ed2dc33;border-radius:6px}
+    .doc-block{margin:.5rem 0;position:relative}
+    .doc-line,.doc-text{width:100%;border:1px solid transparent;border-radius:6px;background:transparent;padding:.45rem .55rem;font:inherit;line-height:1.55;color:#19313c;resize:vertical}
+    .doc-line{min-height:2.2rem}.doc-text{min-height:3.2rem}
+    .doc-line:hover,.doc-text:hover{border-color:#dbe4e6;background:#fbfcfc}
+    .doc-line:focus,.doc-text:focus{outline:none;border-color:#9ed2dc;background:#fff;box-shadow:0 0 0 3px #9ed2dc33}
+    .doc-field{background:#f7fafb;border:1px solid #e1eaec;border-radius:10px;padding:.8rem .9rem;margin:.8rem 0}
+    .doc-field label{display:block;font-weight:600;margin-bottom:.35rem}
+    .doc-field small{display:block;color:#526873;margin-bottom:.4rem;overflow-wrap:anywhere}
+    .doc-field textarea,.doc-field input[type=date]{width:100%;min-height:2.8rem;resize:vertical;border:1px solid #9fb3bb;border-radius:8px;padding:.65rem;font:inherit;line-height:1.45;background:#fff;color:#19313c}
+    .doc-field textarea:focus,.doc-field input[type=date]:focus{outline:3px solid #9ed2dc;border-color:#287b82}
+    .doc-auto{background:#f4f7f8;border-left:3px solid #b9c9ce;padding:.6rem .8rem;margin:.6rem 0;font-size:.95rem;color:#3f5a63;white-space:pre-wrap;overflow-wrap:anywhere}
+    .doc-auto .marker{background:#e5edef;border-radius:4px;padding:0 .25rem;font-family:monospace;font-size:.85em}
+    .doc-auto-label{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;color:#7b929a;font-weight:700;margin-bottom:.25rem}
+    .doc-context{color:#526873;font-size:.9rem;margin:.45rem 0 .1rem;white-space:pre-wrap;overflow-wrap:anywhere}
+    .doc-table-note{background:#f4f7f8;border:1px dashed #c4d2d6;border-radius:8px;padding:.7rem .9rem;margin:.7rem 0;color:#526873;font-size:.92rem}
+    .doc-note{color:#526873;font-size:.92rem;margin:.6rem 0}
     .manual-badge{display:inline-block;margin-left:.4rem;padding:.05rem .45rem;border-radius:999px;background:#fff3cd;color:#7a5b00;font-size:.72rem;font-weight:700;vertical-align:middle}
+    .fix-badge{display:inline-block;margin-left:.4rem;padding:.05rem .45rem;border-radius:999px;background:#e8eef0;color:#526873;font-size:.68rem;font-weight:700;vertical-align:middle}
     .reset-field{margin-top:.35rem;font-size:.8rem;padding:.28rem .65rem;border:1px solid #c9d4da;border-radius:.4rem;background:#fff;color:#24506b;cursor:pointer}
-    textarea{width:100%;min-height:5.2rem;resize:vertical;border:1px solid #9fb3bb;border-radius:8px;padding:.7rem;font:inherit;line-height:1.45;background:#fff;color:#19313c}
-    select,input[type=date]{width:100%;min-height:44px;border:1px solid #9fb3bb;border-radius:8px;padding:.7rem;font:inherit;background:#fff;color:#19313c}
-    textarea:focus{outline:3px solid #9ed2dc;border-color:#287b82}button{border:0;border-radius:8px;background:#17667d;color:white;padding:.8rem 1.3rem;font:inherit;font-weight:650;cursor:pointer}
-    button:disabled{opacity:.55;cursor:wait}.actions{position:sticky;bottom:0;background:#f2f5f5eF;padding:.8rem 0;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
-    .secondary{background:#e2edf0;color:#163746}.draft-row{border-top:1px solid #d8e1e4;padding:1rem 0}.draft-row:first-child{border-top:0}
+    .reset-field:hover{background:#eef4f5}
+    .block-tools{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin:.15rem 0 .2rem;opacity:.45;transition:opacity .15s}
+    .doc-block:hover .block-tools,.doc-block:focus-within .block-tools{opacity:1}
+    details.doc-extra{border:1px solid #e1eaec;border-radius:8px;padding:.6rem .8rem;margin:.6rem 0;background:#fbfcfc}
+    details.doc-extra summary{cursor:pointer;font-weight:600;color:#24506b}
+    .actions{position:sticky;bottom:0;background:#f2f5f5eF;padding:.8rem 0;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;z-index:2}
+    button{border:0;border-radius:8px;background:#17667d;color:white;padding:.8rem 1.3rem;font:inherit;font-weight:650;cursor:pointer}
+    button:disabled{opacity:.55;cursor:wait}.secondary{background:#e2edf0;color:#163746}
+    .draft-row{border-top:1px solid #d8e1e4;padding:1rem 0}.draft-row:first-child{border-top:0}
     .draft-row label{display:flex;align-items:center;gap:.6rem}.draft-row input[type=checkbox]{width:1.15rem;height:1.15rem}
-    .draft-row textarea{min-height:7rem}.draft-note{color:#526873;margin:.5rem 0}
+    .draft-row textarea{width:100%;min-height:7rem;resize:vertical;border:1px solid #9fb3bb;border-radius:8px;padding:.7rem;font:inherit;line-height:1.45;background:#fff;color:#19313c}
+    .draft-note{color:#526873;margin:.5rem 0}
     .chat-log{display:grid;gap:.6rem;margin:.4rem 0 .9rem}.chat-log:empty{display:none}
     .chat-log p{margin:0;padding:.7rem .9rem;border-radius:10px;background:#eef4f5;white-space:pre-wrap}
     .chat-log p.me{background:#e2edf0;border-left:4px solid #287b82}
     .chat-actions{display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;margin-top:.6rem}
-    @media(max-width:700px){.grid{grid-template-columns:1fr}section{padding:1rem}header{padding:1rem}.actions{padding:.8rem 0 max(.8rem,env(safe-area-inset-bottom))}}
-    @media(max-width:480px){main{padding:.75rem}.actions{display:grid;grid-template-columns:minmax(0,1fr);gap:.6rem}.actions button{width:100%;min-height:44px}.notice,section{overflow-wrap:anywhere}}
+    @media(max-width:700px){.doc-section{padding:1rem}header{padding:1rem}.actions{padding:.8rem 0 max(.8rem,env(safe-area-inset-bottom))}}
+    @media(max-width:480px){main{padding:.75rem}.actions{display:grid;grid-template-columns:minmax(0,1fr);gap:.6rem}.actions button{width:100%;min-height:44px}.notice,.doc-section{overflow-wrap:anywhere}}
   </style>
 </head>
 <body>
-  <header><h1>Műszaki paraméterek</h1><p>Projekt: <strong id="projectUid"></strong></p></header>
+  <header><h1>Műszaki leírás szerkesztése</h1><p>Projekt: <strong id="projectUid"></strong></p></header>
   <main>
     <div class="links"><a id="dashboardLink" href="/dashboard">Vissza a dashboardra</a><a id="sheetLink" hidden>Tervezési adatlap megnyitása</a></div>
-    <p class="notice">A numerikus területeket, az övezeti alapértékeket és az a–p tervezési programot a tervezési adatlapon add meg. A szöveges mezőkbe rövid, tényszerű pontokat is írhatsz. Az „AI-val kitöltés projektadatból” gomb a rendelkezésre álló tényadatokból megírja valamennyi fejezetet, elmenti őket, majd létrehozza a DRAFT dokumentumot; a hiányzó adat helyén [KIEGÉSZÍTENDŐ: …] jelölés marad. A szövegeket a mentés előtt itt is szerkesztheted. A gomb megnyomásakor a projekt tényadatai a Gemini API-hoz kerülnek.</p>
+    <p class="notice">A műszaki leírás a dokumentum sorrendjében jelenik meg. A szürke „Automatikus” részek a projekt adataiból töltődnek, a többi szöveg itt közvetlenül szerkeszthető. A mentés a DRAFT dokumentumot is frissíti. Az „AI-val kitöltés projektadatból” gomb a rendelkezésre álló tényadatokból megírja a fejezeteket; a hiányzó adat helyén [KIEGÉSZÍTENDŐ: …] jelölés marad.</p>
     <div id="status" role="status" aria-live="polite"></div>
     <section id="chat" hidden aria-labelledby="chatTitle">
       <h2 id="chatTitle">Beszélgetés az AI-val</h2>
@@ -47,7 +75,7 @@
       <textarea id="chatMessage" rows="3" maxlength="2000" placeholder="Például: a helyiségek leírásában emeld ki a kertkapcsolatot."></textarea>
       <div class="chat-actions"><button id="chatSend" type="button">Küldés</button></div>
     </section>
-    <form id="form" hidden><div id="groups"></div><div class="actions"><button id="save" type="submit">Műszaki adatok mentése</button><button id="draft" type="button" class="secondary">AI-szövegtervezet készítése</button><button id="autoDraft" type="button" class="secondary">AI-val kitöltés projektadatból</button><span>Mentés után a dashboardon frissítsd a DRAFT műszaki leírást.</span></div></form>
+    <form id="form" hidden><div id="groups" class="document"></div><div class="actions"><button id="save" type="submit">Műszaki leírás mentése</button><button id="draft" type="button" class="secondary">AI-szövegtervezet készítése</button><button id="autoDraft" type="button" class="secondary">AI-val kitöltés projektadatból</button><span>Mentés után a DRAFT műszaki leírás frissül.</span></div></form>
     <section id="draftPreview" hidden aria-labelledby="draftTitle"><h2 id="draftTitle">AI-tervezet – ellenőrzésre</h2><p class="draft-note">A kijelölt fejezeteket szerkesztheted. A „Beillesztés” csak az űrlap mezőit módosítja; utána mentsd őket. A számokat, anyagokat és műszaki állításokat ellenőrizd.</p><div id="draftRows"></div><button id="applyDraft" type="button">Kijelölt fejezetek beillesztése</button></section>
   </main>
   <script>
@@ -77,38 +105,144 @@
         key.includes('TUZVEDELMI'))return 'Jóváhagyott szövegek';
       if(key.startsWith('TERVEZESI_PROGRAM:'))return 'Tervezési program és fejezetszövegek';
       return 'Projekt és helyiségek'}
-    async function load(){if(!/^[A-Za-z0-9-]{4,64}$/.test(uid)){message('Érvénytelen projektazonosító.','error');return}
-      message('Adatok betöltése…');try{const data=await rpc('dashboardGetTechnicalFields',uid);
-        const link=document.getElementById('sheetLink');link.href=data.sheetUrl;link.hidden=false;
-        const groups=new Map(),root=document.getElementById('groups');root.replaceChildren();
-        const order=['Dokumentum','Projekt és helyiségek','Helyszín és előzmények',
-          'Építészeti koncepció','Övezeti előírások','Területek és lakásszám','Építményérték',
-          'Épületszerkezetek','Szakági adatok','Tervlapok és szakági egyeztetés','Jóváhagyott szövegek',
-          'Tervezési program és fejezetszövegek'];
-        data.fields.slice().sort((a,b)=>order.indexOf(groupFor(a.key))-order.indexOf(groupFor(b.key)))
-          .forEach(field=>{const name=groupFor(field.key);let grid=groups.get(name);
-          if(!grid){const section=document.createElement('section'),title=document.createElement('h2');
-            title.textContent=name;grid=document.createElement('div');grid.className='grid';
-            section.append(title,grid);root.append(section);groups.set(name,grid)}
-          const wrapper=document.createElement('div'),label=document.createElement('label');let input;
-          if(field.key==='DOKUMENTUM:kiadas_datuma'){
-            input=document.createElement('input');input.type='date';
-          }else{
-            input=document.createElement('textarea');
-            input.rows=field.key.includes('LEIRAS')||field.key.includes('NYILATKOZAT')||
-              field.key==='HELYISEGLISTA'?7:field.key.startsWith('TERVEZESI_PROGRAM:')?6:3;
-          }
-          input.id='field-'+data.fields.indexOf(field);input.dataset.key=field.key;input.value=field.value;
-          label.htmlFor=input.id;label.textContent=field.help;
-          if(field.manual){const badge=document.createElement('span');badge.className='manual-badge';badge.textContent='Kézi';label.append(' ',badge)}
-          wrapper.append(label,input);
-          if(field.manual){const reset=document.createElement('button');reset.type='button';reset.className='reset-field';reset.textContent='Visszaállítás';reset.title='A mező törlése; a következő generálás újra kitölti.';reset.addEventListener('click',()=>{input.value='';form.requestSubmit()});wrapper.append(reset)}
-          grid.append(wrapper)});
-        draftButton.disabled=!data.aiConfigured;draftButton.title=data.aiConfigured?'':'A GEMINI_API_KEY nincs beállítva.';
-        autoDraftButton.disabled=!data.aiConfigured;autoDraftButton.title=data.aiConfigured?'A projekt tényadataiból minden fejezetet megír, elment, majd létrehozza a DRAFT dokumentumot.':'A GEMINI_API_KEY nincs beállítva.';
-        aiReady=Boolean(data.aiConfigured);
-        form.hidden=false;chat.hidden=!aiReady;message('A mezők betöltve.','success')
-      }catch(error){message(error.message||String(error),'error')}}
+    const fieldInputs=new Map(),blockInputs=new Map();
+    function badge(text,className){const span=document.createElement('span');span.className=className;span.textContent=text;return span}
+    function autoText(text){
+      const root=document.createElement('div');root.className='auto-text';
+      let last=0;const re=/\{\{([^{}]+)\}\}/g;let match;
+      while((match=re.exec(text))){
+        if(match.index>last)root.append(document.createTextNode(text.slice(last,match.index)));
+        root.append(badge(match[0],'marker'));last=match.index+match[0].length;
+      }
+      if(last<text.length)root.append(document.createTextNode(text.slice(last)));
+      return root;
+    }
+    function autoSize(input){if(input.tagName!=='TEXTAREA'||input.rows>8)return;input.style.height='auto';input.style.height=input.scrollHeight+'px'}
+    function contextText(text){return String(text||'').replace(/\{\{[^{}]+\}\}/g,'').trim().length>0}
+    function fieldInput(field){
+      let input;
+      if(field.key==='DOKUMENTUM:kiadas_datuma'){
+        input=document.createElement('input');input.type='date';
+        const match=/^(\d{4})\.(\d{2})\.(\d{2})\.?$/.exec(field.value||'');
+        input.value=match?`${match[1]}-${match[2]}-${match[3]}`:(field.value||'');
+      }else{
+        input=document.createElement('textarea');
+        const long=['TUZVEDELMI_LEIRAS_JOVAHAGYOTT_SZOVEG','SZERKEZETEK LEÍRÁSA','TERVEZOI_NYILATKOZAT_JOVAHAGYOTT_SZOVEG','RETEGRENDEK_JOVAHAGYOTT_SZOVEG'];
+        input.rows=long.includes(field.key)?16:field.key.startsWith('TERVEZESI_PROGRAM:')?5:
+          field.key==='HELYISEGLISTA'?8:3;
+      }
+      input.dataset.key=field.key;input.value=field.value||'';
+      if(field.default&&!field.value)input.placeholder=field.default;
+      input.addEventListener('input',()=>autoSize(input));
+      return input;
+    }
+    function renderField(parent,field){
+      if(fieldInputs.has(field.key))return;
+      const wrapper=document.createElement('div');wrapper.className='doc-field';
+      const label=document.createElement('label');label.textContent=field.help;
+      if(field.manual)label.append(' ',badge('Kézi','manual-badge'));
+      wrapper.append(label);
+      if(field.default&&!field.value){const hint=document.createElement('small');hint.textContent='Alapértelmezés a sablonból – üresen hagyva ez kerül a dokumentumba.';wrapper.append(hint)}
+      const input=fieldInput(field);input.id='field-'+String(field.key).replace(/[^A-Za-z0-9_-]/g,'-');
+      label.htmlFor=input.id;
+      wrapper.append(input);
+      if(field.manual){
+        const reset=document.createElement('button');reset.type='button';reset.className='reset-field';reset.textContent='Visszaállítás';
+        reset.title='A mező törlése; a következő generálás vagy a sablon alapértéke kerül a helyére.';
+        reset.addEventListener('click',()=>{input.value='';
+          const mark=label.querySelector('.manual-badge');if(mark)mark.remove();
+          reset.remove();form.requestSubmit()});wrapper.append(reset);
+      }
+      parent.append(wrapper);fieldInputs.set(field.key,{input,field});
+    }
+    function blockControl(block,heading){
+      const input=document.createElement(heading?'input':(block.text.length<100&&!block.text.includes('\n')?'input':'textarea'));
+      if(input.tagName==='INPUT')input.type='text';
+      input.value=block.value||block.text;input.dataset.blockId=block.id;input.dataset.original=block.text;
+      input.setAttribute('aria-label',heading?'Fejezetcím':'Fix szöveg');
+      input.className=heading?'doc-heading':'doc-line';
+      if(!heading&&input.tagName==='TEXTAREA')input.className='doc-text';
+      input.addEventListener('input',()=>autoSize(input));
+      blockInputs.set(block.id,{input,block});
+      return input;
+    }
+    function renderBlock(parent,entry){
+      const wrapper=document.createElement('div');wrapper.className='doc-block';
+      const input=blockControl(entry,entry.type==='heading');
+      wrapper.append(input);
+      if(entry.type!=='heading'){
+        const tools=document.createElement('div');tools.className='block-tools';
+        tools.append(badge('Fix szöveg','fix-badge'));
+        if(blockInputs.get(entry.id)?.block?.manual)tools.append(badge('Kézi','manual-badge'));
+        wrapper.append(tools);
+      }
+      if(blockInputs.get(entry.id)?.block?.manual){
+        const reset=document.createElement('button');reset.type='button';reset.className='reset-field';reset.textContent='Visszaállítás';
+        reset.title='A blokk visszaállítása a sablon szövegére.';
+        reset.addEventListener('click',()=>{input.value=entry.text;
+          const mark=wrapper.querySelector('.manual-badge');if(mark)mark.remove();
+          reset.remove();form.requestSubmit()});
+        wrapper.append(reset);
+      }
+      parent.append(wrapper);
+    }
+    function renderOutline(data){
+      const root=document.getElementById('groups');root.replaceChildren();
+      fieldInputs.clear();blockInputs.clear();
+      const fields=new Map((data.fields||[]).map(field=>[field.key,field]));
+      const blocks=new Map((data.blocks||[]).map(block=>[block.id,block]));
+      const outline=Array.isArray(data.outline)?data.outline:[];
+      let current=null,seenHeading=false;
+      const section=title=>{const node=document.createElement('section');node.className='doc-section';
+        if(title){const h=document.createElement('h2');h.className='doc-section-title';h.textContent=title;node.append(h)}
+        root.append(node);current=node;return node};
+      for(const entry of outline){
+        if(entry.type==='heading'){
+          const block=blocks.get(entry.id)||entry;const node=section();
+          const h=document.createElement('h2');h.className='doc-section-title';
+          h.append(blockControl(block,true));node.append(h);
+          if(block.manual){const reset=document.createElement('button');reset.type='button';reset.className='reset-field';reset.textContent='Visszaállítás';reset.title='A cím visszaállítása a sablon szövegére.';reset.addEventListener('click',()=>{const input=blockInputs.get(entry.id)?.input;if(input)input.value=block.text;reset.remove();form.requestSubmit()});node.append(reset)}
+          current=node;seenHeading=true;continue;
+        }
+        if(!current)current=section(seenHeading?'Műszaki leírás':'Címlap és tartalomjegyzék');
+        if(entry.type==='text'){renderBlock(current,blocks.get(entry.id)||entry);continue}
+        if(entry.type==='fields'){
+          if(contextText(entry.context)){const node=document.createElement('div');node.className='doc-context';node.append(autoText(entry.context));current.append(node)}
+          for(const key of entry.keys||[]){const field=fields.get(key);if(field)renderField(current,field)}
+          continue;
+        }
+        if(entry.type==='field'){
+          if(!entry.range&&contextText(entry.context)){const node=document.createElement('div');node.className='doc-context';node.append(autoText(entry.context));current.append(node)}
+          const field=fields.get(entry.key);if(field)renderField(current,field);continue;
+        }
+        if(entry.type==='auto'){
+          const node=document.createElement('div');node.className='doc-auto';
+          node.append(badge('Automatikus – projektadatból','doc-auto-label'),autoText(entry.preview||entry.text||''));
+          current.append(node);continue;
+        }
+        if(entry.type==='table'){
+          const node=document.createElement('div');node.className='doc-table-note';node.textContent=entry.note||'Táblázat';current.append(node);continue;
+        }
+        if(entry.type==='note'){
+          const node=document.createElement('div');node.className='doc-note';node.textContent=entry.text||'';current.append(node);
+        }
+      }
+      const missing=(data.missingFields||[]).map(key=>fields.get(key)).filter(Boolean);
+      if(missing.length){
+        const node=section('További adatok');
+        const groups=new Map();
+        missing.forEach(field=>{const name=groupFor(field.key);if(!groups.has(name))groups.set(name,[]);groups.get(name).push(field)});
+        groups.forEach((items,name)=>{
+          const details=document.createElement('details');details.className='doc-extra';
+          const summary=document.createElement('summary');summary.textContent=name+' ('+items.length+')';
+          details.append(summary);items.forEach(field=>renderField(details,field));node.append(details);
+        });
+      }
+      requestAnimationFrame(()=>{
+        fieldInputs.forEach(({input})=>autoSize(input));
+        blockInputs.forEach(({input})=>autoSize(input));
+      });
+    }
     function showDraft(sections){
       const host=document.getElementById('draftRows');host.replaceChildren();let shown=0;
       for(const [key,text] of Object.entries(sections||{})){
@@ -122,6 +256,15 @@
       if(!shown){message('Az AI nem adott beilleszthető módosítást.','error');return false}
       preview.hidden=false;preview.scrollIntoView({behavior:'smooth',block:'start'});return true;
     }
+    async function load(){if(!/^[A-Za-z0-9-]{4,64}$/.test(uid)){message('Érvénytelen projektazonosító.','error');return}
+      message('Adatok betöltése…');try{const data=await rpc('dashboardGetTechnicalFields',uid);
+        const link=document.getElementById('sheetLink');link.href=data.sheetUrl;link.hidden=false;
+        renderOutline(data);
+        draftButton.disabled=!data.aiConfigured;draftButton.title=data.aiConfigured?'':'A GEMINI_API_KEY nincs beállítva.';
+        autoDraftButton.disabled=!data.aiConfigured;autoDraftButton.title=data.aiConfigured?'A projekt tényadataiból minden fejezetet megír, elment, majd létrehozza a DRAFT dokumentumot.':'A GEMINI_API_KEY nincs beállítva.';
+        aiReady=Boolean(data.aiConfigured);
+        form.hidden=false;chat.hidden=!aiReady;message('A dokumentum szövegei betöltve.','success')
+      }catch(error){message(error.message||String(error),'error')}}
     draftButton.addEventListener('click',async()=>{
       const inputs=[...form.querySelectorAll('[data-key]')].filter(input=>draftable(input.dataset.key)&&input.value.trim());
       if(!inputs.length){message('Előbb írj tényszerű pontokat legalább egy szöveges fejezethez.','error');return}
@@ -165,7 +308,7 @@
         if(result.url&&tab)tab.location.replace(result.url);
         else if(tab)tab.close();
         await load();
-        message(result.message+(result.url?' A dokumentum új lapon megnyílt.':'')+' Az elkészült fejezetszövegeket itt szerkesztheted, majd mentsd.','success')
+        message(result.message+(result.url?' A dokumentum új lapon megnyílt.':'')+' Az elkészült szövegeket itt szerkesztheted, majd mentsd.','success')
       }catch(error){if(tab)tab.close();message(error.message||String(error),'error')}
       finally{autoDraftButton.disabled=!aiReady;draftButton.disabled=!aiReady}
     });
@@ -177,14 +320,18 @@
         if(!input)continue;
         if(input.value!==row.dataset.original){changed++;continue}
         const text=row.querySelector('textarea').value.trim();if(!text)continue;
-        input.value=text;applied++}
+        input.value=text;autoSize(input);applied++}
       message(applied+' fejezet bekerült az űrlapba. '+(changed?changed+' időközben módosított mezőt kihagytam. ':'')+'A dokumentum frissítése előtt mentsd az űrlapot.',applied?'success':'error');
       if(applied)preview.hidden=true;
     });
     form.addEventListener('submit',async event=>{event.preventDefault();const button=document.getElementById('save');
-      const values={};form.querySelectorAll('[data-key]').forEach(input=>{values[input.dataset.key]=input.value});
-      button.disabled=true;message('Mentés…');try{const result=await rpc('dashboardSaveTechnicalFields',uid,values);
-        message(result.syncMessage||'A műszaki adatok mentve.',result.synced?'success':'warning')
+      const values={};fieldInputs.forEach(({input},key)=>{values[key]=input.value});
+      const blocks={};blockInputs.forEach(({input,block},id)=>{
+        const value=input.value;
+        blocks[id]={value:value===block.text?'':value,original:block.text};
+      });
+      button.disabled=true;message('Mentés…');try{const result=await rpc('dashboardSaveTechnicalFields',uid,values,blocks);
+        message(result.syncMessage||'A műszaki leírás mentve.',result.synced?'success':'warning')
       }catch(error){message(error.message||String(error),'error')}finally{button.disabled=false}});
     load();
   </script>

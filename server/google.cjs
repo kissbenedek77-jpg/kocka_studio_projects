@@ -16,6 +16,7 @@ const {valueTableRequests} = require('./value_table.cjs');
 const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs');
 const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
 const {sectionTexts,sectionReplaceRequests,sectionStyleRequests,hasTemplateSections,retegrendStyleRequests,structureHeadingRequests,appendixRequests} = require('./technical_texts.cjs');
+const {BLOCK_SHEET,BLOCK_HEADER,BLOCK_ID,templateOutline,blockOverrides,blockRequests} = require('./technical_blocks.cjs');
 const {findMarker,insertRequests,findEmptyTable,fillRequests,
   layoutRequests:roomLayoutRequests,styleRequests:roomStyleRequests,
   rowStyleRequests:roomRowStyleRequests,
@@ -680,6 +681,20 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         range:`'${FIELD_SHEET}'!A1:C${fieldSheetRows().length}`,valueInputOption:'RAW',
         requestBody:{values:fieldSheetRows()}}));
     }
+    if (!(metadata.data.sheets || []).some(item => item.properties?.title === BLOCK_SHEET)) {
+      try {
+        await sheetWrite(() => sheets.spreadsheets.batchUpdate({spreadsheetId:sheet.id,
+          requestBody:{requests:[{addSheet:{properties:{title:BLOCK_SHEET,hidden:true,
+            gridProperties:{frozenRowCount:1}}}}]}}));
+        await sheetWrite(() => sheets.spreadsheets.values.update({spreadsheetId:sheet.id,
+          range:`'${BLOCK_SHEET}'!A1:D1`,valueInputOption:'RAW',
+          requestBody:{values:[BLOCK_HEADER]}}));
+      } catch (error) {
+        if (error.status === 429) throw error;
+        // A kiegészítő szövegblokk-lap hiánya nem akadályozhatja a műszaki
+        // adatlap használatát; a blokkfelülírások ilyenkor nem elérhetők.
+      }
+    }
     const controlId = (metadata.data.sheets || []).find(item => item.properties?.title === 'Generálás')?.properties?.sheetId;
     if (controlId != null) await googleCache.get(`dashboard-link:${sheet.id}:${uid}`,300000,async () => {
       const dashboardUrl = `${config.baseUrl}/dashboard?project=${encodeURIComponent(uid)}`;
@@ -694,6 +709,27 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     return {id:sheet.id,url:sheet.webViewLink || `https://docs.google.com/spreadsheets/d/${sheet.id}/edit`};
   }
 
+  async function technicalTemplateDocument() {
+    return googleCache.get('technical-template-document',30000,async () =>
+      (await googleQuota.run('docsRead',1,() => docs.documents.get({
+        documentId:DOCUMENT_TEMPLATES.muszakiLeiras.templateId,includeTabsContent:false
+      }))).data);
+  }
+
+  async function ensureTechnicalBlockRows(sheetId) {
+    try {
+      return (await sheetRead(() => sheets.spreadsheets.values.get({
+        spreadsheetId:sheetId,range:`'${BLOCK_SHEET}'!A2:D`,
+        valueRenderOption:'FORMATTED_VALUE'
+      }))).data.values || [];
+    } catch (error) {
+      if (error.status === 429) throw error;
+      // Régi adatlapnál még nincs blokklap; ilyenkor nincs felülírás.
+      if (/unable to parse range/i.test(String(error.message || ''))) return [];
+      throw error;
+    }
+  }
+
   async function getTechnicalFields(uid) {
     const sheet = await ensureProjectDataSheet(uid);
     const rows = await ensureTechnicalFieldRows(sheet.id);
@@ -701,14 +737,42 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       value:String(row[1] || ''),
       hash:String(row[3] || '').trim()
     }]));
+    const blockRows = await ensureTechnicalBlockRows(sheet.id);
+    const overrides = blockOverrides(blockRows);
+    let outline = {entries:[],blocks:[],missingFields:MANUAL_FIELDS.map(([key]) => key)};
+    let defaults = {};
+    const previewValues = {};
+    try {
+      const {data} = await project(uid);
+      Object.assign(previewValues,documentValues(data));
+      if (data.projekt_varos) previewValues.telepules = data.projekt_varos;
+    } catch (error) {
+      if (error.status === 429) throw error;
+    }
+    for (const [key,entry] of current)
+      if (entry.value) previewValues[key] = entry.value;
+    try {
+      const template = await technicalTemplateDocument();
+      outline = templateOutline(template,{manualKeys:MANUAL_FIELDS.map(([key]) => key),
+        values:previewValues});
+      defaults = sectionTexts(template);
+    } catch (error) {
+      if (error.status === 429) throw error;
+      // A sablon átmeneti olvasási hibája esetén a mezők külön listában
+      // jelennek meg; a mentés ettől még működik.
+    }
     return {sheetUrl:sheet.url,aiConfigured:Boolean(process.env.GEMINI_API_KEY),
       autoChapters:AUTO_CHAPTERS,
+      outline:outline.entries,
+      missingFields:outline.missingFields,
+      blocks:outline.blocks.map(block => ({id:block.id,text:block.text,
+        value:overrides.get(block.id) || '',manual:Boolean(overrides.get(block.id))})),
       fields:MANUAL_FIELDS.map(([key,help]) => {
         const entry = current.get(key) || {value:'',hash:''};
         // Kézi: az érték eltér az utoljára generálttól (vagy nincs lenyomat).
         const manual = Boolean(entry.value.trim()) &&
           (!entry.hash || entry.hash !== fieldHash(entry.value));
-        return {key,help,value:entry.value,manual};
+        return {key,help,value:entry.value,manual,default:defaults[key] || ''};
       })};
   }
 
@@ -747,6 +811,41 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     }
   }
 
+  // A sablon fix szövegblokkjainak felülírásai külön, rejtett lapon élnek. A
+  // blokk azonosítója a sablon bekezdéssorszáma (b0, b1, ...); a generálás a
+  // dokumentumban ugyanazt a bekezdést cseréli a mentett szövegre.
+  async function saveTechnicalBlocks(uid, blocks) {
+    if (!blocks || typeof blocks !== 'object' || Array.isArray(blocks))
+      throw new Error('A szövegblokkok hiányoznak.');
+    const sheet = await ensureProjectDataSheet(uid);
+    const rows = await ensureTechnicalBlockRows(sheet.id);
+    const positions = new Map(rows.map((row,index) =>
+      [String(row[0] || '').trim(),index+2]));
+    const now = new Date().toISOString();
+    const updates = [], append = [];
+    for (const [id,payload] of Object.entries(blocks)) {
+      if (!BLOCK_ID.test(id)) throw new Error('Ismeretlen szövegblokk: '+id);
+      const value = String(typeof payload === 'string' ? payload
+        : payload?.value ?? '').trim();
+      const original = String(typeof payload === 'string' ? ''
+        : payload?.original ?? '').trim();
+      if (value.length > 50000 || original.length > 50000)
+        throw new Error('Túl hosszú szövegblokk: '+id);
+      if (/\{\{[^{}]+\}\}/.test(value))
+        throw new Error('A szövegblokk nem tartalmazhat {{...}} jelölőt: '+id);
+      const row = positions.get(id);
+      if (row) updates.push({range:`'${BLOCK_SHEET}'!B${row}:D${row}`,
+        values:[[value,original,now]]});
+      else if (value) append.push([id,value,original,now]);
+    }
+    if (append.length) await sheetWrite(() => sheets.spreadsheets.values.append({
+      spreadsheetId:sheet.id,range:`'${BLOCK_SHEET}'!A:D`,valueInputOption:'RAW',
+      insertDataOption:'INSERT_ROWS',requestBody:{values:append}}));
+    if (updates.length) await sheetWrite(() => sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId:sheet.id,requestBody:{valueInputOption:'RAW',data:updates}}));
+    return true;
+  }
+
   async function saveTechnicalFields(uid,input,options = {}) {
     if (!input || typeof input !== 'object' || Array.isArray(input))
       throw new Error('A műszaki adatok hiányoznak.');
@@ -776,6 +875,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     if (data.length) await sheetWrite(() => sheets.spreadsheets.values.batchUpdate({
       spreadsheetId:sheet.id,requestBody:{valueInputOption:'RAW',data}
     }));
+    if (options.blocks) await saveTechnicalBlocks(uid,options.blocks);
     const result = await getTechnicalFields(uid);
     // A felületről indított mentés után a módosított szöveg azonnal a DRAFT
     // dokumentumba kerül. A belső hívások (generálás) nem szinkronizálnak, így
@@ -1243,6 +1343,8 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     const source = (await googleQuota.run('docsRead',1,() => docs.documents.get({
       documentId:template.templateId,includeTabsContent:false
     }))).data;
+    const outline = type === 'muszakiLeiras'
+      ? templateOutline(source,{manualKeys:MANUAL_FIELDS.map(([key]) => key)}) : null;
     // A dokumentum összeállítása nem állhat meg egy részadat hibájától: a hiba
     // figyelmeztetés lesz, a hiányzó helyen pedig [KIEGÉSZÍTENDŐ: ...] jelölés marad.
     const warnings = [];
@@ -1278,7 +1380,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     }
     // A helyiséglista a dokumentum elkészítése után, a táblázat beszúrásakor is
     // kell, ezért a blokkon kívül, a függvény szintjén tartjuk.
-    let roomData = null, pdfFiles = [], writtenFiles = [];
+    let roomData = null, pdfFiles = [], writtenFiles = [], blockRows = [];
     if (type === 'muszakiLeiras') {
       let dataSheet = null;
       let parts = [];
@@ -1294,6 +1396,14 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         dataSheet = null;
         warn('A tervezési adatlap adatai nem olvashatók ('+(error.message||String(error))+
           '). A dokumentum a korábban mentett és a kézzel megadott adatokkal készül el.');
+      }
+      if (dataSheet) {
+        try { blockRows = await ensureTechnicalBlockRows(dataSheet.id); }
+        catch (error) {
+          if (error.status === 429) throw error;
+          warn('A szerkesztett szövegblokkok nem olvashatók ('+
+            (error.message||String(error))+'); a dokumentum a sablon szövegeivel készül el.');
+        }
       }
       let projectChildren = [];
       try {
@@ -1792,10 +1902,35 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     const requests = mergeRequests(document,mergeValues,
       {allowUnknown:type === 'muszakiLeiras',restoreMissing:type === 'muszakiLeiras',
         allowConditional:true});
-    if (requests.length) await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({
-      documentId,requestBody:{requests,
-        ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}
-    }));
+    if (requests.length) {
+      await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({
+        documentId,requestBody:{requests,
+          ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}
+      }));
+      document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+        documentId,includeTabsContent:false
+      }))).data;
+    }
+    // A /technical űrlapon kézzel átírt fix szövegblokkok a sablon szövege helyére
+    // kerülnek. A blokkokat a dokumentum sorrendjében, a sablon bekezdéssorszámával
+    // azonosítjuk; a cserét alulról felfelé végezzük.
+    if (type === 'muszakiLeiras' && blockRows.length && outline) {
+      const blockUpdate = blockRequests(document,outline.blocks,blockOverrides(blockRows));
+      if (blockUpdate.requests.length) {
+        try {
+          await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+            requestBody:{requests:blockUpdate.requests,
+              ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+          document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+            documentId,includeTabsContent:false
+          }))).data;
+        } catch (error) {
+          if (error.status === 429) throw error;
+          warn('A szerkesztett szövegblokkokat nem sikerült a dokumentumba írni ('+
+            (error.message||String(error))+'); ellenőrizd a dokumentumot.');
+        }
+      }
+    }
     // Az építményérték-táblázat a minta alapján: a cím és az egységár oszlop,
     // a terület és az egységár szorzatából az érték, alul a MINDÖSSZESEN sor.
     // A helyettesítés után olvassuk vissza, mert a terület a cellába már bekerült.
@@ -1965,7 +2100,8 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         values:[['']]}));
       if (data.length) await sheetWrite(() => sheets.spreadsheets.values.batchUpdate({
         spreadsheetId:sheet.id,requestBody:{valueInputOption:'RAW',data}}));
-      for (const range of [`'Tervezési program'!B2:B17`,'Munkalap2!A2:B500'])
+      for (const range of [`'Tervezési program'!B2:B17`,'Munkalap2!A2:B500',
+        `'${BLOCK_SHEET}'!A2:D`])
         await sheetWrite(() => sheets.spreadsheets.values.clear({spreadsheetId:sheet.id,range}));
       return true;
     } catch (error) {

@@ -9,7 +9,7 @@ test('Projektadatlap másolata az írásos mappába kerül és Node dashboard-li
   const originalDrive = google.drive;
   const row = Array(40).fill(''); row[0] = 'ABC123'; row[4] = 'Projekt mappa';
   const folderNames = ['írásos','_Belső','PDFA','DWG','Adat társtervezőktől','PLN','Render'];
-  let copied; let linkUpdate; let formulaUpdate; let fieldUpdate;
+  let copied; let linkUpdate; let formulaUpdate; const updates=[];
   google.sheets = () => ({spreadsheets:{
     get: async options => options.includeGridData ? {data:{sheets:[{data:[{startRow:1,
       rowData:[{values:[{hyperlink:'https://drive.google.com/drive/folders/root-folder-id'}]}]}]}]}} :
@@ -17,7 +17,7 @@ test('Projektadatlap másolata az írásos mappába kerül és Node dashboard-li
     batchUpdate: async options => {linkUpdate = options; return {data:{}};},
     values:{get:async () => ({data:{values:[row]}}),
       batchUpdate:async options => {formulaUpdate=options; return {data:{}};},
-      update:async options => {fieldUpdate=options; return {data:{}};}}
+      update:async options => {updates.push(options); return {data:{}};}}
   }});
   google.drive = () => ({files:{
     get:async options => ({data:{id:options.fileId,name:'Projekt A',
@@ -42,8 +42,11 @@ test('Projektadatlap másolata az írásos mappába kerül és Node dashboard-li
     // Az arányképletek (L2/M2, L5/M5, L7/M7) a sablonban vannak, ezért a másolat
     // létrehozásakor nem írjuk felül őket.
     assert.equal(formulaUpdate, undefined);
-    assert.equal(fieldUpdate.requestBody.values[0][0],'Mező');
+    const fieldUpdate = updates.find(item => item.requestBody.values[0][0] === 'Mező');
+    const blockUpdate = updates.find(item => item.requestBody.values[0][0] === 'Blokk');
+    assert.ok(fieldUpdate, 'A műszaki mezőlap fejléce hiányzik.');
     assert.equal(fieldUpdate.requestBody.values[1][0],'TERV_TARGYA');
+    assert.ok(blockUpdate, 'A szövegblokk-lap fejléce hiányzik.');
   } finally {
     google.sheets = originalSheets;
     google.drive = originalDrive;

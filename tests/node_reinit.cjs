@@ -132,9 +132,10 @@ test('A műszaki leírás mentett tartalma teljesen kiürül',async()=>{
   try{
     const ok=await mock.client.resetTechnicalContent('ABC123');
     assert.equal(ok,true);
-    // A program és a helyiséglista-táblázat teljes tartománya törlődik.
+    // A program, a helyiséglista-táblázat és a szövegblokk-felülírások teljes
+    // tartománya törlődik.
     assert.deepEqual(mock.state.cleared,
-      ["'Tervezési program'!B2:B17",'Munkalap2!A2:B500']);
+      ["'Tervezési program'!B2:B17",'Munkalap2!A2:B500',"'_MűszakiSzövegek'!A2:D"]);
     // A fejezetmezők minden sora üres értéket kap (a fejléc nem). A lenyomat-
     // oszlop írásait itt nem számítjuk.
     const fieldWrites=mock.state.fieldWrites.filter(item =>

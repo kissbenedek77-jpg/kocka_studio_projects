@@ -227,7 +227,6 @@
       busyState(true,({folder:'Projektmappa létrehozása…',dataSheet:'Projektadatlap létrehozása…',sync:'Dokumentumok szinkronizálása…',reinit:'DRAFT fájlok újrainicializálása…',start:'Projekt indítása…',close:'Projekt lezárása…',archive:'Projekt archiválása…','technical:generate':'Műszaki leírás szövegezése AI-val…'})[action]||(action.startsWith('document:')?'Dokumentum előállítása…':'Dolgozom…'));
       notice('');try{const result=await rpc('dashboardPerform',project.uid,action,confirmation,date);
         project=result.project;
-        if(generate&&Array.isArray(result.chapters))technicalDraft=result.chapters;
         if(generate&&step!==5)step=5;
         render();notice(result.message,'success');
         if(openResult&&result.url){if(tab)tab.location.replace(result.url);else{
@@ -525,57 +524,8 @@
     function saveMemoSoon(){clearTimeout(memoTimer);const uid=project.uid,value=$('projectMemo').value;project.memo=value;const revision=++memoRevision;$('memoState').textContent='Mentés…';memoTimer=setTimeout(()=>{memoTimer=null;queueMemo(uid,value,revision).catch(()=>{})},700)}
     async function flushMemo(){if(memoTimer&&project){clearTimeout(memoTimer);memoTimer=null;await queueMemo(project.uid,project.memo,memoRevision)}else await memoQueue.catch(()=>{})}
     function renderNotes(parent){const root=section(parent,'Projektjegyzet');const field=element('div','field');const label=element('label','','Közös jegyzet – automatikus mentés');label.htmlFor='projectMemo';const input=element('textarea');input.id='projectMemo';input.maxLength=50000;input.rows=10;input.value=project.memo||'';input.addEventListener('input',saveMemoSoon);field.append(label,input);root.append(field);const state=element('div','autosave','A módosítások automatikusan mentődnek.');state.id='memoState';root.append(state);requestAnimationFrame(()=>{if(document.activeElement!==input){input.selectionStart=input.selectionEnd=input.value.length}})}
-    const TECHNICAL_GROUP_TITLES={HELYSZIN:'Helyszín és tervelőzmények',KONCEPCIO:'Építészeti koncepció',
-      SZERKEZET:'Szerkezetek és anyagok',GEPESZET:'Gépészet',VILLAMOS:'Villamos',
-      KORNYEZET:'Környezet',ALTALANOS:'Általános'};
-    function renderTechnicalDraft(parent){
-      if(!Array.isArray(technicalDraft)||!technicalDraft.length)return;
-      const root=section(parent,'AI fejezetszövegek szerkesztése');
-      paragraph(root,'A szövegek a projekt tényszerű adataiból készültek. A [KIEGÉSZÍTENDŐ: …] jelölés hiányzó adatot mutat: egészítsd ki, majd mentsd el. A mentés után a DRAFT dokumentum frissül; a véglegesítés a jelölést nem engedi át.');
-      const groups=new Map();
-      technicalDraft.forEach(item=>{const prefix=item.key.includes(':')?item.key.split(':')[0]:'ALTALANOS';
-        if(!groups.has(prefix))groups.set(prefix,[]);groups.get(prefix).push(item)});
-      const fields=[];
-      groups.forEach((items,prefix)=>{
-        const group=element('div','technical-group');
-        group.append(element('h4','',TECHNICAL_GROUP_TITLES[prefix]||'Általános'));
-        items.forEach(item=>{
-          const field=element('div','field');
-          const id='technical-'+String(item.key).replace(/[^A-Za-z0-9_-]/g,'-');
-          const label=element('label','',item.title);label.htmlFor=id;
-          if(item.manual){const badge=element('span','','Kézi');badge.style.cssText='margin-left:.4rem;padding:.05rem .45rem;border-radius:999px;background:#fff3cd;color:#7a5b00;font-size:.72rem;font-weight:700;vertical-align:middle';label.append(' ',badge)}
-          const input=element('textarea');input.id=id;input.rows=4;input.maxLength=4000;
-          input.value=item.value||'';
-          field.append(label);
-          if(/\[KIEGÉSZÍTENDŐ:/.test(input.value))
-            field.append(element('div','note','Hiányzó adatot jelöl – a véglegesítés előtt pótolni kell.'));
-          field.append(input);
-          if(item.manual){const reset=button(field,'Visszaállítás',async()=>{busyState(true,'Mező visszaállítása…');try{await rpc('dashboardSaveTechnicalFields',project.uid,{[item.key]:''});item.value='';item.manual=false;input.value='';render();notice('A mező törölve; a következő AI-szövegezés újra kitölti.','success')}catch(error){notice(error.message||String(error),'error')}finally{busyState(false)}},'secondary small');reset.title='A mező törlése; a következő AI-szövegezés újra kitölti.'}
-          group.append(field);
-          fields.push({key:item.key,input});
-        });
-        root.append(group);
-      });
-      const draftActions=element('div','action-row');root.append(draftActions);
-      button(draftActions,'Fejezetek mentése és dokumentum frissítése',async()=>{
-        busyState(true,'Fejezetszövegek mentése…');
-        try{
-          const payload={};fields.forEach(({key,input})=>{payload[key]=input.value});
-          await rpc('dashboardSaveTechnicalFields',project.uid,payload);
-          const result=await rpc('dashboardPerform',project.uid,'document:muszakiLeiras');
-          project=result.project;
-          technicalDraft=technicalDraft.map(item=>({...item,
-            value:Object.prototype.hasOwnProperty.call(payload,item.key)?payload[item.key]:item.value}));
-          render();notice('A fejezetszövegek mentve, a műszaki leírás frissítve.','success');
-        }catch(error){notice(error.message||String(error),'error')}
-        finally{busyState(false)}
-      },'small');
-      button(draftActions,'Újraszövegezés projektadatból',()=>confirm('AI-val újraszövegezés',
-        'A rendszer a projekt tényszerű adataiból újra megírja a fejezetszövegeket, és felülírja a most szerkesztett mezőket. A hiányzó adat helyén [KIEGÉSZÍTENDŐ: …] jelölés marad.',
-        ()=>callAction('technical:generate')),'secondary small');
-    }
     function renderAudio(parent){const root=section(parent,'Hangjegyzet');paragraph(root,'Mobilon hangfájlt is rögzíthetsz vagy kiválaszthatsz. Az AI-kivonat a közös jegyzet végére kerül.');const input=element('input');input.type='file';input.accept='audio/*';input.setAttribute('capture','microphone');input.setAttribute('aria-label','Hangfájl kiválasztása');root.append(input);button(root,'Hangfájl feltöltése',async()=>{const file=input.files&&input.files[0];if(!file){notice('Válassz hangfájlt.','error');return}if(file.size>8*1024*1024){notice('Legfeljebb 8 MB-os hangfájl tölthető fel.','error');return}busyState(true,'Hangfájl feltöltése…');try{const base64=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=reject;reader.readAsDataURL(file)});const result=await rpc('dashboardUploadAudio',project.uid,file.name,file.type,base64);project=result.project;render();notice('A hangfájl feltöltve.','success')}catch(error){notice(error.message||String(error),'error')}finally{busyState(false)}});(project.audio||[]).forEach(file=>{const row=element('div','ks-data-row');row.append(element('strong','',file.name));const controls=element('div','controls');link(controls,'Meghallgatás',file.url,'secondary small');const ai=button(controls,'AI-kivonat',()=>confirm('AI-kivonat','A kiválasztott hanganyag a Gemini API-hoz kerül feldolgozásra. A kivonat a jegyzet végére kerül.',async()=>{busyState(true,'AI-kivonat készítése…');try{const result=await rpc('dashboardSummarizeAudio',project.uid,file.id);const memo=$('projectMemo');memo.value+=(memo.value?'\n\n':'')+result.summary;saveMemoSoon();notice('Az AI-kivonat a jegyzet végére került.','success');memo.focus();memo.selectionStart=memo.selectionEnd=memo.value.length}catch(error){notice(error.message||String(error),'error')}finally{busyState(false)}}),'small');ai.disabled=!project.aiConfigured;row.append(controls);root.append(row)});if(!project.aiConfigured)paragraph(root,document.body.dataset.runtime==='node'?'AI-kivonathoz GEMINI_API_KEY szükséges a Railway Variables között.':'AI-kivonathoz GEMINI_API_KEY szükséges a Script Properties beállításai között.')}
-    let emailOpens=null,sentMailbox=null,pdfAudit=null,mailPreviewObserver=null,technicalDraft=null;const emailOpenSeen=new Map(),mailDetails=new Map(),mailDetailPending=new Map();
+    let emailOpens=null,sentMailbox=null,pdfAudit=null,mailPreviewObserver=null;const emailOpenSeen=new Map(),mailDetails=new Map(),mailDetailPending=new Map();
     function emailTime(value){const date=new Date(value);return Number.isNaN(date.getTime())?'Ismeretlen időpont':date.toLocaleString('hu-HU',{timeZone:'Europe/Budapest',dateStyle:'short',timeStyle:'medium'})}
     function mailPopup(title,items){const backdrop=element('div','modal-backdrop'),dialog=element('div','modal');
       dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');
@@ -761,19 +711,10 @@
         technical.title=technical.disabled?'A műszaki leírás lezárt projektnél nem módosítható, a projektmappa és a GEMINI_API_KEY szükséges.':'A szövegezéshez GEMINI_API_KEY szükséges. A hiányzó adat jelölőként marad a szövegben.';
         if(techDoc.url)button(technicalGroup,'Dokumentum frissítése a mentett szövegekkel',()=>callAction('document:muszakiLeiras'),'secondary');
         if(techDoc.url)link(technicalGroup,'Műszaki leírás megnyitása',techDoc.url,'secondary');
-        const data=actionGroup('Projektadatok');if(document.body.dataset.runtime==='node'){const maintenance=actionGroup('Karbantartás');const reinit=button(maintenance,'Fájlok újra inicializálása',()=>confirm('Fájlok újra inicializálása','A DRAFT dokumentumok a kukába kerülnek, a dokumentumindex soraik törlődnek, majd a rendszer a friss sablonokból újra létrehozza őket, mintha most indítanád a projektet. A műszaki leírás mentett fejezetszövegei, az a–p tervezési program sorai és a helyiséglista-táblázat is törlődnek, így a piszkozat üres sablonból indul. A tervezési paraméterek (Munkalap1), a feltöltött tervlapok és a PLN-fájlok megmaradnak; a DRAFT dokumentumokban kézzel végzett módosítások elvesznek.',()=>callAction('reinit','reinit:'+project.uid)),'secondary');reinit.disabled=project.stage==='closed'||!project.folderUrl;reinit.title=reinit.disabled?'Lezárt projektnél vagy projektmappa nélkül nem inicializálhatók újra a DRAFT fájlok.':'A piszkozatok üres sablonból, a friss sablonok szerint jönnek létre; a műszaki leírás mentett szövegei törlődnek.'}
-        if(document.body.dataset.runtime==='node')link(technicalGroup,'Műszaki leírás szerkesztése (kézi mezők)','/technical?uid='+encodeURIComponent(project.uid),'secondary');
+        const data=actionGroup('Projektadatok');if(document.body.dataset.runtime==='node'){const maintenance=actionGroup('Karbantartás');const reinit=button(maintenance,'Fájlok újra inicializálása',()=>confirm('Fájlok újra inicializálása','A DRAFT dokumentumok a kukába kerülnek, a dokumentumindex soraik törlődnek, majd a rendszer a friss sablonokból újra létrehozza őket, mintha most indítanád a projektet. A műszaki leírás mentett fejezetszövegei, a fix szövegblokkok felülírásai, az a–p tervezési program sorai és a helyiséglista-táblázat is törlődnek, így a piszkozat üres sablonból indul. A tervezési paraméterek (Munkalap1), a feltöltött tervlapok és a PLN-fájlok megmaradnak; a DRAFT dokumentumokban kézzel végzett módosítások elvesznek.',()=>callAction('reinit','reinit:'+project.uid)),'secondary');reinit.disabled=project.stage==='closed'||!project.folderUrl;reinit.title=reinit.disabled?'Lezárt projektnél vagy projektmappa nélkül nem inicializálhatók újra a DRAFT fájlok.':'A piszkozatok üres sablonból, a friss sablonok szerint jönnek létre; a műszaki leírás mentett szövegei törlődnek.'}
+        if(document.body.dataset.runtime==='node')link(technicalGroup,'Műszaki leírás szerkesztése (teljes szöveg)','/technical?uid='+encodeURIComponent(project.uid),'secondary');
         link(data,'Tervezési adatlap megnyitása',project.dataSheetUrl,'secondary');
         paragraph(panel,'Az AI a projekt tényadataiból készíti el a fejezetszövegeket, majd létrehozza a DRAFT dokumentumot. A szerkezeteket, az ellenőrzött övezeti forrást és a jóváhagyandó szövegeket a műszaki űrlapon pontosíthatod. Számot, mértékegységet és terv szerinti állapotot az AI nem talál ki: hiányzó adat helyén [KIEGÉSZÍTENDŐ: …] jelölés marad.');
-        if(!technicalDraft)button(technicalGroup,'Mentett fejezetszövegek szerkesztése',async()=>{
-          busyState(true,'Fejezetszövegek betöltése…');
-          try{const data=await rpc('dashboardGetTechnicalFields',project.uid);
-            technicalDraft=(data.autoChapters||[]).map(item=>{const field=data.fields.find(entry=>entry.key===item.key);return {key:item.key,title:item.title,value:field?.value||'',manual:Boolean(field?.manual)}});
-            render();notice('A mentett fejezetszövegek betöltve szerkesztésre.','success')
-          }catch(error){notice(error.message||String(error),'error')}
-          finally{busyState(false)}
-        },'secondary');
-        renderTechnicalDraft(panel);
         if(technical.disabled){
           const why=section(panel,'Miért nem hozható létre a műszaki leírás?');
           if(project.stage==='closed')paragraph(why,'A projekt le van zárva, ezért a műszaki leírás már nem módosítható.');

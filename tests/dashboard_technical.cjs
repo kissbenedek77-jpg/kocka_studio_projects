@@ -14,24 +14,22 @@ function node(tag='div',className='',text=''){
   return {tag,className,textContent:text,children:[],attributes:{},value:'',
     append(...items){this.children.push(...items)},setAttribute(name,value){this.attributes[name]=value}};
 }
-const descendants=item=>[item,...(item.children||[]).flatMap(descendants)];
-
 function harness(project){
-  const buttons=[],textareas=[],sections=[],paragraphs=[],notices=[],rpcCalls=[];
+  const buttons=[],sections=[],paragraphs=[],notices=[],rpcCalls=[],links=[];
   const actions=node();
   const panel=node();
   const actionGroup=()=>{const grid=node();actions.append(grid);return grid};
   const context=vm.createContext({
-    step:5,actions,panel,project,technicalDraft:null,actionGroup,
+    step:5,actions,panel,project,actionGroup,
     document:{body:{dataset:{runtime:'node'}}},
-    element(tag,className,text){const item=node(tag,className,text);
-      if(tag==='textarea')textareas.push(item);return item;},
+    element(tag,className,text){const item=node(tag,className,text);return item;},
     section(parent,title){const item=node('div','detail',title);item.title=title;
       sections.push(item);parent.append(item);return item;},
     paragraph(parent,text){paragraphs.push(text);parent.append({tag:'p',textContent:text});},
     button(parent,label,handler){const item={label,handler,parent,disabled:false};
       buttons.push(item);parent.append(item);return item;},
-    link(){},
+    link(parent,label,url){const item={label,url,parent};links.push(item);
+      parent.append({tag:'a',label,url});return item;},
     doc:() => ({url:''}),
     callAction(action){context.calledAction=action;},
     sendEmail(){},
@@ -44,19 +42,15 @@ function harness(project){
         return {folder:'PDFA',files:['PDFA/A terv.pdf','PDFA/Statika/S-01.pdf'],
           missing:false,truncated:false};
       if(args[0]==='dashboardSaveTechnicalFields')return {fields:[]};
-      if(args[0]==='dashboardGetTechnicalFields')return {
-        autoChapters:[{key:'HELYSZIN:meglevo_allapot',title:'Meglévő állapot'}],
-        fields:[{key:'HELYSZIN:meglevo_allapot',value:'Üres telek.'}]};
       if(args[0]==='dashboardPerform')return {message:'A dokumentum frissítve.',
         url:'https://docs.google.com/document/d/doc/edit',project};
       return {...project,expectedFiles:args[2]};}
   });
-  return {context,buttons,textareas,sections,paragraphs,notices,rpcCalls,actions,panel};
+  return {context,buttons,sections,paragraphs,notices,rpcCalls,links,actions,panel};
 }
 
 function runStep5(run){
-  const source=section('    const TECHNICAL_GROUP_TITLES=','    function renderAudio(parent){')+
-    '\n'+section('      if(step===5){','      if(step===6){');
+  const source=section('      if(step===5){','      if(step===6){');
   vm.runInContext(source,run.context);
 }
 
@@ -129,43 +123,15 @@ test('Lezárt projektnél és projektmappa nélkül a gomb okot ír ki',() => {
   assert.ok(noAi.paragraphs.some(text=>text.includes('GEMINI_API_KEY nincs beállítva')));
 });
 
-test('A kész fejezetek szerkeszthetők, menthetők és a DRAFT frissül',async () => {
-  const run=harness({uid:'ABC123',stage:'started',
-    folderUrl:'https://drive.google.com/drive/folders/root',documents:[],issues:[]});
-  run.context.technicalDraft=[
-    {key:'HELYSZIN:meglevo_allapot',title:'Meglévő állapot',value:'Üres telek.'},
-    {key:'SZERKEZET:alapozas',title:'Alapozás',
-      value:'[KIEGÉSZÍTENDŐ: alapozás rétegrendje]'}];
-  runStep5(run);
-  assert.equal(run.notices.length,0);
-  const root=run.sections.find(item=>item.title==='AI fejezetszövegek szerkesztése');
-  assert.ok(root,'Hiányzik a fejezetszerkesztő.');
-  const groups=descendants(root).filter(item=>item.tag==='h4').map(item=>item.textContent);
-  assert.deepEqual(groups,['Helyszín és tervelőzmények','Szerkezetek és anyagok']);
-  assert.equal(run.textareas.length,2);
-  assert.ok(descendants(root).some(item=>item.textContent?.includes('Hiányzó adatot jelöl')));
-  run.textareas[0].value='Üres telek, a telek határoló kerítéssel.';
-  const save=run.buttons.find(item=>item.label==='Fejezetek mentése és dokumentum frissítése');
-  assert.ok(save);
-  await save.handler();
-  assert.equal(JSON.stringify(Array.from(run.rpcCalls[0])),JSON.stringify(['dashboardSaveTechnicalFields','ABC123',
-    {'HELYSZIN:meglevo_allapot':'Üres telek, a telek határoló kerítéssel.',
-      'SZERKEZET:alapozas':'[KIEGÉSZÍTENDŐ: alapozás rétegrendje]'}]));
-  assert.deepEqual(Array.from(run.rpcCalls[1]),['dashboardPerform','ABC123','document:muszakiLeiras']);
-  assert.equal(run.notices.at(-1)?.kind,'success');
-});
-
-test('Korábbi fejezetszövegek betölthetők szerkesztésre',async () => {
+test('A teljes szöveg szerkesztése a /technical oldalon nyílik',()=>{
   const run=harness({uid:'ABC123',stage:'started',
     folderUrl:'https://drive.google.com/drive/folders/root',documents:[],issues:[]});
   runStep5(run);
-  const load=run.buttons.find(item=>item.label==='Mentett fejezetszövegek szerkesztése');
-  assert.ok(load,'Hiányzik a mentett szövegek betöltése.');
-  await load.handler();
-  assert.equal(run.context.technicalDraft.length,1);
-  assert.equal(run.context.technicalDraft[0].key,'HELYSZIN:meglevo_allapot');
-  assert.equal(run.context.technicalDraft[0].value,'Üres telek.');
-  assert.equal(run.notices.at(-1)?.kind,'success');
+  const link=run.links.find(item=>item.label==='Műszaki leírás szerkesztése (teljes szöveg)');
+  assert.ok(link,'Hiányzik a /technical szerkesztő linkje.');
+  assert.equal(link.url,'/technical?uid=ABC123');
+  assert.equal(run.buttons.some(item=>item.label==='Mentett fejezetszövegek szerkesztése'),false);
+  assert.equal(run.sections.some(item=>item.title==='AI fejezetszövegek szerkesztése'),false);
 });
 
 test('A PDFA mappa fájljai egy gombnyomásra bekerülnek az elvárt listába',async () => {
