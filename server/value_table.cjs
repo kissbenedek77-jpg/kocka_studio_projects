@@ -92,7 +92,7 @@ function toRequests(edits) {
     const parts = [];
     if (edit.end > edit.start)
       parts.push({deleteContentRange:{range:{startIndex:edit.start,endIndex:edit.end}}});
-    parts.push({insertText:{location:{index:edit.start},text:edit.text}});
+    if (edit.text) parts.push({insertText:{location:{index:edit.start},text:edit.text}});
     return parts;
   }).flat();
 }
@@ -101,6 +101,41 @@ function toRequests(edits) {
 function ensureValueUnit(text) {
   const value = String(text ?? '');
   return /E\s*Ft\s*$/i.test(value.trim()) ? value : value + ' ' + DEFAULT_VALUE_UNIT;
+}
+
+// A /technical űrlapról érkező, jogszabályi soronkénti területek alapján
+// kitölti a dokumentum építményérték-táblázatát. Csak a megadott sorokat
+// tölti ki, a többit üríti; az utolsó sor az összesítés.
+function valueTableRowRequests(table, rows = []) {
+  const tableRows = table?.table?.tableRows || [];
+  const totalIndex = tableRows.length - 1;
+  if (totalIndex < 0) return {requests:[],rows:[],total:0};
+  const dataRows = tableRows.slice(0,totalIndex);
+  const edits = [];
+  let total = 0;
+  rows.forEach((row,index) => {
+    const cells = dataRows[index]?.tableCells || [];
+    if (cells.length <= COLUMN.value) return;
+    const price = Number(row.price) || 0;
+    const area = Number(row.area) || 0;
+    const value = area * price;
+    setCell(edits,cells[COLUMN.label],`${row.number}. ${row.label}`);
+    setCell(edits,cells[COLUMN.unit],'E Ft/m2');
+    setCell(edits,cells[COLUMN.price],formatNumber(price,0));
+    setCell(edits,cells[COLUMN.area],formatNumber(area,2)+' m²');
+    setCell(edits,cells[COLUMN.value],formatNumber(value,0)+' E Ft');
+    total += value;
+  });
+  for (let index=rows.length; index<dataRows.length; index++) {
+    const cells = dataRows[index].tableCells || [];
+    if (cells.length <= COLUMN.value) continue;
+    for (const column of [COLUMN.label,COLUMN.unit,COLUMN.price,COLUMN.area,COLUMN.value])
+      setCell(edits,cells[column],'');
+  }
+  const totalCells = tableRows[totalIndex]?.tableCells || [];
+  if (totalCells.length > COLUMN.value)
+    setCell(edits,totalCells[COLUMN.value],formatNumber(total,0)+' E Ft');
+  return {requests:toRequests(edits),rows,total};
 }
 
 // A táblázat kitöltése. A `fallback` a minta hiányzó celláinak tartaléka
@@ -146,4 +181,4 @@ function valueTableRequests(document, {fallback = []} = {}) {
 }
 
 module.exports = {TOTAL_LABEL,COLUMN,findValueTable,cellText,parseNumber,formatNumber,
-  replaceNumber,valueTableRequests};
+  replaceNumber,valueTableRequests,valueTableRowRequests};

@@ -85,7 +85,7 @@ function bodyItems(document) {
       const text = normalizedText(item);
       items.push({kind:'paragraph',item,ordinal,text,startIndex:item.startIndex,
         endIndex:item.endIndex,style:item.paragraph?.paragraphStyle?.namedStyleType || '',
-        heading:isSectionHeading(item)});
+        heading:isSectionHeading(item),chapterHeading:Boolean(item.paragraph?.bullet)});
       ordinal++;
     } else if (item.table) {
       items.push({kind:'table',item});
@@ -99,6 +99,14 @@ function bodyItems(document) {
 // A sablon szerkeszthető kirajzolása. A visszaadott entries a dokumentum
 // sorrendjében tartalmazza a címeket, a fix szövegblokkokat, a mezőket és a
 // csak olvasható automatikus szövegeket.
+// A fejezetszámok a dokumentum bulleted főcímei szerint. A címoldal és a
+// tartalomjegyzék a 0. fejezet; az 1., 3., 5., 10., 11. fejezet tényszerű adat,
+// ezért csak olvasható. A 4. fejezet saját építményérték-táblázatot kap.
+const READONLY_CHAPTERS = new Set([0,1,3,5,10,11]);
+const VALUE_TABLE_FIELDS = ['EPITMENYERTEK:terulet_1_m2','EPITMENYERTEK:terulet_5_m2',
+  'EPITMENYERTEK:rendeltetesi_kategoria','EPITMENYERTEK:egysegar_eFt_m2',
+  'SZAMITOTT_EPITMENYERTEK','EPITMENYERTEK:jogszabaly_es_modszer'];
+
 function templateOutline(document, {manualKeys = [], values = {}} = {}) {
   const manual = new Set(manualKeys);
   const items = bodyItems(document);
@@ -117,26 +125,55 @@ function templateOutline(document, {manualKeys = [], values = {}} = {}) {
   const used = new Set();
   const entries = [];
   const blocks = [];
+  let chapter = 0;
   for (const item of items) {
     if (item.kind === 'table') {
-      entries.push({type:'table',note:'Táblázat – az adatokat a tervezési adatlapon szerkeszd.'});
+      if (chapter === 4) continue;
+      const readonly = READONLY_CHAPTERS.has(chapter);
+      entries.push({type:'table',note:'Táblázat – az adatokat a tervezési adatlapon szerkeszd.',
+        chapter,readonly});
       const tableKeys = tableFieldKeys(item.item?.table,manual);
       if (tableKeys.length) {
-        entries.push({type:'fields',keys:tableKeys,ordinal:null,context:'Táblázat adatai'});
-        tableKeys.forEach(key => used.add(key));
+        entries.push({type:'fields',keys:tableKeys,ordinal:null,context:'Táblázat adatai',
+          chapter,readonly});
+        if (chapter !== 0)
+          tableKeys.forEach(key => used.add(key));
       }
       continue;
     }
     if (item.kind === 'toc') {
-      entries.push({type:'note',text:'Tartalomjegyzék'});
+      entries.push({type:'note',text:'Tartalomjegyzék',chapter,readonly:true});
       continue;
     }
     if (!item.text.trim()) continue;
+    if (item.heading) {
+      if (item.chapterHeading) {
+        chapter++;
+        const regulation = String(values['EPITMENYERTEK:jogszabaly_es_modszer'] || '').trim() ||
+          '245/2006. (XII. 5.) Korm. rendelet 1. melléklet';
+        const suffix = /szerint\s*$/i.test(regulation) ? '' : ' szerint';
+        const text = chapter === 4
+          ? `Építményérték számítása (${regulation}${suffix})`
+          : item.text;
+        entries.push({type:'heading',level:'chapter',number:chapter,text,
+          chapter,readonly:true});
+        if (chapter === 4) {
+          entries.push({type:'valueTable',chapter:4});
+          VALUE_TABLE_FIELDS.forEach(key => used.add(key));
+        }
+      } else {
+        entries.push({type:'heading',level:'subheading',text:item.text,
+          chapter,readonly:true});
+      }
+      continue;
+    }
+    if (chapter === 4) continue;
+    const readonly = READONLY_CHAPTERS.has(chapter);
     const range = rangeAt.get(item.ordinal);
     if (range) {
       entries.push({type:'field',key:range.key,ordinal:item.ordinal,context:item.text,
-        range:true});
-      used.add(range.key);
+        range:true,chapter,readonly});
+      if (chapter !== 0) used.add(range.key);
       continue;
     }
     // A tartomány belső bekezdéseit a fejezetszöveg-mező képviseli.
@@ -146,8 +183,10 @@ function templateOutline(document, {manualKeys = [], values = {}} = {}) {
     const keys = markerKeys(item.text);
     const fieldKeys = keys.filter(key => manual.has(key));
     if (fieldKeys.length) {
-      entries.push({type:'fields',keys:fieldKeys,ordinal:item.ordinal,context:item.text});
-      fieldKeys.forEach(key => used.add(key));
+      entries.push({type:'fields',keys:fieldKeys,ordinal:item.ordinal,context:item.text,
+        chapter,readonly});
+      if (chapter !== 0)
+        fieldKeys.forEach(key => used.add(key));
       continue;
     }
     if (keys.length) {
@@ -155,13 +194,15 @@ function templateOutline(document, {manualKeys = [], values = {}} = {}) {
       const single = item.text.trim().replace(/^\{\{|\}\}$/g,'');
       entries.push({type:'auto',text:item.text,
         preview:AUTO_LABELS[single] || previewText(item.text,values),
-        ordinal:item.ordinal});
+        ordinal:item.ordinal,chapter});
       continue;
     }
     const block = {id:'b'+item.ordinal,text:item.text,ordinal:item.ordinal,
       style:item.style,heading:item.heading};
-    blocks.push(block);
-    entries.push({type:item.heading?'heading':'text',...block});
+    // A tervezési program a)–p) jelű sorai struktúracímkék, nem szerkeszthetők.
+    const blockReadonly = readonly || (chapter === 2 && /^[a-p]\)\s/.test(item.text.trim()));
+    if (!blockReadonly) blocks.push(block);
+    entries.push({type:item.heading?'heading':'text',...block,readonly:blockReadonly,chapter});
   }
   const missingFields = [...manual].filter(key => !used.has(key));
   return {entries,blocks,missingFields};

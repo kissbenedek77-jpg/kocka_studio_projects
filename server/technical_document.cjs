@@ -32,6 +32,8 @@ const MANUAL_FIELDS = [
   ['TERVEZESI_ADATOK:megengedett_lakasszam_db','Megengedett lakásszám'],
   ['EPITMENYERTEK:rendeltetesi_kategoria','Építményérték rendeltetési kategória'],
   ['EPITMENYERTEK:egysegar_eFt_m2','Jogszabály alapján igazolt egységár, E Ft/m²'],
+  ['EPITMENYERTEK:terulet_1_m2','A jogszabály 1. sorához tartozó nettó alapterület, m²'],
+  ['EPITMENYERTEK:terulet_5_m2','A jogszabály 5. sorához tartozó nettó alapterület, m²'],
   ['SZAMITOTT_EPITMENYERTEK','Jóváhagyott számított építményérték, E Ft'],
   ['EPITMENYERTEK:jogszabaly_es_modszer','Ellenőrzött jogszabály és számítási módszer'],
   ['HELYISEGLISTA','Helyiségek és területek; a PLN/helyiségek.txt alapján ellenőrizve'],
@@ -112,6 +114,8 @@ const GAP_LABELS = {
   'OVEZET:ellenorzes_allapota':'a helyrajzi szám és az övezet kézi ellenőrzésének állapota',
   'EPITMENYERTEK:rendeltetesi_kategoria':'az építményérték rendeltetési kategóriája',
   'EPITMENYERTEK:egysegar_eFt_m2':'a jogszabály alapján igazolt egységár (E Ft/m²)',
+  'EPITMENYERTEK:terulet_1_m2':'a jogszabály 1. sorához tartozó nettó alapterület m²-ben',
+  'EPITMENYERTEK:terulet_5_m2':'a jogszabály 5. sorához tartozó nettó alapterület m²-ben',
   'EPITMENYERTEK:jogszabaly_es_modszer':'az építményérték számításának jogszabályi alapja és módszere',
   'TERV_HIVATKOZAS':'a leíráshoz tartozó tervlapok jele',
   'SZAKAG:egyeztetes':'a szakági munkarészek és a felelős tervezők egyeztetése',
@@ -142,6 +146,9 @@ function validateTechnicalField(key,value) {
   if (key === 'OVEZET:ellenorzes_datuma' && value && !validIsoDate(value) &&
       !validHungarianDate(value))
     throw new Error('A dátum ÉÉÉÉ.HH.NN. formátumú és valós naptári nap legyen.');
+  if (/^EPITMENYERTEK:terulet_[15]_m2$/.test(key) && value &&
+      !/^\d+(?:[.,]\d+)?$/.test(value))
+    throw new Error('A területet m²-ben, számként add meg (például 120,5).');
 }
 
 function fieldSheetRows() {
@@ -302,6 +309,21 @@ function rendeltetesiKategoria(roomData) {
     lines.push(epitmenyErtekRowText(EPITMENYERTEK_ROWS[5])+' – pinceszint: '+
       (area/100).toFixed(2).replace('.',',')+' m²');
   return lines.join('\n');
+}
+
+// A /technical űrlap építményérték-táblázatának sorai. Csak azok a
+// jogszabályi sorok kerülnek a dokumentumba, amelyekhez van kitöltött m².
+function valueRowsFromManual(manual = {}) {
+  const rows = [];
+  for (const number of [1,5]) {
+    const raw = String(manual[`EPITMENYERTEK:terulet_${number}_m2`] || '')
+      .replace(/\s/g,'').replace(',','.');
+    const area = Number(raw);
+    if (!Number.isFinite(area) || area <= 0) continue;
+    const row = EPITMENYERTEK_ROWS[number];
+    rows.push({number,label:row.label,unit:row.unit,price:Number(row.price),area});
+  }
+  return rows;
 }
 
 function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfFiles = [],
@@ -511,4 +533,4 @@ module.exports = {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,
   validateTechnicalField,fieldSheetRows,fieldHash,
   manualValues,numberFromSheet,technicalReview,technicalReplacements,displayDate,validIsoDate,
   validHungarianDate,hungarianToday,gapText,placeholderOnly,fillRetegrendGaps,DATA_MARKER,tervTargya,rendeltetesiKategoria,
-  basementArea};
+  valueRowsFromManual,basementArea};

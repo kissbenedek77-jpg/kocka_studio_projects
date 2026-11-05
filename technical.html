@@ -38,6 +38,18 @@
     .doc-context{color:#526873;font-size:.9rem;margin:.45rem 0 .1rem;white-space:pre-wrap;overflow-wrap:anywhere}
     .doc-table-note{background:#f4f7f8;border:1px dashed #c4d2d6;border-radius:8px;padding:.7rem .9rem;margin:.7rem 0;color:#526873;font-size:.92rem}
     .doc-note{color:#526873;font-size:.92rem;margin:.6rem 0}
+    .doc-readonly{white-space:pre-wrap;overflow-wrap:anywhere;color:#3f5a63;line-height:1.55;margin:.35rem 0;padding:.2rem .55rem}
+    .doc-readonly-field{background:#f4f7f8;border-left:3px solid #b9c9ce;padding:.55rem .75rem;margin:.55rem 0;font-size:.93rem;color:#3f5a63;white-space:pre-wrap;overflow-wrap:anywhere}
+    .doc-readonly-field b{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:#7b929a;margin-bottom:.2rem}
+    .doc-subheading{font-size:1.02rem;font-weight:700;color:#24506b;margin:1rem 0 .35rem}
+    .doc-structure-subheading{font-size:.98rem;font-weight:700;color:#24506b;margin:1rem 0 .25rem}
+    .doc-table-scroll{overflow-x:auto;margin:.6rem 0}
+    .doc-value-table{width:100%;border-collapse:collapse;font-size:.9rem;min-width:640px}
+    .doc-value-table th,.doc-value-table td{border:1px solid #d8e1e4;padding:.45rem .55rem;text-align:left;vertical-align:top}
+    .doc-value-table th{background:#f4f7f8;font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:#526873}
+    .doc-value-table input[type=number]{width:7.5rem;min-height:2.4rem;border:1px solid #9fb3bb;border-radius:6px;padding:.35rem .45rem;font:inherit}
+    .doc-value-table input[type=number]:focus{outline:3px solid #9ed2dc;border-color:#287b82}
+    .doc-value-total{font-weight:700;background:#f7fafb}
     .manual-badge{display:inline-block;margin-left:.4rem;padding:.05rem .45rem;border-radius:999px;background:#fff3cd;color:#7a5b00;font-size:.72rem;font-weight:700;vertical-align:middle}
     .fix-badge{display:inline-block;margin-left:.4rem;padding:.05rem .45rem;border-radius:999px;background:#e8eef0;color:#526873;font-size:.68rem;font-weight:700;vertical-align:middle}
     .reset-field{margin-top:.35rem;font-size:.8rem;padding:.28rem .65rem;border:1px solid #c9d4da;border-radius:.4rem;background:#fff;color:#24506b;cursor:pointer}
@@ -65,7 +77,7 @@
   <header><h1>Műszaki leírás szerkesztése</h1><p>Projekt: <strong id="projectUid"></strong></p></header>
   <main>
     <div class="links"><a id="dashboardLink" href="/dashboard">Vissza a dashboardra</a><a id="sheetLink" hidden>Tervezési adatlap megnyitása</a></div>
-    <p class="notice">A műszaki leírás a dokumentum sorrendjében jelenik meg. A szürke „Automatikus” részek a projekt adataiból töltődnek, a többi szöveg itt közvetlenül szerkeszthető. A mentés a DRAFT dokumentumot is frissíti. Az „AI-val kitöltés projektadatból” gomb a rendelkezésre álló tényadatokból megírja a fejezeteket; a hiányzó adat helyén [KIEGÉSZÍTENDŐ: …] jelölés marad.</p>
+    <p class="notice">A műszaki leírás a dokumentum sorrendjében jelenik meg. A szürke „Automatikus” részek a projekt adataiból töltődnek, a „Tényszerű adat” jelzésű fejezetek csak olvashatók, a többi szöveg itt közvetlenül szerkeszthető. A mentés a DRAFT dokumentumot is frissíti. Az „AI-val kitöltés projektadatból” gomb a rendelkezésre álló tényadatokból megírja a fejezeteket; a hiányzó adat helyén [KIEGÉSZÍTENDŐ: …] jelölés marad.</p>
     <div id="status" role="status" aria-live="polite"></div>
     <section id="chat" hidden aria-labelledby="chatTitle">
       <h2 id="chatTitle">Beszélgetés az AI-val</h2>
@@ -105,7 +117,7 @@
         key.includes('TUZVEDELMI'))return 'Jóváhagyott szövegek';
       if(key.startsWith('TERVEZESI_PROGRAM:'))return 'Tervezési program és fejezetszövegek';
       return 'Projekt és helyiségek'}
-    const fieldInputs=new Map(),blockInputs=new Map();
+    const fieldInputs=new Map(),blockInputs=new Map(),fieldRefresh=new Map();
     function badge(text,className){const span=document.createElement('span');span.className=className;span.textContent=text;return span}
     function autoText(text){
       const root=document.createElement('div');root.className='auto-text';
@@ -186,35 +198,159 @@
       }
       parent.append(wrapper);
     }
+    function renderReadonlyText(parent,text){
+      const node=document.createElement('div');node.className='doc-readonly';node.textContent=text||'';parent.append(node);
+    }
+    function renderReadonlyField(parent,field,editableElsewhere){
+      const node=document.createElement('div');node.className='doc-readonly-field';
+      node.append(badge('Tényszerű adat','doc-auto-label'));
+      node.append(document.createTextNode(field.value||field.default||'A dokumentum a projekt adataiból tölti ki.'));
+      if(editableElsewhere){const note=document.createElement('small');note.textContent='A szerkesztés a További adatok szakaszban lehetséges.';node.append(note)}
+      parent.append(node);
+    }
+    function renderValueTable(parent,data,fields){
+      const rows=Array.isArray(data.valueRows)?data.valueRows:[];
+      if(!rows.length){
+        const note=document.createElement('div');note.className='doc-table-note';
+        note.textContent='Az építményérték-táblázat jogszabályi sorai nem érhetők el.';parent.append(note);return;
+      }
+      const note=document.createElement('p');note.className='draft-note';
+      note.textContent='A jogszabályi sorokhoz tartozó nettó alapterületet add meg m²-ben. Csak a kitöltött területű sorok kerülnek a dokumentum táblázatába.';
+      parent.append(note);
+      const scroll=document.createElement('div');scroll.className='doc-table-scroll';
+      const table=document.createElement('table');table.className='doc-value-table';
+      const head=document.createElement('thead');const headRow=document.createElement('tr');
+      ['Jogszabályi sor','Megnevezés','Egységár','Terület (m²)','Érték'].forEach(text=>{
+        const th=document.createElement('th');th.textContent=text;headRow.append(th);
+      });
+      head.append(headRow);table.append(head);
+      const body=document.createElement('tbody');const totalRow=document.createElement('tr');totalRow.className='doc-value-total';
+      const totalLabel=document.createElement('td');totalLabel.colSpan=4;totalLabel.textContent='MINDÖSSZESEN';
+      const totalValue=document.createElement('td');totalValue.textContent='0 E Ft';
+      totalRow.append(totalLabel,totalValue);
+      const inputs=[],valueCells=[];
+      const updateTotal=()=>{
+        let total=0;
+        rows.forEach((row,index)=>{
+          const area=Number(String(inputs[index].value).replace(',','.'))||0;
+          const value=area*Number(row.price||0);
+          valueCells[index].textContent=value?value.toLocaleString('hu-HU')+' E Ft':'–';
+          total+=value;
+        });
+        totalValue.textContent=total?total.toLocaleString('hu-HU')+' E Ft':'0 E Ft';
+      };
+      rows.forEach((row,index)=>{
+        const tr=document.createElement('tr');
+        const number=document.createElement('td');number.textContent=row.number+'.';
+        const label=document.createElement('td');label.textContent=row.label;
+        const price=document.createElement('td');price.textContent=Number(row.price||0).toLocaleString('hu-HU')+' E Ft/m²';
+        const areaCell=document.createElement('td');
+        const field=fields.get(row.key)||{key:row.key,help:row.label,value:'',manual:false};
+        const input=document.createElement('input');input.type='number';input.min='0';input.step='0.01';
+        input.value=String(field.value||'').replace(',','.');
+        input.dataset.key=row.key;input.setAttribute('aria-label',row.label+' területe m²-ben');
+        input.addEventListener('input',updateTotal);
+        fieldInputs.set(row.key,{input,field});inputs.push(input);
+        areaCell.append(input);
+        const valueCell=document.createElement('td');valueCell.textContent='–';valueCells.push(valueCell);
+        tr.append(number,label,price,areaCell,valueCell);body.append(tr);
+      });
+      body.append(totalRow);table.append(body);scroll.append(table);parent.append(scroll);
+      updateTotal();
+    }
+    function isStructureSubheading(text,next){
+      const value=String(text||'').trim();
+      if(!value||value.length>60)return false;
+      if(/[.!?:;,]$/.test(value))return false;
+      if(value.includes('\t'))return false;
+      if(!/^[A-ZÁÉÍÓÖŐÚÜŰ]/.test(value))return false;
+      return String(next||'').trim().length>value.length;
+    }
+    function splitStructure(text){
+      const lines=String(text||'').split('\n');const blocks=[];let current=null;
+      for(let i=0;i<lines.length;i++){
+        const line=lines[i],trimmed=line.trim();
+        if(!trimmed){if(current)current.body.push('');continue}
+        let next='';for(let j=i+1;j<lines.length;j++){if(lines[j].trim()){next=lines[j];break}}
+        if(isStructureSubheading(trimmed,next)){current={title:trimmed,body:[]};blocks.push(current)}
+        else{if(!current){current={title:'',body:[]};blocks.push(current)}current.body.push(line)}
+      }
+      return blocks.length?blocks:[{title:'',body:[]}];
+    }
+    function renderStructureField(parent,field){
+      const wrapper=document.createElement('div');wrapper.className='doc-field structure-field';
+      const label=document.createElement('label');label.textContent=field.help;
+      if(field.manual)label.append(' ',badge('Kézi','manual-badge'));
+      wrapper.append(label);
+      const hidden=document.createElement('input');hidden.type='hidden';hidden.dataset.key=field.key;
+      hidden.value=field.value||field.default||'';hidden.dataset.original=hidden.value;
+      wrapper.append(hidden);
+      const host=document.createElement('div');wrapper.append(host);
+      let blocks=[];
+      const rebuild=()=>{hidden.value=blocks.map(block=>(block.title?block.title+'\n':'')+block.body.join('\n').trim()).join('\n\n').trim()};
+      const paint=text=>{
+        blocks=splitStructure(text);host.replaceChildren();
+        blocks.forEach(block=>{
+          if(block.title){const h=document.createElement('h3');h.className='doc-structure-subheading';h.textContent=block.title;host.append(h)}
+          const area=document.createElement('textarea');area.className='doc-text';area.rows=3;area.value=block.body.join('\n').trim();
+          area.addEventListener('input',()=>{block.body=area.value.split('\n');rebuild();autoSize(area)});
+          host.append(area);
+        });
+        rebuild();
+      };
+      paint(hidden.value);
+      fieldInputs.set(field.key,{input:hidden,field});
+      fieldRefresh.set(field.key,paint);
+      if(field.manual){
+        const reset=document.createElement('button');reset.type='button';reset.className='reset-field';reset.textContent='Visszaállítás';
+        reset.title='A szerkezetleírás visszaállítása a sablon szövegére.';
+        reset.addEventListener('click',()=>{hidden.value='';paint(field.default||'');const mark=label.querySelector('.manual-badge');if(mark)mark.remove();reset.remove();form.requestSubmit()});
+        wrapper.append(reset);
+      }
+      parent.append(wrapper);
+    }
     function renderOutline(data){
       const root=document.getElementById('groups');root.replaceChildren();
-      fieldInputs.clear();blockInputs.clear();
+      fieldInputs.clear();blockInputs.clear();fieldRefresh.clear();
       const fields=new Map((data.fields||[]).map(field=>[field.key,field]));
       const blocks=new Map((data.blocks||[]).map(block=>[block.id,block]));
       const outline=Array.isArray(data.outline)?data.outline:[];
+      const missingSet=new Set(data.missingFields||[]);
       let current=null,seenHeading=false;
       const section=title=>{const node=document.createElement('section');node.className='doc-section';
         if(title){const h=document.createElement('h2');h.className='doc-section-title';h.textContent=title;node.append(h)}
         root.append(node);current=node;return node};
       for(const entry of outline){
         if(entry.type==='heading'){
-          const block=blocks.get(entry.id)||entry;const node=section();
-          const h=document.createElement('h2');h.className='doc-section-title';
-          h.append(blockControl(block,true));node.append(h);
-          if(block.manual){const reset=document.createElement('button');reset.type='button';reset.className='reset-field';reset.textContent='Visszaállítás';reset.title='A cím visszaállítása a sablon szövegére.';reset.addEventListener('click',()=>{const input=blockInputs.get(entry.id)?.input;if(input)input.value=block.text;reset.remove();form.requestSubmit()});node.append(reset)}
-          current=node;seenHeading=true;continue;
+          if(entry.level==='chapter'){
+            const node=section();const h=document.createElement('h2');h.className='doc-section-title';h.textContent=entry.text;node.append(h);
+            current=node;seenHeading=true;
+          }else{
+            if(!current)current=section(seenHeading?'Műszaki leírás':'Címlap és tartalomjegyzék');
+            const h=document.createElement('h3');h.className='doc-subheading';h.textContent=entry.text;current.append(h);
+          }
+          continue;
         }
         if(!current)current=section(seenHeading?'Műszaki leírás':'Címlap és tartalomjegyzék');
-        if(entry.type==='text'){renderBlock(current,blocks.get(entry.id)||entry);continue}
+        if(entry.type==='text'){
+          if(entry.readonly)renderReadonlyText(current,entry.text);
+          else renderBlock(current,blocks.get(entry.id)||entry);
+          continue;
+        }
         if(entry.type==='fields'){
           if(contextText(entry.context)){const node=document.createElement('div');node.className='doc-context';node.append(autoText(entry.context));current.append(node)}
-          for(const key of entry.keys||[]){const field=fields.get(key);if(field)renderField(current,field)}
+          for(const key of entry.keys||[]){const field=fields.get(key);if(!field)continue;if(entry.readonly)renderReadonlyField(current,field,missingSet.has(key));else renderField(current,field)}
           continue;
         }
         if(entry.type==='field'){
           if(!entry.range&&contextText(entry.context)){const node=document.createElement('div');node.className='doc-context';node.append(autoText(entry.context));current.append(node)}
-          const field=fields.get(entry.key);if(field)renderField(current,field);continue;
+          const field=fields.get(entry.key);if(!field)continue;
+          if(entry.readonly)renderReadonlyField(current,field,missingSet.has(field.key));
+          else if(entry.key==='SZERKEZETEK LEÍRÁSA')renderStructureField(current,field);
+          else renderField(current,field);
+          continue;
         }
+        if(entry.type==='valueTable'){renderValueTable(current,data,fields);continue}
         if(entry.type==='auto'){
           const node=document.createElement('div');node.className='doc-auto';
           node.append(badge('Automatikus – projektadatból','doc-auto-label'),autoText(entry.preview||entry.text||''));
@@ -320,12 +456,17 @@
         if(!input)continue;
         if(input.value!==row.dataset.original){changed++;continue}
         const text=row.querySelector('textarea').value.trim();if(!text)continue;
-        input.value=text;autoSize(input);applied++}
+        input.value=text;autoSize(input);
+        const refresh=fieldRefresh.get(row.dataset.key);if(refresh)refresh(text);
+        applied++}
       message(applied+' fejezet bekerült az űrlapba. '+(changed?changed+' időközben módosított mezőt kihagytam. ':'')+'A dokumentum frissítése előtt mentsd az űrlapot.',applied?'success':'error');
       if(applied)preview.hidden=true;
     });
     form.addEventListener('submit',async event=>{event.preventDefault();const button=document.getElementById('save');
-      const values={};fieldInputs.forEach(({input},key)=>{values[key]=input.value});
+      const values={};fieldInputs.forEach(({input},key)=>{
+        const value=input.dataset.original!==undefined&&input.value===input.dataset.original?'':input.value;
+        values[key]=value;
+      });
       const blocks={};blockInputs.forEach(({input,block},id)=>{
         const value=input.value;
         blocks[id]={value:value===block.text?'':value,original:block.text};

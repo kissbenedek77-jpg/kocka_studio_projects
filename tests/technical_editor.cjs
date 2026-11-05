@@ -86,17 +86,30 @@ test('A /technical oldal a dokumentum sorrendjében, szerkeszthető blokkokkal j
   const payload = {
     sheetUrl:'https://docs.google.com/spreadsheets/d/x/edit',aiConfigured:false,
     outline:[
-      {type:'heading',id:'b0',text:'Adatok',ordinal:0},
-      {type:'text',id:'b1',text:'Fix szöveg',ordinal:1},
-      {type:'fields',keys:['TERV_TARGYA'],context:'Tárgy: {{TERV_TARGYA}}',ordinal:2},
+      {type:'heading',level:'chapter',number:1,text:'Adatok',ordinal:0,readonly:true},
+      {type:'text',id:'b1',text:'Fix szöveg',ordinal:1,readonly:false},
+      {type:'fields',keys:['TERV_TARGYA'],context:'Tárgy: {{TERV_TARGYA}}',ordinal:2,readonly:false},
       {type:'auto',text:'{{Teljes név}}',preview:'Lovas Krisztián',ordinal:3},
-      {type:'table',note:'Táblázat'}
+      {type:'table',note:'Táblázat'},
+      {type:'heading',level:'chapter',number:4,text:'Építményérték számítása',ordinal:4,readonly:true},
+      {type:'valueTable',chapter:4},
+      {type:'field',key:'SZERKEZETEK LEÍRÁSA',range:true,chapter:7,readonly:false,context:'Alapozás'}
     ],
     blocks:[
-      {id:'b0',text:'Adatok',value:'',manual:false},
       {id:'b1',text:'Fix szöveg',value:'Kézi szöveg',manual:true}
     ],
-    fields:[{key:'TERV_TARGYA',help:'A terv tárgya',value:'',manual:false,default:'alap'}],
+    fields:[
+      {key:'TERV_TARGYA',help:'A terv tárgya',value:'',manual:false,default:'alap'},
+      {key:'EPITMENYERTEK:terulet_1_m2',help:'1. sor területe',value:'100',manual:false},
+      {key:'EPITMENYERTEK:terulet_5_m2',help:'5. sor területe',value:'',manual:false},
+      {key:'SZERKEZETEK LEÍRÁSA',help:'Szerkezetek leírása',
+        value:'Alapozás\nAz épület alatt sávalap készül.\n\nTeherhordó szerkezetek\nAz épület tartószerkezete teherhordó falakból áll.',
+        manual:false,default:''}
+    ],
+    valueRows:[
+      {number:1,key:'EPITMENYERTEK:terulet_1_m2',label:'Lakóépület',unit:'nettó alapterület / m²',price:'600'},
+      {number:5,key:'EPITMENYERTEK:terulet_5_m2',label:'Pince',unit:'nettó alapterület / m²',price:'400'}
+    ],
     missingFields:[]
   };
   const {ids} = createContext(payload,calls);
@@ -120,6 +133,11 @@ test('A /technical oldal a dokumentum sorrendjében, szerkeszthető blokkokkal j
     textOf(node).includes('Lovas Krisztián')),
     'Az automatikus szöveg előnézete hiányzik.');
   assert.ok(all.some(node => node.className === 'doc-table-note'));
+  const area1 = all.find(node => node.dataset?.key === 'EPITMENYERTEK:terulet_1_m2');
+  assert.ok(area1,'Hiányzik az építményérték 1. sorának területmezője.');
+  assert.equal(area1.value,'100');
+  assert.ok(all.some(node => node.className === 'doc-structure-subheading' &&
+    node.textContent === 'Alapozás'),'Hiányzik a szerkezetleírás alpontcíme.');
 
   const form = ids.get('form');
   field.value = 'Új tervtárgy';
@@ -128,5 +146,5 @@ test('A /technical oldal a dokumentum sorrendjében, szerkeszthető blokkokkal j
   const save = calls.find(call => call.name === 'dashboardSaveTechnicalFields');
   assert.ok(save,'A mentés nem indult el.');
   assert.equal(save.args[2].b1.value,'Módosított fix szöveg');
-  assert.equal(save.args[2].b0.value,'');
+  assert.equal(save.args[1]['EPITMENYERTEK:terulet_1_m2'],'100');
 });

@@ -22,7 +22,9 @@ test('Node a műszaki DRAFT-ot projekt Sheetből és PLN fájlból készíti',as
     values:{get:async options=>({data:{values:options.range.includes('Adatok')&&
       !options.range.includes('AO1')?[row]:[]}}),
       batchGet:async()=>({data:{valueRanges:[{values:sheetRows},{values:program},
-        {values:[['TERV_TARGYA','Lakóépület bővítése']]},{values:[['Helyiség','Terület (m²)']]}]}}),
+        {values:[['TERV_TARGYA','Lakóépület bővítése'],
+          ['EPITMENYERTEK:terulet_1_m2','30']]},
+        {values:[['Helyiség','Terület (m²)']]}]}}),
       update:async options=>{if(options.range.includes('J7'))areaWritten=options;return {data:{}};},
       append:async options=>{appended=options;return {data:{}};}}
   }});

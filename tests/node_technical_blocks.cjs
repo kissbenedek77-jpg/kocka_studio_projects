@@ -19,21 +19,26 @@ function documentWith(items) {
   return {body: {content: items}, namedRanges: {}};
 }
 
-test('A sablon kirajzolása a dokumentum sorrendjét követi', () => {
+test('A sablon kirajzolása a dokumentum sorrendjét és a fejezetkorlátokat követi', () => {
   const doc = documentWith([
     paragraph('Címlap', 'NORMAL_TEXT', 0),
     paragraph('Adatok', 'NORMAL_TEXT', 7),
-    paragraph('Építés jellege: {{EPITES_JELLEGE}}', 'NORMAL_TEXT', 14),
-    paragraph('Fix szöveg', 'NORMAL_TEXT', 45)
+    paragraph('Fix szöveg', 'NORMAL_TEXT', 14),
+    paragraph('Tűzvédelem', 'NORMAL_TEXT', 25),
+    paragraph('Szerkeszthető szöveg', 'NORMAL_TEXT', 37),
+    paragraph('Építés jellege: {{EPITES_JELLEGE}}', 'NORMAL_TEXT', 60)
   ]);
   doc.body.content[1].paragraph.bullet = {};
+  doc.body.content[3].paragraph.bullet = {};
   const outline = templateOutline(doc, {manualKeys: ['EPITES_JELLEGE']});
   assert.deepEqual(outline.entries.map(item => item.type),
-    ['text', 'heading', 'fields', 'text']);
-  assert.equal(outline.entries[0].id, 'b0');
-  assert.equal(outline.entries[1].text, 'Adatok');
-  assert.deepEqual(outline.entries[2].keys, ['EPITES_JELLEGE']);
-  assert.deepEqual(outline.blocks.map(item => item.id), ['b0', 'b1', 'b3']);
+    ['text', 'heading', 'text', 'heading', 'text', 'fields']);
+  assert.equal(outline.entries[0].readonly, true);
+  assert.equal(outline.entries[1].level, 'chapter');
+  assert.equal(outline.entries[2].readonly, true);
+  assert.equal(outline.entries[3].level, 'chapter');
+  assert.equal(outline.entries[4].readonly, false);
+  assert.deepEqual(outline.blocks.map(item => item.id), ['b4']);
   assert.deepEqual(outline.missingFields, []);
 });
 
@@ -48,12 +53,13 @@ test('A táblázatban álló mezők a táblázat helyén jelennek meg', () => {
     }
   };
   const doc = documentWith([
-    paragraph('Építményérték számítása', 'NORMAL_TEXT', 0),
+    paragraph('Adatok', 'NORMAL_TEXT', 0),
     table
   ]);
+  doc.body.content[0].paragraph.bullet = {};
   const outline = templateOutline(doc, {manualKeys: ['SZAMITOTT_EPITMENYERTEK']});
-  const types = outline.entries.map(item => item.type);
-  assert.deepEqual(types, ['text', 'table', 'fields']);
+  assert.deepEqual(outline.entries.map(item => item.type),
+    ['heading', 'table', 'fields']);
   assert.deepEqual(outline.entries[2].keys, ['SZAMITOTT_EPITMENYERTEK']);
   assert.deepEqual(outline.missingFields, []);
 });
@@ -63,8 +69,8 @@ test('A blokkfelülírás és a visszaállítás a megfelelő bekezdést cserél
     paragraph('Cím', 'HEADING_3', 0),
     paragraph('Fix szöveg', 'NORMAL_TEXT', 5)
   ]);
-  const outline = templateOutline(doc, {manualKeys: []});
-  const override = blockRequests(doc, outline.blocks, new Map([['b1', 'Új szöveg']]));
+  const blocks = [{id:'b1',text:'Fix szöveg',ordinal:1}];
+  const override = blockRequests(doc, blocks, new Map([['b1', 'Új szöveg']]));
   assert.equal(override.applied, 1);
   assert.deepEqual(override.requests[0], {
     deleteContentRange: {range: {startIndex: 5, endIndex: 15}}
@@ -77,7 +83,7 @@ test('A blokkfelülírás és a visszaállítás a megfelelő bekezdést cserél
     paragraph('Cím', 'HEADING_3', 0),
     paragraph('Új szöveg', 'NORMAL_TEXT', 5)
   ]);
-  const reset = blockRequests(generated, outline.blocks, new Map([['b1', '']]));
+  const reset = blockRequests(generated, blocks, new Map([['b1', '']]));
   assert.equal(reset.applied, 1);
   assert.deepEqual(reset.requests[1], {
     insertText: {location: {index: 5}, text: 'Fix szöveg'}

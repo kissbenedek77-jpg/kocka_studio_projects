@@ -11,8 +11,8 @@ const {planScale, resolvePlanScale, planScaleWarning} = require('./plans.cjs');
 const {restartPostfix,appendPostfix,copiedName,expectedPath} = require('./restart.cjs');
 const {technicalSheetValues, technicalProgramLines} = require('./technical_sheet.cjs');
 const {parseRoomText,areaText} = require('./room_data.cjs');
-const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,fieldSheetRows,fieldHash,validateTechnicalField,manualValues,placeholderOnly,technicalReplacements} = require('./technical_document.cjs');
-const {valueTableRequests} = require('./value_table.cjs');
+const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,fieldSheetRows,fieldHash,validateTechnicalField,manualValues,placeholderOnly,technicalReplacements,valueRowsFromManual} = require('./technical_document.cjs');
+const {valueTableRowRequests,findValueTable} = require('./value_table.cjs');
 const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs');
 const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
 const {sectionTexts,sectionReplaceRequests,sectionStyleRequests,hasTemplateSections,retegrendStyleRequests,structureHeadingRequests,appendixRequests} = require('./technical_texts.cjs');
@@ -767,6 +767,9 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       missingFields:outline.missingFields,
       blocks:outline.blocks.map(block => ({id:block.id,text:block.text,
         value:overrides.get(block.id) || '',manual:Boolean(overrides.get(block.id))})),
+      valueRows:[1,5].map(number => ({number,key:`EPITMENYERTEK:terulet_${number}_m2`,
+        label:EPITMENYERTEK_ROWS[number].label,unit:EPITMENYERTEK_ROWS[number].unit,
+        price:EPITMENYERTEK_ROWS[number].price})),
       fields:MANUAL_FIELDS.map(([key,help]) => {
         const entry = current.get(key) || {value:'',hash:''};
         // Kézi: az érték eltér az utoljára generálttól (vagy nincs lenyomat).
@@ -1931,29 +1934,68 @@ function googleClient(config, refreshToken = '', authOverride = null) {
         }
       }
     }
-    // Az építményérték-táblázat a minta alapján: a cím és az egységár oszlop,
-    // a terület és az egységár szorzatából az érték, alul a MINDÖSSZESEN sor.
-    // A helyettesítés után olvassuk vissza, mert a terület a cellába már bekerült.
-    if (type === 'muszakiLeiras' && roomData) {
+    // Az építményérték-táblázat a /technical űrlapon megadott, jogszabályi
+    // soronkénti m²-értékekből készül. Csak a kitöltött területű sorok
+    // szerepelnek a táblázatban; a többi adatsor üresen marad vagy törlődik.
+    if (type === 'muszakiLeiras') {
       try {
-        const valueDocument = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+        const valueRows = valueRowsFromManual(mergeValues);
+        let valueDocument = (await googleQuota.run('docsRead',1,() => docs.documents.get({
           documentId,includeTabsContent:false
         }))).data;
-        const valueTable = valueTableRequests(valueDocument,{fallback:[
-          {label:EPITMENYERTEK_ROWS[1].label,price:EPITMENYERTEK_ROWS[1].price},
-          {label:EPITMENYERTEK_ROWS[5].label,price:EPITMENYERTEK_ROWS[5].price}
-        ]});
-        if (valueTable && !valueTable.rows.length)
-          warn('Az építményérték-táblázatban nincs kitölthető terület, ezért az érték '+
-            'és az összeg üresen maradt. Ellenőrizd a nettó alapterületet.');
-        if (valueTable?.requests?.length) {
-          await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
-            requestBody:{requests:valueTable.requests,
-              ...(valueDocument.revisionId
-                ? {writeControl:{requiredRevisionId:valueDocument.revisionId}} : {})}}));
-          document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
-            documentId,includeTabsContent:false
-          }))).data;
+        let table = findValueTable(valueDocument);
+        if (!table) {
+          warn('Az építményérték-táblázat nem található a dokumentumban; a '+
+            'jogszabályi soronkénti területek nem kerültek be.');
+        } else {
+          let dataCount = (table.table.tableRows || []).length - 1;
+          if (valueRows.length > dataCount) {
+            const requests = [];
+            for (let index = 0; index < valueRows.length - dataCount; index++)
+              requests.push({insertTableRow:{tableCellLocation:{
+                tableStartLocation:{index:table.startIndex},
+                rowIndex:dataCount - 1,columnIndex:0},insertBelow:true}});
+            await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({
+              documentId,requestBody:{requests,
+                ...(valueDocument.revisionId
+                  ? {writeControl:{requiredRevisionId:valueDocument.revisionId}} : {})}}));
+            valueDocument = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+              documentId,includeTabsContent:false
+            }))).data;
+            table = findValueTable(valueDocument);
+            dataCount = table ? (table.table.tableRows || []).length - 1 : 0;
+          } else {
+            const targetCount = Math.max(1,valueRows.length);
+            if (targetCount < dataCount) {
+              // A felesleges, már nem használt adatsorok törlése. Legalább egy
+              // adatsor marad, hogy a táblázat szerkezete megmaradjon.
+              const requests = [];
+              for (let index = dataCount - 1; index >= targetCount; index--)
+                requests.push({deleteTableRow:{tableCellLocation:{
+                  tableStartLocation:{index:table.startIndex},
+                  rowIndex:index,columnIndex:0}}});
+              await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({
+                documentId,requestBody:{requests,
+                  ...(valueDocument.revisionId
+                    ? {writeControl:{requiredRevisionId:valueDocument.revisionId}} : {})}}));
+              valueDocument = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+                documentId,includeTabsContent:false
+              }))).data;
+              table = findValueTable(valueDocument);
+            }
+          }
+          if (table) {
+            const valueTable = valueTableRowRequests(table,valueRows);
+            if (valueTable.requests.length) {
+              await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({
+                documentId,requestBody:{requests:valueTable.requests,
+                  ...(valueDocument.revisionId
+                    ? {writeControl:{requiredRevisionId:valueDocument.revisionId}} : {})}}));
+              document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+                documentId,includeTabsContent:false
+              }))).data;
+            } else document = valueDocument;
+          }
         }
       } catch (error) {
         if (error.status === 429) throw error;
