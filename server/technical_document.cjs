@@ -4,7 +4,7 @@ const crypto = require('node:crypto');
 const {documentValues} = require('./doc_merge.cjs');
 const {ADDRESSES, SHEET_PREFIX, technicalSheetValues, technicalProgramLines} = require('./technical_sheet.cjs');
 const {programReplacements,exitCount,PROGRAM_LETTERS} = require('./technical_program.cjs');
-const {renderTemplate} = require('./technical_texts.cjs');
+const {renderTemplate,SECTION_KEYS} = require('./technical_texts.cjs');
 const {planScale} = require('./plans.cjs');
 const {teruletrendezesiNyilatkozat} = require('./teruletrendezes.cjs');
 
@@ -73,6 +73,13 @@ const FIELD_KEYS = new Set(MANUAL_FIELDS.map(([key]) => key));
 // A felületen a hosszú fejezetszövegek alapértéke a sablon dokumentumból jön.
 const CHAPTER_KEYS = ['TUZVEDELMI_LEIRAS_JOVAHAGYOTT_SZOVEG','SZERKEZETEK LEÍRÁSA',
   'RETEGRENDEK_JOVAHAGYOTT_SZOVEG','TERVEZOI_NYILATKOZAT_JOVAHAGYOTT_SZOVEG'];
+// Ezekben a fejezetszövegekben a sablonból származó {{...}} jelölők maradhatnak:
+// a felület a sablon alapértékét mutatja, a generálás pedig a projekt adataival
+// tölti ki őket. Más kézi mezőben a jelölő hibás, mert nem oldódna fel.
+const MARKER_TEXT_KEYS = new Set([...SECTION_KEYS,...CHAPTER_KEYS]);
+function allowsTemplateMarkers(key) {
+  return MARKER_TEXT_KEYS.has(String(key || '').trim());
+}
 function validIsoDate(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) &&
     new Date(value).toISOString().slice(0,10) === value;
@@ -208,8 +215,11 @@ function manualValues(rows) {
     if (hash && hash === fieldHash(value)) continue;
     // A csak hiányjelölést tartalmazó mező nem kitöltött adat: a számított vagy
     // a sablonból származó szöveg lép a helyére. Így egy korábban elmentett
-    // hiányjelölés nem ragad be a műszaki adatlapra.
-    if (value && !/\{\{[^{}]+\}\}/.test(value) && !placeholderOnly(value))
+    // hiányjelölés nem ragad be a műszaki adatlapra. A fejezetszövegekben
+    // viszont maradhat sablonjelölő, mert azt a generálás kitölti.
+    const hasMarker = /\{\{[^{}]+\}\}/.test(value);
+    if (value && !placeholderOnly(value) &&
+        (allowsTemplateMarkers(key) || !hasMarker))
       result[key] = value;
   }
   return result;
@@ -411,6 +421,15 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     warn('A kijáratok számát a földszinti bejárati/előtér helyiségek alapján becsültük ('+
       exits+' db); ellenőrizd az alaprajzokon.');
   const context = {...values,...sheet};
+  // A felületen szerkesztett fejezetszövegben maradt sablonjelölőket ugyanúgy
+  // oldjuk fel, mint a sablon alapértékét, hogy a kész dokumentumba ne kerüljön
+  // nyers {{...}}.
+  for (const key of MARKER_TEXT_KEYS) {
+    if (!String(manual[key] || '').trim()) continue;
+    if (!/\{\{[^{}]+\}\}/.test(String(values[key] || ''))) continue;
+    values[key] = renderTemplate(values[key],context);
+    context[key] = values[key];
+  }
   for (const [key,text] of Object.entries(sectionTexts || {})) {
     if (key.startsWith('TERVEZESI_PROGRAM:')) continue;
     if (String(values[key] || '').trim()) continue;
@@ -529,8 +548,8 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     keep.has(key) || String(value ?? '').trim()));
 }
 
-module.exports = {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,
-  validateTechnicalField,fieldSheetRows,fieldHash,
+module.exports = {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,MARKER_TEXT_KEYS,EPITMENYERTEK_ROWS,
+  allowsTemplateMarkers,validateTechnicalField,fieldSheetRows,fieldHash,
   manualValues,numberFromSheet,technicalReview,technicalReplacements,displayDate,validIsoDate,
   validHungarianDate,hungarianToday,gapText,placeholderOnly,fillRetegrendGaps,DATA_MARKER,tervTargya,rendeltetesiKategoria,
   valueRowsFromManual,basementArea};

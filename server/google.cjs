@@ -11,7 +11,7 @@ const {planScale, resolvePlanScale, planScaleWarning} = require('./plans.cjs');
 const {restartPostfix,appendPostfix,copiedName,expectedPath} = require('./restart.cjs');
 const {technicalSheetValues, technicalProgramLines} = require('./technical_sheet.cjs');
 const {parseRoomText,areaText} = require('./room_data.cjs');
-const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,fieldSheetRows,fieldHash,validateTechnicalField,manualValues,placeholderOnly,technicalReplacements,valueRowsFromManual} = require('./technical_document.cjs');
+const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,fieldSheetRows,fieldHash,validateTechnicalField,manualValues,placeholderOnly,technicalReplacements,valueRowsFromManual,allowsTemplateMarkers} = require('./technical_document.cjs');
 const {valueTableRowRequests,findValueTable} = require('./value_table.cjs');
 const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs');
 const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
@@ -877,7 +877,8 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     for (const [key] of MANUAL_FIELDS) {
       if (!Object.prototype.hasOwnProperty.call(input,key)) continue;
       const value = String(input[key] ?? '').trim();
-      if (value.length > 50000 || /\{\{[^{}]+\}\}/.test(value))
+      const hasMarker = /\{\{[^{}]+\}\}/.test(value);
+      if (value.length > 50000 || (hasMarker && !allowsTemplateMarkers(key)))
         throw new Error('Érvénytelen vagy túl hosszú műszaki adat: '+key);
       validateTechnicalField(key,value);
       data.push({range:`'${FIELD_SHEET}'!B${positions.get(key)}`,values:[[value]]});

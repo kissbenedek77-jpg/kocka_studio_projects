@@ -2,7 +2,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {technicalReplacements,technicalReview,validateTechnicalField,fieldSheetRows,
-  fieldHash,manualValues,tervTargya,rendeltetesiKategoria} = require('../server/technical_document.cjs');
+  fieldHash,manualValues,tervTargya,rendeltetesiKategoria,
+  allowsTemplateMarkers} = require('../server/technical_document.cjs');
 const {mergeRequests,unresolvedMarkers} = require('../server/doc_merge.cjs');
 const {technicalSupplementRequests} = require('../server/technical_upgrade.cjs');
 
@@ -320,4 +321,30 @@ test('A generált érték lenyomata alapján a kézi módosítás felismerhető'
     'A lenyomattól eltérő érték kézi módosítás.');
   row[1]='másik szöveg';row[3]=fieldHash('eltérő');
   assert.equal(manualValues([row]).TERV_TARGYA,'másik szöveg');
+});
+
+test('A szerkesztett fejezetszöveg sablonjelölője a generáláskor kitöltődik',()=>{
+  const fields=fieldSheetRows();
+  fields.find(row=>row[0]==='SZERKEZETEK LEÍRÁSA')[1] =
+    'Alapozás\nA fal {{retegrend:fal_anyag}} anyagból, {{retegrend:fal_vastagsag}} vastagságban.';
+  const manual=manualValues(fields.slice(1));
+  assert.ok(manual['SZERKEZETEK LEÍRÁSA'].includes('{{retegrend:fal_anyag}}'),
+    'A fejezetszöveg a sablonjelölőjével együtt marad meg.');
+  const values=technicalReplacements({project:{uid:'ABC123'},sheetRows:[],programRows:[],
+    fieldRows:fields.slice(1),extraValues:{
+      'retegrend:fal_anyag':'Ytong pórusbeton falazóelem',
+      'retegrend:fal_vastagsag':'37,5 cm'}});
+  assert.equal(values['SZERKEZETEK LEÍRÁSA'],
+    'Alapozás\nA fal Ytong pórusbeton falazóelem anyagból, 37,5 cm vastagságban.');
+});
+
+test('A közönséges kézi mezőben a sablonjelölő továbbra is hiba',()=>{
+  const row=fieldSheetRows().find(item=>item[0]==='TERV_TARGYA');
+  row[1]='Lakóépület {{retegrend:fal_anyag}}';
+  assert.equal(manualValues([row]).TERV_TARGYA,undefined,
+    'A nem fejezetszöveg mező jelölője nem kerülhet a dokumentumba.');
+  assert.equal(allowsTemplateMarkers('TERV_TARGYA'),false);
+  assert.equal(allowsTemplateMarkers('SZERKEZETEK LEÍRÁSA'),true);
+  assert.equal(allowsTemplateMarkers('TERVEZESI_PROGRAM:a'),true);
+  assert.equal(allowsTemplateMarkers('RETEGRENDEK_JOVAHAGYOTT_SZOVEG'),true);
 });

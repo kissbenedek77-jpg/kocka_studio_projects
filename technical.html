@@ -380,6 +380,7 @@
         rebuild();
       };
       paint(hidden.value);
+      hidden.dataset.original=hidden.value;
       fieldInputs.set(field.key,{input:hidden,field});
       fieldRefresh.set(field.key,paint);
       if(field.manual){
