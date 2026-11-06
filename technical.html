@@ -125,7 +125,7 @@
       </div>
     </section>
     <form id="form" hidden><div id="groups" class="document"></div>
-      <p class="draft-note" id="aiHint">Az „AI-szövegtervezet” a Helyszín, Koncepció, Szerkezetek, Gépészet, Villamos és Környezet mezőkbe írt tényjegyzetekből dolgozik. Az „AI-val kitöltés projektadatból” a teljes DRAFT-ot elkészíti, a helyszín- és koncepciófejezeteket is beírja; ez 1–2 percig is eltarthat.</p>
+      <p class="draft-note" id="aiHint">Az „AI-szövegtervezet” a Szerkezetek, Gépészet, Villamos és Környezet mezőkbe írt tényjegyzetekből dolgozik. Az „AI-val kitöltés projektadatból” a teljes DRAFT-ot elkészíti; ez 1–2 percig is eltarthat.</p>
       <div class="actions"><button id="save" type="submit">Műszaki leírás mentése</button><button id="draft" type="button" class="secondary">AI-szövegtervezet készítése</button><button id="autoDraft" type="button" class="secondary">AI-val kitöltés projektadatból</button><span>Mentés után a DRAFT műszaki leírás frissül.</span></div></form>
     <section id="draftPreview" hidden aria-labelledby="draftTitle"><h2 id="draftTitle">AI-tervezet – ellenőrzésre</h2><p class="draft-note">A kijelölt fejezeteket szerkesztheted. A „Beillesztés” csak az űrlap mezőit módosítja; utána mentsd őket. A számokat, anyagokat és műszaki állításokat ellenőrizd.</p><div id="draftRows"></div><button id="applyDraft" type="button">Kijelölt fejezetek beillesztése</button></section>
   </main>
@@ -138,7 +138,7 @@
     const chatNode=document.getElementById('chat'),chatToggle=document.getElementById('chatToggle'),
       chatTarget=document.getElementById('chatTarget');
     let chatKeys=new Set(),activeQueued=false;
-    const draftable=key=>key==='EPITES_JELLEGE'||/^(HELYSZIN:|KONCEPCIO:|SZERKEZET:)/.test(key)||
+    const draftable=key=>key==='EPITES_JELLEGE'||/^SZERKEZET:/.test(key)||
       ['GEPESZET:szellozes','GEPESZET:energiaellatas','KORNYEZET:kitermelt_asvanyi_nyersanyag','VILLAMOS:teljesitmeny'].includes(key);
     function openFirstDraftField(){
       const input=[...form.querySelectorAll('[data-key]')].find(item=>draftable(item.dataset.key));
@@ -643,7 +643,7 @@
         if(hint)hint.textContent=ready
           ? 'Az AI-szövegtervezet a kitöltött tényjegyzetekből dolgozik ('+ready+' mező). '+
             'Az AI-val kitöltés projektadatból a teljes DRAFT-ot elkészíti; ez 1–2 percig is eltarthat.'
-          : 'Az AI-szövegtervezethez előbb írj tényjegyzetet a Helyszín, Koncepció vagy Szerkezetek mezőkbe. '+
+          : 'Az AI-szövegtervezethez előbb írj tényjegyzetet a Szerkezetek, Gépészet, Villamos vagy Környezet mezőkbe. '+
             'Az AI-val kitöltés projektadatból a projekt tényadataiból a teljes DRAFT-ot elkészíti.';
         form.hidden=false;chatNode.hidden=!aiReady;
         setChatHeight();refreshActiveField();
@@ -652,7 +652,7 @@
     draftButton.addEventListener('click',async()=>{
       const inputs=[...form.querySelectorAll('[data-key]')].filter(input=>draftable(input.dataset.key)&&input.value.trim());
       if(!inputs.length){
-        message('Az AI-szövegtervezet a tényjegyzetekből dolgozik. Nyisd ki a Helyszín, Koncepció vagy Szerkezetek mezőt, és írj be legalább egy tényt.','error');
+        message('Az AI-szövegtervezet a tényjegyzetekből dolgozik. Nyisd ki a Szerkezetek, Gépészet, Villamos vagy Környezet mezőt, és írj be legalább egy tényt.','error');
         openFirstDraftField();
         return;
       }

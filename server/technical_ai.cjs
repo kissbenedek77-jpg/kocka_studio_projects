@@ -4,8 +4,6 @@
 // jogszabályi, számított és tervezői nyilatkozati mezőket az AI nem írhat.
 const DRAFTABLE_KEYS = new Set([
   'EPITES_JELLEGE',
-  ...['elozmenyek','meglevo_allapot','terep_es_viz','megkozelites'].map(key => `HELYSZIN:${key}`),
-  ...['rendeltetes','elhelyezes','tomeg_es_szintek','tajolas','homlokzat','funkcio'].map(key => `KONCEPCIO:${key}`),
   ...['alapozas','teherhordo','kemenyek','valaszfalak','aljzatok','teto','badogozas',
     'vizszigeteles','hoszigeteles','vakolatok','homlokzat','nyilaszarok','gipszkarton',
     'feluletkepzes','padloburkolatok','asztalos','lakatos'].map(key => `SZERKEZET:${key}`),

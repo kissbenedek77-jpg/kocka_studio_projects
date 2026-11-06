@@ -4,8 +4,6 @@
 // Az új fejezeteket a régi sablon megfelelő pontjai elé illesztjük be.
 const ADDITIONS = [
   {anchor:'Adatok',guard:'Iratjegyzék',text:'Iratjegyzék\n{{IRATJEGYZEK}}\n'},
-  {anchor:'Beépítési paraméterek',guard:'Helyszín és tervelőzmények',text:
-    'Helyszín és tervelőzmények\nTervezési előzmények: {{HELYSZIN:elozmenyek}}\nA telek és a meglévő építmények állapota: {{HELYSZIN:meglevo_allapot}}\nTerepviszonyok és felszíni vízelvezetés: {{HELYSZIN:terep_es_viz}}\nMegközelítés és parkolás: {{HELYSZIN:megkozelites}}\nÉpítészeti koncepció\nRendeltetés és önálló egységek: {{KONCEPCIO:rendeltetes}}\nTelepítés a telken: {{KONCEPCIO:elhelyezes}}\nTömeg, szintek és tetőforma: {{KONCEPCIO:tomeg_es_szintek}}\nTájolás és térkapcsolatok: {{KONCEPCIO:tajolas}}\nHomlokzati kialakítás: {{KONCEPCIO:homlokzat}}\nFunkcionális rend: {{KONCEPCIO:funkcio}}\n'},
   {anchor:'Épület adatai',guard:'Igazoló beépítési mérleg',text:
     'Igazoló beépítési mérleg\n{{BEEPITESI_MERLEG}}\nTerület- és arányadatok egyeztetése: {{ADAT_EGYEZTETES}}\n'},
   {anchor:'Tűzvédelem',guard:'Tervlapok és szakági összhang',text:
@@ -13,6 +11,14 @@ const ADDITIONS = [
 ];
 // A kivett dokumentumadatok: a régi DRAFT-okból is eltávolítjuk őket.
 const REMOVED = [/^Tervfázis:/i,/^Tervszám:/i,/^Revízió(?:\s+jele)?:/i];
+// A korábbi verzió a DRAFT-ba illesztett egy helyszín- és egy koncepciófejezetet.
+// Ezekre nincs szükség, ezért a régi DRAFT-okból eltávolítjuk. Csak akkor
+// törlünk, ha a blokk pontosan a generált címkéket tartalmazza, hogy a kézzel
+// írt, eltérő tartalmat ne veszítse el.
+const NARRATIVE_TITLE = 'Helyszín és tervelőzmények';
+const NARRATIVE_MARKERS = ['Tervezési előzmények:','A telek és a meglévő építmények állapota:',
+  'Építészeti koncepció','Funkcionális rend:'];
+const NARRATIVE_ENDS = new Set(['Beépítési paraméterek','Épület adatai']);
 
 function paragraphs(document) {
   return (document?.body?.content || []).filter(item => item.paragraph).map(item => ({
@@ -20,6 +26,16 @@ function paragraphs(document) {
     end:item.endIndex,
     text:(item.paragraph.elements || []).map(part => part.textRun?.content || '').join('').trim()
   }));
+}
+
+function narrativeRange(lines) {
+  const start = lines.findIndex(line => line.text === NARRATIVE_TITLE);
+  if (start < 0) return null;
+  const end = lines.findIndex((line,index) => index > start && NARRATIVE_ENDS.has(line.text));
+  if (end < 0) return null;
+  const block = lines.slice(start,end).map(line => line.text).join('\n');
+  if (!NARRATIVE_MARKERS.every(marker => block.includes(marker))) return null;
+  return {startIndex:lines[start].index,endIndex:lines[end].index};
 }
 
 function technicalSupplementRequests(document) {
@@ -30,6 +46,9 @@ function technicalSupplementRequests(document) {
     if (!anchor) throw new Error('A régi műszaki DRAFT nem bővíthető automatikusan: '+item.anchor);
     return {insertText:{location:{index:anchor.index},text:item.text}};
   });
+  const narrative = narrativeRange(lines);
+  if (narrative)
+    requests.push({deleteContentRange:{range:narrative}});
   for (const line of lines) {
     if (!REMOVED.some(pattern => pattern.test(line.text))) continue;
     if (line.end > line.index)
@@ -40,4 +59,4 @@ function technicalSupplementRequests(document) {
     a.deleteContentRange.range.startIndex));
 }
 
-module.exports = {technicalSupplementRequests,REMOVED};
+module.exports = {technicalSupplementRequests,REMOVED,NARRATIVE_TITLE};

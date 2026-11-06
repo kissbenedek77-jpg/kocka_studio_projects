@@ -50,16 +50,6 @@ const MANUAL_FIELDS = [
   ['RETEGRENDEK_JOVAHAGYOTT_SZOVEG','Jóváhagyott rétegrendek: azonosító, rétegek kívülről befelé, vastagság és érintett tervlap'],
   ['TERVEZOI_NYILATKOZAT_JOVAHAGYOTT_SZOVEG','Tervező által jóváhagyott nyilatkozat'],
   ['DOKUMENTUM:kiadas_datuma','Kiadás dátuma (ÉÉÉÉ.HH.NN.)'],
-  ['HELYSZIN:elozmenyek','Tervezési előzmények; ha nincsenek, ezt egyértelműen írd le'],
-  ['HELYSZIN:meglevo_allapot','Telek és meglévő építmények tényszerű állapota'],
-  ['HELYSZIN:terep_es_viz','Terepviszonyok és felszíni vízelvezetés tervezett módja'],
-  ['HELYSZIN:megkozelites','Gyalogos és gépjármű megközelítés, parkolás'],
-  ['KONCEPCIO:rendeltetes','Rendeltetés, önálló rendeltetési egységek és területeik'],
-  ['KONCEPCIO:elhelyezes','Épület elhelyezése a telken; elő-, oldal- és hátsókert'],
-  ['KONCEPCIO:tomeg_es_szintek','Tömegformálás, szintek és tetőforma'],
-  ['KONCEPCIO:tajolas','Tájolás, benapozás és a fő helyiségek kapcsolata'],
-  ['KONCEPCIO:homlokzat','Homlokzati megjelenés, jellemző anyagok és színek'],
-  ['KONCEPCIO:funkcio','Helyiségek kapcsolata és használati rend'],
   ['SZAKAG:egyeztetes','Szakági munkarészek és felelős tervezők egyeztetése'],
   ['TERV_HIVATKOZAS','A leíráshoz tartozó helyszínrajz, alaprajz, metszet és homlokzat tervlapjele'],
   // A tervezési program a)–p) pontjának végleges (kiértékelt) szövege. A
@@ -112,15 +102,10 @@ function hungarianToday(now = new Date()) {
 // folyószövegben viszont egyértelmű hiányjelölés, hogy a véglegesítés
 // elutasítsa a piszkozatot.
 const DATA_MARKER = /^(?:TERVEZESI_ADATOK:|EPITMENYERTEK:|SZAMITOTT_EPITMENYERTEK$|PARKOLOEGYENLEG_ERTEKELES$|BEEPITESI_MERLEG$|ADAT_EGYEZTETES$|TERVJEGYZEK$|IRATJEGYZEK$)/;
-// A generálás a DRAFT-ba illesztett helyszín- és koncepciófejezetek helyőrzőit
-// is kitölti. Ha nincs jegyzet, a szokásos hiányjelölés kerül a helyére, hogy
+// A DRAFT-ba illesztett szakági és tervlaphivatkozási helyőrzőket is kitölti a
+// generálás. Ha nincs jegyzet, a szokásos hiányjelölés kerül a helyére, hogy
 // nyers {{...}} ne maradjon a dokumentumban.
-const NARRATIVE_FIELD_KEYS = [
-  'HELYSZIN:elozmenyek','HELYSZIN:meglevo_allapot','HELYSZIN:terep_es_viz',
-  'HELYSZIN:megkozelites','KONCEPCIO:rendeltetes','KONCEPCIO:elhelyezes',
-  'KONCEPCIO:tomeg_es_szintek','KONCEPCIO:tajolas','KONCEPCIO:homlokzat',
-  'KONCEPCIO:funkcio','SZAKAG:egyeztetes','TERV_HIVATKOZAS'
-];
+const NARRATIVE_FIELD_KEYS = ['SZAKAG:egyeztetes','TERV_HIVATKOZAS'];
 const GAP_LABELS = {
   'TERV_TARGYA':'a terv tárgya és az engedélyezési eljárás megnevezése',
   'EPITES_JELLEGE':'az építés jellege',
@@ -135,16 +120,6 @@ const GAP_LABELS = {
   'EPITMENYERTEK:jogszabaly_es_modszer':'az építményérték számításának jogszabályi alapja és módszere',
   'TERV_HIVATKOZAS':'a leíráshoz tartozó tervlapok jele',
   'SZAKAG:egyeztetes':'a szakági munkarészek és a felelős tervezők egyeztetése',
-  'HELYSZIN:elozmenyek':'a tervezési előzmények',
-  'HELYSZIN:meglevo_allapot':'a telek és a meglévő építmények állapota',
-  'HELYSZIN:terep_es_viz':'a terepviszonyok és a felszíni vízelvezetés',
-  'HELYSZIN:megkozelites':'a megközelítés és a parkolás',
-  'KONCEPCIO:rendeltetes':'a rendeltetés és az önálló rendeltetési egységek',
-  'KONCEPCIO:elhelyezes':'az épület elhelyezése a telken',
-  'KONCEPCIO:tomeg_es_szintek':'a tömegformálás, a szintek és a tetőforma',
-  'KONCEPCIO:tajolas':'a tájolás és a benapozás',
-  'KONCEPCIO:homlokzat':'a homlokzati megjelenés',
-  'KONCEPCIO:funkcio':'a helyiségek kapcsolata és használati rendje',
   'GEPESZET:szellozes':'a szellőzés módja',
   'GEPESZET:energiaellatas':'az energiaellátás módja',
   'KORNYEZET:kitermelt_asvanyi_nyersanyag':'a kitermelt ásványi nyersanyag mennyisége',

@@ -106,18 +106,6 @@ const READONLY_CHAPTERS = new Set([0,1,3,5,10,11]);
 const VALUE_TABLE_FIELDS = ['EPITMENYERTEK:terulet_1_m2','EPITMENYERTEK:terulet_5_m2',
   'EPITMENYERTEK:rendeltetesi_kategoria','EPITMENYERTEK:egysegar_eFt_m2',
   'SZAMITOTT_EPITMENYERTEK','EPITMENYERTEK:jogszabaly_es_modszer'];
-// Ezeket a narratív fejezeteket az AI a tényjegyzetekből fogalmazza. A régi
-// sablonban nincs helyük, ezért a szerkesztő a Tervezési program elé illeszti
-// őket, a DRAFT pedig generáláskor kapja meg a hozzájuk tartozó helyőrzőket.
-const NARRATIVE_GROUPS = [
-  {title:'Helyszín és tervelőzmények', keys:[
-    'HELYSZIN:elozmenyek','HELYSZIN:meglevo_allapot',
-    'HELYSZIN:terep_es_viz','HELYSZIN:megkozelites']},
-  {title:'Építészeti koncepció', keys:[
-    'KONCEPCIO:rendeltetes','KONCEPCIO:elhelyezes','KONCEPCIO:tomeg_es_szintek',
-    'KONCEPCIO:tajolas','KONCEPCIO:homlokzat','KONCEPCIO:funkcio']}
-];
-const NARRATIVE_KEYS = NARRATIVE_GROUPS.flatMap(group => group.keys);
 
 function templateOutline(document, {manualKeys = [], values = {}} = {}) {
   const manual = new Set(manualKeys);
@@ -215,26 +203,6 @@ function templateOutline(document, {manualKeys = [], values = {}} = {}) {
     const blockReadonly = readonly || (chapter === 2 && /^[a-p]\)\s/.test(item.text.trim()));
     if (!blockReadonly) blocks.push(block);
     entries.push({type:item.heading?'heading':'text',...block,readonly:blockReadonly,chapter});
-  }
-  // A sablonból hiányzó helyszín- és koncepciófejezetek. A DRAFT generáláskor
-  // megkapja a helyőrzőiket, itt pedig a Tervezési program elé kerülnek, hogy
-  // az AI-jegyzetek a dokumentum sorrendjében, ne a rejtett „További adatok”
-  // alatt legyenek szerkeszthetők.
-  if (!NARRATIVE_KEYS.some(key => used.has(key))) {
-    const chapterTwo = entries.findIndex(entry => entry.type === 'heading' &&
-      entry.level === 'chapter' && entry.number === 2 &&
-      /^Tervezési program/i.test(String(entry.text || '')));
-    if (chapterTwo >= 0) {
-      const additions = [];
-      for (const group of NARRATIVE_GROUPS) {
-        additions.push({type:'heading',level:'subheading',text:group.title,
-          chapter:1,readonly:true});
-        additions.push({type:'fields',keys:group.keys,ordinal:null,context:'',
-          chapter:1,readonly:false});
-        group.keys.forEach(key => used.add(key));
-      }
-      entries.splice(chapterTwo,0,...additions);
-    }
   }
   const missingFields = [...manual].filter(key => !used.has(key));
   return {entries,blocks,missingFields};

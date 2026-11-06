@@ -151,19 +151,19 @@ test('A tervezési program a projekt adatait és a helyiséglistát használja',
 });
 
 test('A chat az aktív mező szövegére szűkíti a kérést', () => {
-  const input = chatInput({message:'Fogalmazd rövidebbre.',focusKey:'HELYSZIN:meglevo_allapot',
-    focusValue:'A telken jelenleg egy régi ház áll.',focusLabel:'Meglévő állapot'},{
-    'HELYSZIN:meglevo_allapot':'Tárolt régi szöveg.',
-    'HELYSZIN:elozmenyek':'A telek 2019-ben került a család tulajdonába.'});
-  assert.deepEqual(Object.keys(input.notes),['HELYSZIN:meglevo_allapot']);
-  assert.equal(input.notes['HELYSZIN:meglevo_allapot'],'A telken jelenleg egy régi ház áll.',
+  const input = chatInput({message:'Fogalmazd rövidebbre.',focusKey:'TERVEZESI_PROGRAM:c',
+    focusValue:'Az ingatlan Dombóvár belterületén helyezkedik el.',focusLabel:'Tervezési program c) pontjának végleges szövege'},{
+    'TERVEZESI_PROGRAM:c':'Tárolt régi szöveg.',
+    'TERVEZESI_PROGRAM:d':'A megfelelőség igazolásának módja.'});
+  assert.deepEqual(Object.keys(input.notes),['TERVEZESI_PROGRAM:c']);
+  assert.equal(input.notes['TERVEZESI_PROGRAM:c'],'Az ingatlan Dombóvár belterületén helyezkedik el.',
     'A felületen szerkesztett, még nem mentett szöveg számít.');
   const prompt = chatPrompt({...input,projectType:'Lakóház'});
   assert.match(prompt,/kizárólag/);
-  assert.match(prompt,/HELYSZIN:meglevo_allapot/);
-  assert.doesNotMatch(prompt,/"HELYSZIN:elozmenyek"/);
-  assert.throws(()=>chatInput({message:'Írd át.',focusKey:'HELYSZIN:meglevo_allapot',
-    focusValue:'   ',focusLabel:'Meglévő állapot'},{'HELYSZIN:elozmenyek':'Előzmény'}),/még üres/);
+  assert.match(prompt,/TERVEZESI_PROGRAM:c/);
+  assert.doesNotMatch(prompt,/"TERVEZESI_PROGRAM:d"/);
+  assert.throws(()=>chatInput({message:'Írd át.',focusKey:'TERVEZESI_PROGRAM:c',
+    focusValue:'   ',focusLabel:'Tervezési program'},{'TERVEZESI_PROGRAM:d':'Szöveg.'}),/még üres/);
   assert.throws(()=>chatInput({message:'Írd át.',focusKey:'DOKUMENTUM:kiadas_datuma',
     focusValue:'2026.10.07.'},{}),/nem kérhető/);
   // A szerkezetleírás egy alpontja és a sablon egy fix bekezdése is önálló célpont.

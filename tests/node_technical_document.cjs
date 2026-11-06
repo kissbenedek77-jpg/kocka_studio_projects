@@ -254,12 +254,37 @@ test('A régi DRAFT bővítése megőrzi az eredeti tartalmat és ismételhető'
   const doc={body:{content:lines.map((line,index)=>({startIndex:1+index*50,
     paragraph:{elements:[{textRun:{content:line+'\n'}}]}}))}};
   const additions=technicalSupplementRequests(doc);
-  assert.equal(additions.length,4);
+  assert.equal(additions.length,3);
   assert.ok(additions.every(item=>item.insertText.location.index>0));
   assert.deepEqual(lines[5],'Meglévő, kézzel jóváhagyott szöveg');
   const upgraded={body:{content:[...doc.body.content,{startIndex:500,paragraph:{elements:[{
     textRun:{content:additions.map(item=>item.insertText.text).join('\n')}}]}}]}};
   assert.deepEqual(technicalSupplementRequests(upgraded),[]);
+});
+
+test('A korábban beillesztett helyszín- és koncepciófejezet kikerül a DRAFT-ból', () => {
+  const lines=['Tartalomjegyzék','Iratjegyzék','Adatok','Helyszín és tervelőzmények',
+    'Tervezési előzmények: [KIEGÉSZÍTENDŐ: a tervezési előzmények.]',
+    'A telek és a meglévő építmények állapota: [KIEGÉSZÍTENDŐ: az állapot.]',
+    'Építészeti koncepció','Funkcionális rend: [KIEGÉSZÍTENDŐ: a használati rend.]',
+    'Beépítési paraméterek','Épület adatai','Tűzvédelem'];
+  const doc={body:{content:lines.map((line,index)=>({startIndex:1+index*50,
+    paragraph:{elements:[{textRun:{content:line+'\n'}}]}}))}};
+  const requests=technicalSupplementRequests(doc);
+  const deletion=requests.find(item=>item.deleteContentRange);
+  assert.ok(deletion,'A régi helyszín- és koncepciófejezetet törölni kell.');
+  assert.equal(deletion.deleteContentRange.range.startIndex,1+3*50);
+  assert.equal(deletion.deleteContentRange.range.endIndex,1+8*50);
+});
+
+test('A kézzel írt, eltérő helyszínfejezetet nem törli a rendszer', () => {
+  const lines=['Adatok','Helyszín és tervelőzmények','Saját, kézzel írt helyszínleírás.',
+    'Beépítési paraméterek','Épület adatai','Tűzvédelem'];
+  const doc={body:{content:lines.map((line,index)=>({startIndex:1+index*50,
+    paragraph:{elements:[{textRun:{content:line+'\n'}}]}}))}};
+  const requests=technicalSupplementRequests(doc);
+  assert.equal(requests.some(item=>item.deleteContentRange),false,
+    'A nem generált szöveget meg kell őrizni.');
 });
 
 test('A korábban elmentett hiányjelölés nem blokkolja a számított fejezetszöveget',()=>{

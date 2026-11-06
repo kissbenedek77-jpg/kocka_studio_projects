@@ -42,7 +42,7 @@ test('A sablon kirajzolása a dokumentum sorrendjét és a fejezetkorlátokat k�
   assert.deepEqual(outline.missingFields, []);
 });
 
-test('A sablonból hiányzó helyszín- és koncepciófejezetek a Tervezési program elé kerülnek', () => {
+test('A szerkesztő nem illeszt helyszín- és koncepciófejezetet a sablonból hiányzó helyükre', () => {
   const doc = documentWith([
     paragraph('Adatok', 'NORMAL_TEXT', 0),
     paragraph('Tervezési program', 'NORMAL_TEXT', 7),
@@ -50,21 +50,17 @@ test('A sablonból hiányzó helyszín- és koncepciófejezetek a Tervezési pro
   ]);
   doc.body.content[0].paragraph.bullet = {};
   doc.body.content[1].paragraph.bullet = {};
-  const outline = templateOutline(doc, {manualKeys: [
-    'HELYSZIN:elozmenyek','KONCEPCIO:rendeltetes','EPITES_JELLEGE']});
+  const outline = templateOutline(doc, {manualKeys: ['EPITES_JELLEGE']});
   const headings = outline.entries.filter(item => item.type === 'heading')
     .map(item => item.text);
-  assert.ok(headings.includes('Helyszín és tervelőzmények'),
-    'A helyszínfejezet címének meg kell jelennie a szerkesztőben.');
-  assert.ok(headings.includes('Építészeti koncepció'),
-    'A koncepciófejezet címének meg kell jelennie a szerkesztőben.');
+  assert.equal(headings.includes('Helyszín és tervelőzmények'), false,
+    'A helyszínfejezet nem kerülhet a szerkesztőbe.');
+  assert.equal(headings.includes('Építészeti koncepció'), false,
+    'A koncepciófejezet nem kerülhet a szerkesztőbe.');
   const fields = outline.entries.filter(item => item.type === 'fields')
     .flatMap(item => item.keys);
-  assert.ok(fields.includes('HELYSZIN:elozmenyek'));
-  assert.ok(fields.includes('KONCEPCIO:rendeltetes'));
-  assert.equal(outline.missingFields.includes('HELYSZIN:elozmenyek'), false,
-    'A fejezetbe illesztett mező nem kerülhet a rejtett További adatok közé.');
-  assert.equal(outline.missingFields.includes('KONCEPCIO:rendeltetes'), false);
+  assert.equal(fields.some(key => /^(HELYSZIN|KONCEPCIO):/.test(key)), false);
+  assert.deepEqual(outline.missingFields, ['EPITES_JELLEGE']);
 });
 
 test('A táblázatban álló mezők a táblázat helyén jelennek meg', () => {

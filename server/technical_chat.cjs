@@ -4,7 +4,10 @@
 // kijelölt fejezetszövegek fogalmazódnak újra. A chat nem ment: a javaslatot a
 // felület tölti az űrlapba, a mentés külön, ellenőrzött művelet.
 const {DRAFTABLE_KEYS} = require('./technical_ai.cjs');
+const {PROGRAM_LETTERS} = require('./technical_program.cjs');
 const CHAT_KEYS = new Set([...DRAFTABLE_KEYS,
+  // A tervezési program a)–p) pontja is önálló, szerkeszthető szöveg.
+  ...PROGRAM_LETTERS.map(letter => `TERVEZESI_PROGRAM:${letter}`),
   'HELYISEGLISTA','TUZVEDELMI_LEIRAS_JOVAHAGYOTT_SZOVEG','SZERKEZETEK LEÍRÁSA',
   'RETEGRENDEK_JOVAHAGYOTT_SZOVEG','TERVEZOI_NYILATKOZAT_JOVAHAGYOTT_SZOVEG',
   'TERV_TARGYA','SZAKAG:egyeztetes','TERV_HIVATKOZAS']);

@@ -6,9 +6,9 @@ const {googleClient}=require('../server/google.cjs');
 const {draftInputs,draftPrompt,parseDraftResult}=require('../server/technical_ai.cjs');
 
 test('Műszaki AI csak tényszerű prózamezőkből készít ellenőrizhető tervezetet',()=>{
-  const notes=draftInputs({'HELYSZIN:meglevo_allapot':'Üres telek, nincs épület.',
+  const notes=draftInputs({'SZERKEZET:alapozas':'Üres telek, nincs épület.',
     'OVEZET:ellenorzes_allapota':'Ellenőrizve'});
-  assert.deepEqual(Object.keys(notes),['HELYSZIN:meglevo_allapot']);
+  assert.deepEqual(Object.keys(notes),['SZERKEZET:alapozas']);
   const prompt=draftPrompt({notes,sheetValues:{'TERVEZESI_ADATOK:Munkalap1!E2':'1120',
     'TERVEZESI_ADATOK:Munkalap1!B3':'25% szezonális'},projectType:'Lakóház'});
   assert.match(prompt,/Ne találj ki anyagot/);
@@ -16,8 +16,8 @@ test('Műszaki AI csak tényszerű prózamezőkből készít ellenőrizhető ter
   assert.doesNotMatch(prompt,/szezonális/);
   assert.throws(()=>draftInputs({'OVEZET:forras_url':'https://example.com'}),/legalább egy/);
   assert.deepEqual(parseDraftResult({candidates:[{content:{parts:[{text:JSON.stringify({
-    sections:[{key:'HELYSZIN:meglevo_allapot',text:'A telken jelenleg nem áll épület.'}]
-  })}]}}]},notes),{'HELYSZIN:meglevo_allapot':'A telken jelenleg nem áll épület.'});
+    sections:[{key:'SZERKEZET:alapozas',text:'A telken jelenleg nem áll épület.'}]
+  })}]}}]},notes),{'SZERKEZET:alapozas':'A telken jelenleg nem áll épület.'});
   assert.throws(()=>parseDraftResult({candidates:[{content:{parts:[{text:JSON.stringify({
     sections:[{key:'OVEZET:forras_url',text:'Kitalált HÉSZ.'}]
   })}]}}]},notes),/érvénytelen/);
@@ -47,15 +47,15 @@ test('Műszaki AI a projektadatlapból dolgozik, a tervezetet nem menti automati
   process.env.GEMINI_API_KEY='test-key';process.env.GEMINI_TECHNICAL_MODEL='gemini-2.5-flash';
   global.fetch=async(url,options)=>{requests.push({url,body:JSON.parse(options.body)});
     return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify({
-      sections:[{key:'HELYSZIN:meglevo_allapot',text:'A telek jelenleg beépítetlen.'}]
+      sections:[{key:'SZERKEZET:alapozas',text:'A telek jelenleg beépítetlen.'}]
     })}]}}]})};};
   try{
     const client=googleClient({clientId:'test',clientSecret:'test',baseUrl:'https://node.example',
       sheetId:'technical-ai-main',sheetName:'Adatok'});
     const result=await client.draftTechnicalText('ABC123',{
-      'HELYSZIN:meglevo_allapot':'Beépítetlen telek.',
+      'SZERKEZET:alapozas':'Beépítetlen telek.',
       'OVEZET:forras_url':'https://example.com'});
-    assert.equal(result.sections['HELYSZIN:meglevo_allapot'],'A telek jelenleg beépítetlen.');
+    assert.equal(result.sections['SZERKEZET:alapozas'],'A telek jelenleg beépítetlen.');
     assert.equal(requests.length,1);
     assert.equal(readRanges.some(range=>range.includes('Munkalap1')),true);
     assert.equal(JSON.stringify(requests[0].body).includes('OVEZET:forras_url'),false);

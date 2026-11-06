@@ -78,7 +78,7 @@ function mockTechnical({roomContent,fetch:fetchImpl}={}) {
       paragraph:{elements:[{startIndex:start,textRun:{content:text+'\n'}}]}};
   };
   const body={content:[
-    paragraphItem('{{TERV_TARGYA}} {{HELYSZIN:meglevo_allapot}} {{HELYISEGLISTA}} {{TERVEZESI_PROGRAM:b}}'),
+    paragraphItem('{{TERV_TARGYA}} {{HELYISEGLISTA}} {{TERVEZESI_PROGRAM:b}}'),
     paragraphItem('Adatok'),
     paragraphItem('Beépítési paraméterek'),
     paragraphItem('Épület adatai'),
@@ -141,7 +141,7 @@ test('A műszaki leírás egy kéréssel, AI-val elkészül és a fejezetek ment
   }
 });
 
-test('A generálás a DRAFT-ba illeszti a helyszín- és koncepciófejezeteket',async()=>{
+test('A generálás nem illeszti a DRAFT-ba a helyszín- és koncepciófejezeteket',async()=>{
   const harness=mockTechnical({roomContent:[
     '| Helyiség szintjének neve | Helyiség neve | Mért terület',
     '1 | Földszint | nappali | 30,00'].join('\n')});
@@ -151,10 +151,11 @@ test('A generálás a DRAFT-ba illeszti a helyszín- és koncepciófejezeteket',
     const inserted=harness.state.docWrites
       .flatMap(write=>write.requestBody.requests || [])
       .map(item=>item.insertText?.text || '').join('\n');
-    assert.match(inserted,/Helyszín és tervelőzmények/,
-      'A helyszín- és koncepciófejezetek helyőrzőinek a DRAFT-ba kell kerülniük.');
-    assert.match(inserted,/HELYSZIN:elozmenyek/);
-    assert.match(inserted,/KONCEPCIO:rendeltet/);
+    assert.doesNotMatch(inserted,/Helyszín és tervelőzmények/,
+      'A helyszínfejezet nem kerülhet a DRAFT-ba.');
+    assert.doesNotMatch(inserted,/Építészeti koncepció/);
+    assert.doesNotMatch(inserted,/HELYSZIN:|KONCEPCIO:/);
+    assert.match(inserted,/Iratjegyzék/,'A dokumentumokhoz tartozó kiegészítés megmarad.');
   }finally{
     harness.restore();
   }

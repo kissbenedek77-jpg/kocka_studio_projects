@@ -4,16 +4,6 @@
 // tényszerű projektadatokból megfogalmazhat. Az itt szereplő kulcsok
 // megegyeznek a műszaki adatlap és a dokumentumsablon mezőivel.
 const TITLES = {
-  'HELYSZIN:elozmenyek':'Tervezési előzmények',
-  'HELYSZIN:meglevo_allapot':'Meglévő állapot',
-  'HELYSZIN:terep_es_viz':'Terepviszonyok és vízelvezetés',
-  'HELYSZIN:megkozelites':'Megközelítés és parkolás',
-  'KONCEPCIO:rendeltetes':'Rendeltetés',
-  'KONCEPCIO:elhelyezes':'Épület elhelyezése',
-  'KONCEPCIO:tomeg_es_szintek':'Tömegformálás és szintek',
-  'KONCEPCIO:tajolas':'Tájolás és benapozás',
-  'KONCEPCIO:homlokzat':'Homlokzati megjelenés',
-  'KONCEPCIO:funkcio':'Funkcionális kapcsolatok',
   EPITES_JELLEGE:'Az építés jellege'
 };
 // A szerkezet-, gépészet-, környezet- és villamos-fejezetek szövege a sablonból

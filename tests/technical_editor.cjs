@@ -118,17 +118,18 @@ test('A chat a képernyőn látható első mezőre vonatkozik',async () => {
   const payload = {
     sheetUrl:'https://docs.google.com/spreadsheets/d/x/edit',aiConfigured:true,
     outline:[
-      {type:'heading',level:'chapter',number:1,text:'Helyszín és tervelőzmények',readonly:true},
-      {type:'fields',keys:['HELYSZIN:meglevo_allapot'],context:'',readonly:false},
+      {type:'heading',level:'chapter',number:1,text:'Adatok',readonly:true},
+      {type:'fields',keys:['TERV_TARGYA'],context:'',readonly:false},
       {type:'heading',level:'chapter',number:2,text:'Tervezési program',readonly:true},
-      {type:'fields',keys:['KONCEPCIO:rendeltetes'],context:'',readonly:false}
+      {type:'field',key:'TERVEZESI_PROGRAM:c',range:true,readonly:false}
     ],
     blocks:[],
     fields:[
-      {key:'HELYSZIN:meglevo_allapot',help:'Meglévő állapot',value:'Régi ház áll a telken.',manual:false},
-      {key:'KONCEPCIO:rendeltetes',help:'Rendeltetés',value:'Lakóház.',manual:false}
+      {key:'TERV_TARGYA',help:'A terv tárgya',value:'Lakóépület felújítása.',manual:false},
+      {key:'TERVEZESI_PROGRAM:c',help:'Tervezési program c) pontjának végleges szövege',
+        value:'Az ingatlan Dombóvár belterületén helyezkedik el.',manual:false}
     ],
-    chatKeys:['HELYSZIN:meglevo_allapot','KONCEPCIO:rendeltetes'],
+    chatKeys:['TERV_TARGYA','TERVEZESI_PROGRAM:c'],
     valueRows:[],placeholderValues:{},editablePlaceholders:[],missingFields:[]
   };
   const {ids,window} = createContext(payload,calls);
@@ -142,8 +143,8 @@ test('A chat a képernyőn látható első mezőre vonatkozik',async () => {
   };
   walk(groups);
   const inputFor = key => all.find(node => node.dataset?.key === key);
-  const first = inputFor('HELYSZIN:meglevo_allapot');
-  const second = inputFor('KONCEPCIO:rendeltetes');
+  const first = inputFor('TERV_TARGYA');
+  const second = inputFor('TERVEZESI_PROGRAM:c');
   assert.ok(first && second,'Hiányoznak a szerkeszthető mezők.');
   assert.match(first.className,/active-input/,'Az első látható beviteli mező aktív jelölést kap.');
   assert.doesNotMatch(second.className,/active-input/);
@@ -154,7 +155,7 @@ test('A chat a képernyőn látható első mezőre vonatkozik',async () => {
   window.scrollHandler();
   assert.doesNotMatch(first.className,/active-input/,'A kigörgetett mező már nem aktív.');
   assert.match(second.className,/active-input/,'A látható első mező lesz aktív.');
-  assert.match(ids.get('chatTarget').textContent,/Rendeltetés/,
+  assert.match(ids.get('chatTarget').textContent,/Tervezési program c\)/,
     'A chat a kijelölt beviteli mezőt nevezi meg.');
 
   // A felső térköz (24 px) fölött kilógó mező még nem aktív, a következő igen.
@@ -169,9 +170,9 @@ test('A chat a képernyőn látható első mezőre vonatkozik',async () => {
   await new Promise(resolve => setTimeout(resolve,20));
   const chat = calls.find(call => call.name === 'dashboardTechnicalChat');
   assert.ok(chat,'A chat kérés nem indult el.');
-  assert.equal(chat.args[1].focusKey,'KONCEPCIO:rendeltetes');
-  assert.equal(chat.args[1].focusValue,'Lakóház.');
-  assert.equal(chat.args[1].focusLabel,'Rendeltetés');
+  assert.equal(chat.args[1].focusKey,'TERVEZESI_PROGRAM:c');
+  assert.equal(chat.args[1].focusValue,'Az ingatlan Dombóvár belterületén helyezkedik el.');
+  assert.equal(chat.args[1].focusLabel,'Tervezési program c) pontjának végleges szövege');
 });
 
 test('A szerkezetleírás alpontjai külön beviteli mezőként célpontok',async () => {
