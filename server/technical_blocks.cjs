@@ -12,7 +12,6 @@ const BLOCK_HEADER = ['Blokk','Szöveg','Eredeti','Frissítve'];
 const BLOCK_ID = /^b\d+$/;
 const AUTO_LABELS = {
   TERVJEGYZEK:'A tervjegyzék a PDFA mappa tervlapjaiból automatikusan készül.',
-  IRATJEGYZEK:'Az iratjegyzék a dokumentumokból automatikusan készül.',
   BEEPITESI_MERLEG:'A beépítési mérleg a tervezési adatokból automatikusan készül.',
   ADAT_EGYEZTETES:'Az adategyeztetés a tervezési adatokból automatikusan készül.',
   PARKOLOEGYENLEG_ERTEKELES:'A parkolóegyenleg a tervezési adatokból automatikusan készül.'

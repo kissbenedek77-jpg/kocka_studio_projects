@@ -81,25 +81,28 @@
     .chat-log{display:grid;gap:.6rem;margin:.4rem 0 .9rem}.chat-log:empty{display:none}
     .chat-log p{margin:0;padding:.7rem .9rem;border-radius:10px;background:#eef4f5;white-space:pre-wrap}
     .chat-log p.me{background:#e2edf0;border-left:4px solid #287b82}
-    .chat-actions{display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;margin-top:.6rem}
-    /* A chat a képernyő alján marad, a szerkesztő pedig az éppen látható első
-       mezőt jelöli: az AI-kérés mindig erre a mezőre vonatkozik. */
+    .chat-actions{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.45rem}
+    /* A chat a képernyő alján marad, kompakt magassággal. */
     #chat[hidden]{display:none}
     #chat{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(1060px,100%);
       margin:0;padding:0;z-index:20;display:flex;flex-direction:column;
-      max-height:min(52vh,430px);border-radius:14px 14px 0 0;box-shadow:0 -8px 24px #16374626}
-    #chat .chat-head{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding:.65rem 1.1rem;border-bottom:1px solid #e3eaec;flex:none}
-    #chat .chat-head h2{font-size:1rem;margin:0}
-    #chatToggle{padding:.35rem .8rem;font-size:.82rem;min-height:2.2rem;flex:none}
-    #chat .chat-target{margin:0;padding:.45rem 1.1rem;background:#eef6f7;color:#24506b;font-size:.85rem;border-bottom:1px solid #e3eaec;flex:none}
-    #chat .chat-body{padding:.8rem 1.1rem 1rem;overflow:auto;min-height:0;flex:1 1 auto}
-    #chat.collapsed .chat-target,#chat.collapsed .chat-body{display:none}
-    #chat .draft-note{font-size:.88rem}
+      max-height:min(30vh,220px);border-radius:12px 12px 0 0;box-shadow:0 -6px 18px #1637461f}
+    #chat .chat-head{display:flex;align-items:center;gap:.6rem;padding:.35rem .75rem;border-bottom:1px solid #e3eaec;flex:none}
+    #chat .chat-head h2{font-size:.82rem;margin:0;flex:none;color:#526873;text-transform:uppercase;letter-spacing:.08em}
+    #chat .chat-target{margin:0;flex:1 1 auto;min-width:0;font-size:.8rem;color:#24506b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #chatToggle{padding:.2rem .55rem;font-size:.85rem;min-height:1.8rem;flex:none;line-height:1}
+    #chat .chat-body{padding:.45rem .75rem .55rem;overflow:auto;min-height:0;flex:1 1 auto}
+    #chat.collapsed .chat-body{display:none}
+    #chat .chat-log{max-height:6.5rem;overflow:auto;gap:.3rem;margin:.1rem 0 .4rem}
+    #chat .chat-log p{padding:.35rem .55rem;font-size:.84rem;line-height:1.35}
+    #chat .chat-input-row{display:flex;gap:.45rem;align-items:flex-end;min-width:0}
+    #chat textarea{flex:1 1 auto;width:auto;min-width:0;min-height:2.1rem;max-height:5.5rem;resize:none;padding:.45rem .55rem;font-size:.9rem;line-height:1.35}
+    #chat .chat-input-row button{padding:.45rem .9rem;min-height:2.1rem;font-size:.88rem;flex:none}
     /* Az aktív beviteli mező: finom jelzés, hogy a chat kérése erre vonatkozik. */
     .doc-field textarea.active-input,.doc-field input.active-input,
     .doc-line.active-input,.doc-text.active-input{
       border-color:#8ec6d2;background:#f1f9fa;box-shadow:0 0 0 3px #9ed2dc33}
-    @media(max-width:700px){#chat{max-height:46vh;width:100%}#chat .chat-head,#chat .chat-target{padding-left:.9rem;padding-right:.9rem}#chat .chat-body{padding:.7rem .9rem .9rem}}
+    @media(max-width:700px){#chat{max-height:min(36vh,240px);width:100%}#chat .chat-head,#chat .chat-body{padding-left:.65rem;padding-right:.65rem}}
     @media(max-width:700px){.doc-section>summary.doc-section-title{padding:1rem}.doc-section-body{padding:0 1rem 1rem}header{padding:1rem}.actions{padding:.8rem 0 max(.8rem,env(safe-area-inset-bottom))}}
     @media(max-width:480px){main{padding:.75rem;padding-bottom:calc(var(--chat-height,0px) + 1.2rem)}.actions{display:grid;grid-template-columns:minmax(0,1fr);gap:.6rem}.actions button{width:100%;min-height:44px}.notice,.doc-section{overflow-wrap:anywhere}}
   </style>
@@ -110,18 +113,18 @@
     <div class="links"><a id="dashboardLink" href="/dashboard">Vissza a dashboardra</a><a id="sheetLink" hidden>Tervezési adatlap megnyitása</a></div>
     <p class="notice">A műszaki leírás a dokumentum sorrendjében jelenik meg. A szürke „Automatikus” részek a projekt adataiból töltődnek, a „Tényszerű adat” jelzésű fejezetek csak olvashatók, a többi szöveg itt közvetlenül szerkeszthető. A mentés a DRAFT dokumentumot is frissíti. Az „AI-val kitöltés projektadatból” gomb a rendelkezésre álló tényadatokból megírja a fejezeteket; a hiányzó adat helyén [KIEGÉSZÍTENDŐ: …] jelölés marad.</p>
     <div id="status" role="status" aria-live="polite"></div>
-    <section id="chat" hidden aria-labelledby="chatTitle">
+    <section id="chat" hidden aria-labelledby="chatTitle" title="Az AI csak az éppen látható beviteli mező szövegét alakítja át. Számot, anyagot, jogszabályt és megfelelőséget nem talál ki.">
       <div class="chat-head">
-        <h2 id="chatTitle">Beszélgetés az AI-val</h2>
-        <button id="chatToggle" type="button" class="secondary" aria-expanded="true" aria-controls="chatBody">Összecsukás</button>
+        <h2 id="chatTitle">AI</h2>
+        <p class="chat-target" id="chatTarget" aria-live="polite">Görgess egy mezőhöz</p>
+        <button id="chatToggle" type="button" class="secondary" aria-expanded="true" aria-controls="chatBody" aria-label="Összecsukás" title="Összecsukás">–</button>
       </div>
-      <p class="chat-target" id="chatTarget" aria-live="polite">Görgess egy szerkeszthető mezőhöz: a kérés mindig a képernyőn látható első mezőre vonatkozik.</p>
       <div class="chat-body" id="chatBody">
-        <p class="draft-note">Írd le, min változtasson azon a beviteli mezőn, amelyik éppen a képernyőn van (az első látható mező). Az AI csak ennek az egy mezőnek a szövegét alakítja át; a javaslatot előbb átnézheted, és csak a „Beillesztés” után kerül az űrlapba. Számot, anyagot és megfelelőséget nem talál ki.</p>
         <div id="chatLog" class="chat-log" aria-live="polite"></div>
-        <label for="chatMessage">Üzenet az AI-nak</label>
-        <textarea id="chatMessage" rows="2" maxlength="2000" placeholder="Például: fogalmazd rövidebbre ezt a bekezdést."></textarea>
-        <div class="chat-actions"><button id="chatSend" type="button">Küldés</button></div>
+        <div class="chat-input-row">
+          <textarea id="chatMessage" rows="1" maxlength="2000" aria-label="Üzenet az AI-nak" placeholder="Mit változtassak ezen a mezőn?"></textarea>
+          <button id="chatSend" type="button">Küldés</button>
+        </div>
       </div>
     </section>
     <form id="form" hidden><div id="groups" class="document"></div>
@@ -192,9 +195,7 @@
     function updateChatTarget(){
       if(!chatTarget)return;
       const id=activeTargetId();
-      chatTarget.textContent=id
-        ? 'A kérés a(z) „'+activeTargetLabel()+'” beviteli mezőre vonatkozik; más mező nem változik.'
-        : 'Görgess egy szerkeszthető beviteli mezőhöz: a kérés mindig a képernyőn látható első mezőre vonatkozik.';
+      chatTarget.textContent=id?'Mező: „'+activeTargetLabel()+'”':'Görgess egy mezőhöz';
     }
     function setActiveTarget(target){
       if(activeTarget===target)return;
@@ -675,8 +676,10 @@
     if(chatToggle)chatToggle.addEventListener('click',()=>{
       const collapsed=hasClass(chatNode,'collapsed');
       toggleClass(chatNode,'collapsed',!collapsed);
-      chatToggle.textContent=collapsed?'Összecsukás':'Kinyitás';
+      chatToggle.textContent=collapsed?'–':'+';
       chatToggle.setAttribute('aria-expanded',String(collapsed));
+      chatToggle.setAttribute('aria-label',collapsed?'Összecsukás':'Kinyitás');
+      chatToggle.title=collapsed?'Összecsukás':'Kinyitás';
       setChatHeight();scheduleActiveField();
     });
     window.addEventListener('scroll',scheduleActiveField,{passive:true});
@@ -697,7 +700,9 @@
       const focusKey=activeTargetId();
       if(!focusKey){message('Görgess egy szerkeszthető beviteli mezőhöz: a kérés arra a mezőre vonatkozik, amelyik éppen a képernyőn van.','error');return}
       const focusInput=activeTargetInput();
-      const focusValue=focusInput?String(focusInput.value||''):'';
+      // Ha a mező még üres, de a felület a sablon alapértékét mutatja (helyőrző),
+      // akkor a chat azt a látható szöveget alakítja át.
+      const focusValue=focusInput?String(focusInput.value||focusInput.placeholder||''):'';
       const focusLabel=activeTargetLabel();
       logChat(text,true);chatMessage.value='';chatSend.disabled=true;message('Az AI válaszol…');
       try{

@@ -155,7 +155,8 @@ test('A generálás nem illeszti a DRAFT-ba a helyszín- és koncepciófejezetek
       'A helyszínfejezet nem kerülhet a DRAFT-ba.');
     assert.doesNotMatch(inserted,/Építészeti koncepció/);
     assert.doesNotMatch(inserted,/HELYSZIN:|KONCEPCIO:/);
-    assert.match(inserted,/Iratjegyzék/,'A dokumentumokhoz tartozó kiegészítés megmarad.');
+    assert.doesNotMatch(inserted,/Iratjegyzék/,'Az iratjegyzék nem kerülhet a DRAFT-ba.');
+    assert.match(inserted,/Igazoló beépítési mérleg/,'A beépítési mérleg kiegészítés megmarad.');
   }finally{
     harness.restore();
   }

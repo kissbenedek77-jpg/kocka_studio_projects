@@ -3,7 +3,6 @@
 // A már létező DRAFT-ok tartalmát és névvel jelölt mezőit megőrizzük.
 // Az új fejezeteket a régi sablon megfelelő pontjai elé illesztjük be.
 const ADDITIONS = [
-  {anchor:'Adatok',guard:'Iratjegyzék',text:'Iratjegyzék\n{{IRATJEGYZEK}}\n'},
   {anchor:'Épület adatai',guard:'Igazoló beépítési mérleg',text:
     'Igazoló beépítési mérleg\n{{BEEPITESI_MERLEG}}\nTerület- és arányadatok egyeztetése: {{ADAT_EGYEZTETES}}\n'},
   {anchor:'Tűzvédelem',guard:'Tervlapok és szakági összhang',text:
@@ -11,10 +10,12 @@ const ADDITIONS = [
 ];
 // A kivett dokumentumadatok: a régi DRAFT-okból is eltávolítjuk őket.
 const REMOVED = [/^Tervfázis:/i,/^Tervszám:/i,/^Revízió(?:\s+jele)?:/i];
-// A korábbi verzió a DRAFT-ba illesztett egy helyszín- és egy koncepciófejezetet.
-// Ezekre nincs szükség, ezért a régi DRAFT-okból eltávolítjuk. Csak akkor
-// törlünk, ha a blokk pontosan a generált címkéket tartalmazza, hogy a kézzel
-// írt, eltérő tartalmat ne veszítse el.
+// A korábbi verzió két szakaszt illesztett a DRAFT-ba (iratjegyzék, valamint
+// helyszín- és koncepciófejezet). Ezekre nincs szükség, ezért a régi DRAFT-okból
+// eltávolítjuk. Csak akkor törlünk, ha a blokk pontosan a generált tartalmat
+// tartalmazza, hogy a kézzel írt, eltérő szöveget ne veszítse el.
+const IRAT_TITLE = 'Iratjegyzék';
+const IRAT_MARKER = 'Építészeti műszaki leírás (jelen dokumentum)';
 const NARRATIVE_TITLE = 'Helyszín és tervelőzmények';
 const NARRATIVE_MARKERS = ['Tervezési előzmények:','A telek és a meglévő építmények állapota:',
   'Építészeti koncepció','Funkcionális rend:'];
@@ -28,13 +29,16 @@ function paragraphs(document) {
   }));
 }
 
-function narrativeRange(lines) {
-  const start = lines.findIndex(line => line.text === NARRATIVE_TITLE);
+// Egy cím és a következő fejezetcím közötti blokk törlése, ha a blokk tartalma
+// megegyezik a korábban automatikusan beillesztett szöveggel.
+function blockRange(lines, {title,ends,markers = [],text = ''}) {
+  const start = lines.findIndex(line => line.text === title);
   if (start < 0) return null;
-  const end = lines.findIndex((line,index) => index > start && NARRATIVE_ENDS.has(line.text));
+  const end = lines.findIndex((line,index) => index > start && ends.has(line.text));
   if (end < 0) return null;
   const block = lines.slice(start,end).map(line => line.text).join('\n');
-  if (!NARRATIVE_MARKERS.every(marker => block.includes(marker))) return null;
+  if (text && !block.includes(text)) return null;
+  if (!markers.every(marker => block.includes(marker))) return null;
   return {startIndex:lines[start].index,endIndex:lines[end].index};
 }
 
@@ -46,9 +50,11 @@ function technicalSupplementRequests(document) {
     if (!anchor) throw new Error('A régi műszaki DRAFT nem bővíthető automatikusan: '+item.anchor);
     return {insertText:{location:{index:anchor.index},text:item.text}};
   });
-  const narrative = narrativeRange(lines);
-  if (narrative)
-    requests.push({deleteContentRange:{range:narrative}});
+  const irat = blockRange(lines, {title:IRAT_TITLE,ends:new Set(['Adatok']),text:IRAT_MARKER});
+  if (irat) requests.push({deleteContentRange:{range:irat}});
+  const narrative = blockRange(lines, {title:NARRATIVE_TITLE,ends:NARRATIVE_ENDS,
+    markers:NARRATIVE_MARKERS});
+  if (narrative) requests.push({deleteContentRange:{range:narrative}});
   for (const line of lines) {
     if (!REMOVED.some(pattern => pattern.test(line.text))) continue;
     if (line.end > line.index)
@@ -59,4 +65,4 @@ function technicalSupplementRequests(document) {
     a.deleteContentRange.range.startIndex));
 }
 
-module.exports = {technicalSupplementRequests,REMOVED,NARRATIVE_TITLE};
+module.exports = {technicalSupplementRequests,REMOVED,NARRATIVE_TITLE,IRAT_TITLE};

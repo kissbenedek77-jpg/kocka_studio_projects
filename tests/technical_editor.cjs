@@ -165,13 +165,17 @@ test('A chat a képernyőn látható első mezőre vonatkozik',async () => {
   assert.match(second.className,/active-input/,
     'A felső térköz alatt látszó mező aktiválódik.');
 
+  // A mező még nincs mentve: a felület a sablon alapértékét mutatja helyőrzőként,
+  // a chatnek ezt a látható szöveget kell átadnia.
+  second.value='';
+  second.placeholder='A környéken kialakult építészeti arculat nincs.';
   ids.get('chatMessage').value = 'Fogalmazd rövidebbre.';
   ids.get('chatSend').clickHandler();
   await new Promise(resolve => setTimeout(resolve,20));
   const chat = calls.find(call => call.name === 'dashboardTechnicalChat');
   assert.ok(chat,'A chat kérés nem indult el.');
   assert.equal(chat.args[1].focusKey,'TERVEZESI_PROGRAM:c');
-  assert.equal(chat.args[1].focusValue,'Az ingatlan Dombóvár belterületén helyezkedik el.');
+  assert.equal(chat.args[1].focusValue,'A környéken kialakult építészeti arculat nincs.');
   assert.equal(chat.args[1].focusLabel,'Tervezési program c) pontjának végleges szövege');
 });
 

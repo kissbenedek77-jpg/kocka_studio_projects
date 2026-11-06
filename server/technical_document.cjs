@@ -101,7 +101,7 @@ function hungarianToday(now = new Date()) {
 // A táblázatcellákban üres érték marad (a felhasználói döntés szerint), a
 // folyószövegben viszont egyértelmű hiányjelölés, hogy a véglegesítés
 // elutasítsa a piszkozatot.
-const DATA_MARKER = /^(?:TERVEZESI_ADATOK:|EPITMENYERTEK:|SZAMITOTT_EPITMENYERTEK$|PARKOLOEGYENLEG_ERTEKELES$|BEEPITESI_MERLEG$|ADAT_EGYEZTETES$|TERVJEGYZEK$|IRATJEGYZEK$)/;
+const DATA_MARKER = /^(?:TERVEZESI_ADATOK:|EPITMENYERTEK:|SZAMITOTT_EPITMENYERTEK$|PARKOLOEGYENLEG_ERTEKELES$|BEEPITESI_MERLEG$|ADAT_EGYEZTETES$|TERVJEGYZEK$)/;
 // A DRAFT-ba illesztett szakági és tervlaphivatkozási helyőrzőket is kitölti a
 // generálás. Ha nincs jegyzet, a szokásos hiányjelölés kerül a helyére, hogy
 // nyers {{...}} ne maradjon a dokumentumban.
@@ -499,12 +499,6 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     warn('A tervjegyzékben egyetlen tervlaphoz sem ismert a méretarány, ezért a '+
       'tervlapok lépték nélkül szerepelnek. A léptéket a tervlap „M = 1:XXX” '+
       'felirata adja; ellenőrizd, hogy a tervlapon olvasható-e.');
-  values.IRATJEGYZEK = ['Építészeti műszaki leírás (jelen dokumentum)',
-    ...writtenFiles.filter(file => file.mimeType === 'application/vnd.google-apps.document' ||
-      file.mimeType === 'application/pdf').map(file => String(file.name || '').trim())
-      .filter(Boolean).filter(name => !/^Építész műszaki leírás/i.test(name))]
-    .filter((name,index,array) => array.indexOf(name) === index)
-    .sort((a,b) => a.localeCompare(b,'hu')).join('\n');
   // A sablon táblázata közvetlen cellahivatkozásokat használ. Ha egy cella üres,
   // a helyén üres érték marad – nem maradhat nyers {{...}} jelölő. Ezért a mező
   // létezik, az értéke viszont lehet üres; hiányzó adatot nem találunk ki.
@@ -513,7 +507,7 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
     'TERVEZESI_ADATOK:megengedett_lakasszam_db',
     'TERVEZESI_ADATOK:tervezett_foldszinti_beepites_szazalek',
     'TERVEZESI_ADATOK:tervezett_foldszinti_beepites_m2',
-    'PARKOLOEGYENLEG_ERTEKELES','BEEPITESI_MERLEG','TERVJEGYZEK','IRATJEGYZEK',
+    'PARKOLOEGYENLEG_ERTEKELES','BEEPITESI_MERLEG','TERVJEGYZEK',
     // A tűzvédelmi és szerkezeti leírás adat-helyőrzői: ha a forrásadat hiányzik,
     // a mező létezik, de üres – a szövegben hiányjelölés lesz, nem nyers jelölő.
     'tuzszakasz_m2','kijarat_db','retegrend:fal_anyag','retegrend:fal_vastagsag',

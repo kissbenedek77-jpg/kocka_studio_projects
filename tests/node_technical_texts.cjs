@@ -179,6 +179,20 @@ test('A chat az aktív mező szövegére szűkíti a kérést', () => {
     /nem kérhető/);
 });
 
+test('A chat nem fogad el kitalált jogszabályi vagy megfelelőségi hivatkozást', () => {
+  const notes = {'TERVEZESI_PROGRAM:d':'A szomszédos épületek magastetősek.'};
+  const response = text => ({candidates:[{content:{parts:[{text:JSON.stringify({
+    reply:'Kész.',sections:[{key:'TERVEZESI_PROGRAM:d',text}]})}]}}]});
+  const filtered = parseChatResult(response(
+    'A terv a HÉSZ követelményeinek betartásával készül.'), notes);
+  assert.deepEqual(Object.keys(filtered.sections),[],
+    'A forrásban nem szereplő HÉSZ-hivatkozás nem kerülhet a tervezetbe.');
+  const kept = parseChatResult(response(
+    'A szomszédos épületek magastetősek, a terv illeszkedik.'), notes);
+  assert.equal(kept.sections['TERVEZESI_PROGRAM:d'],
+    'A szomszédos épületek magastetősek, a terv illeszkedik.');
+});
+
 test('A chat csak szerkeszthető mezőt fogad el és a választ ellenőrzi', () => {
   const input = chatInput({message:'Rövidítsd a tűzvédelmet.'},{
     'TUZVEDELMI_LEIRAS_JOVAHAGYOTT_SZOVEG':'Hosszú tűzvédelmi szöveg.',

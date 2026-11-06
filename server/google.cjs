@@ -744,8 +744,11 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     let outline = {entries:[],blocks:[],missingFields:MANUAL_FIELDS.map(([key]) => key)};
     let defaults = {};
     const previewValues = {};
+    let projectData = null;
+    let sheetRows = [];
     try {
       const {data} = await project(uid);
+      projectData = data;
       Object.assign(previewValues,documentValues(data));
       if (data.projekt_varos) previewValues.telepules = data.projekt_varos;
     } catch (error) {
@@ -755,7 +758,8 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       if (entry.value) previewValues[key] = entry.value;
     try {
       const parts = await sheetParts(sheet.id,["'Munkalap1'!A1:M20"]);
-      Object.assign(previewValues,technicalSheetValues(parts[0]?.values || []));
+      sheetRows = parts[0]?.values || [];
+      Object.assign(previewValues,technicalSheetValues(sheetRows));
     } catch (error) {
       if (error.status === 429) throw error;
     }
@@ -764,6 +768,21 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       outline = templateOutline(template,{manualKeys:MANUAL_FIELDS.map(([key]) => key),
         values:previewValues});
       defaults = sectionTexts(template);
+      // A sablonból származó alapértékeket a projekt adataival kitöltve adjuk a
+      // felületnek: így a helyőrző és a chat is a látható, kész szöveget kapja,
+      // nem a nyers {{...}} jelölőket. A számítás nem indít új Google-hívást.
+      if (projectData) {
+        try {
+          const computed = await technicalReplacements({project:projectData,
+            sheetRows,programRows:[],fieldRows:[],sectionTexts:defaults,
+            templateMarkers:templateMarkers(template)});
+          for (const [key,value] of Object.entries(computed))
+            if (String(defaults[key] || '').trim() && String(value || '').trim())
+              defaults[key] = value;
+        } catch (error) {
+          if (error.status === 429) throw error;
+        }
+      }
     } catch (error) {
       if (error.status === 429) throw error;
       // A sablon átmeneti olvasási hibája esetén a mezők külön listában
@@ -987,7 +1006,10 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     const apiKey = String(process.env.GEMINI_API_KEY || '').trim();
     if (!apiKey) throw new Error('A chat nem használható: a GEMINI_API_KEY nincs beállítva a Railway Variables között.');
     const fields = await getTechnicalFields(uid);
-    const current = Object.fromEntries(fields.fields.map(field => [field.key,field.value]));
+    // Ha a mező még nincs mentve, a felület által mutatott alapérték (a projekt
+    // adataival kitöltött sablonszöveg) számít a chat kiinduló szövegének.
+    const current = Object.fromEntries(fields.fields.map(field =>
+      [field.key,field.value || field.default || '']));
     const {message,notes} = chatInput(input,current);
     const {data} = await project(uid);
     const model = modelName(process.env.GEMINI_TECHNICAL_MODEL || process.env.GEMINI_AUDIO_MODEL);

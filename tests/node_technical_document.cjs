@@ -107,7 +107,8 @@ test('A sablon cellahivatkozásai üres adatnál sem hagynak nyers jelölőt', (
     'TERVEZESI_ADATOK:tervezett_foldszinti_beepites_m2',
     'PARKOLOEGYENLEG_ERTEKELES','BEEPITESI_MERLEG','TERVJEGYZEK'])
     assert.equal(values[key],'',key);
-  assert.equal(values.IRATJEGYZEK,'Építészeti műszaki leírás (jelen dokumentum)');
+  assert.equal(values.IRATJEGYZEK,undefined,
+    'Az iratjegyzék már nem készül a műszaki leírásba.');
   const doc = {body:{content:[{paragraph:{elements:[{startIndex:1,textRun:{
     content:'{{TERVEZESI_ADATOK:Munkalap1!F8}} {{PARKOLOEGYENLEG_ERTEKELES}}\n'}}]}}]},
   namedRanges:{}};
@@ -254,7 +255,7 @@ test('A régi DRAFT bővítése megőrzi az eredeti tartalmat és ismételhető'
   const doc={body:{content:lines.map((line,index)=>({startIndex:1+index*50,
     paragraph:{elements:[{textRun:{content:line+'\n'}}]}}))}};
   const additions=technicalSupplementRequests(doc);
-  assert.equal(additions.length,3);
+  assert.equal(additions.length,2);
   assert.ok(additions.every(item=>item.insertText.location.index>0));
   assert.deepEqual(lines[5],'Meglévő, kézzel jóváhagyott szöveg');
   const upgraded={body:{content:[...doc.body.content,{startIndex:500,paragraph:{elements:[{
@@ -263,7 +264,7 @@ test('A régi DRAFT bővítése megőrzi az eredeti tartalmat és ismételhető'
 });
 
 test('A korábban beillesztett helyszín- és koncepciófejezet kikerül a DRAFT-ból', () => {
-  const lines=['Tartalomjegyzék','Iratjegyzék','Adatok','Helyszín és tervelőzmények',
+  const lines=['Tartalomjegyzék','Adatok','Helyszín és tervelőzmények',
     'Tervezési előzmények: [KIEGÉSZÍTENDŐ: a tervezési előzmények.]',
     'A telek és a meglévő építmények állapota: [KIEGÉSZÍTENDŐ: az állapot.]',
     'Építészeti koncepció','Funkcionális rend: [KIEGÉSZÍTENDŐ: a használati rend.]',
@@ -273,8 +274,20 @@ test('A korábban beillesztett helyszín- és koncepciófejezet kikerül a DRAFT
   const requests=technicalSupplementRequests(doc);
   const deletion=requests.find(item=>item.deleteContentRange);
   assert.ok(deletion,'A régi helyszín- és koncepciófejezetet törölni kell.');
-  assert.equal(deletion.deleteContentRange.range.startIndex,1+3*50);
-  assert.equal(deletion.deleteContentRange.range.endIndex,1+8*50);
+  assert.equal(deletion.deleteContentRange.range.startIndex,1+2*50);
+  assert.equal(deletion.deleteContentRange.range.endIndex,1+7*50);
+});
+
+test('A korábban beillesztett iratjegyzék kikerül a DRAFT-ból', () => {
+  const lines=['Tartalomjegyzék','Iratjegyzék','Építészeti műszaki leírás (jelen dokumentum)',
+    'Ajánlat','Adatok','Épület adatai','Tűzvédelem'];
+  const doc={body:{content:lines.map((line,index)=>({startIndex:1+index*50,
+    paragraph:{elements:[{textRun:{content:line+'\n'}}]}}))}};
+  const requests=technicalSupplementRequests(doc);
+  const deletion=requests.find(item=>item.deleteContentRange);
+  assert.ok(deletion,'A régi iratjegyzéket törölni kell.');
+  assert.equal(deletion.deleteContentRange.range.startIndex,1+1*50);
+  assert.equal(deletion.deleteContentRange.range.endIndex,1+4*50);
 });
 
 test('A kézzel írt, eltérő helyszínfejezetet nem törli a rendszer', () => {
