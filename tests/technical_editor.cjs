@@ -45,6 +45,7 @@ class Node {
     if (type === 'click') this.clickHandler = handler;
     if (type === 'keydown') this.keydownHandler = handler;
     if (type === 'input') this.inputHandler = handler;
+    if (type === 'focusin') this.focusinHandler = handler;
   }
   removeEventListener(){}
   replaceWith(other){
@@ -184,6 +185,21 @@ test('A chat a képernyőn látható első mezőre vonatkozik',async () => {
   assert.match(second.className,/active-input/,
     'A felső térköz alatt látszó mező aktiválódik.');
 
+  // Kattintás után a mező „rögzül”: addig marad az AI célpontja, amíg teljesen
+  // ki nem kerül a viewportból.
+  ids.get('form').focusinHandler({target:second});
+  first.rect = {top:200,height:40,bottom:240,width:600};
+  second.rect = {top:400,height:60,bottom:460,width:600};
+  window.scrollHandler();
+  assert.match(second.className,/active-input/,
+    'A kiválasztott mező görgetéskor is megtartja az AI-fókuszt, amíg látszik.');
+  second.rect = {top:950,height:60,bottom:1010,width:600};
+  first.rect = {top:100,height:40,bottom:140,width:600};
+  window.scrollHandler();
+  assert.match(first.className,/active-input/,
+    'A teljesen kigörgetett mező után a látható első mező lesz aktív.');
+  ids.get('form').focusinHandler({target:second});
+
   // A mező még nincs mentve: a felület a sablon alapértékét mutatja helyőrzőként,
   // a chatnek ezt a látható szöveget kell átadnia.
   second.value='';
@@ -224,25 +240,47 @@ test('Az AI-javaslat a mezőnél jelenik meg, beillesztés után visszaállítha
   walk(groups);
   const input = all.find(node => node.dataset?.key === 'TERV_TARGYA');
   assert.ok(input,'Hiányzik a szerkeszthető mező.');
-  ids.get('chatMessage').value = 'Rövidítsd.';
-  ids.get('chatSend').clickHandler();
-  await new Promise(resolve => setTimeout(resolve,20));
-  const suggestion = input.nextSibling;
-  assert.ok(suggestion && suggestion.className === 'ai-suggestion',
-    'A javaslatnak a mezőnél, helyben kell megjelennie, nem külön szakaszban.');
-  const actions = suggestion.children.find(node => node.className === 'ai-suggestion-actions');
+  const wrapper = input.parentNode;
+  const label = wrapper.children.find(node => node.tagName === 'LABEL');
+  const sendChat = async () => {
+    ids.get('chatMessage').value = 'Rövidítsd.';
+    ids.get('chatSend').clickHandler();
+    await new Promise(resolve => setTimeout(resolve,20));
+    const suggestion = input.nextSibling;
+    assert.ok(suggestion && suggestion.className === 'ai-suggestion',
+      'A javaslatnak a mezőnél, helyben kell megjelennie, nem külön szakaszban.');
+    return suggestion;
+  };
+  const first = await sendChat();
+  const actions = first.children.find(node => node.className === 'ai-suggestion-actions');
   const apply = actions.children.find(node => node.textContent === 'Beillesztés');
   assert.ok(apply,'Hiányzik a beillesztés gomb.');
   apply.clickHandler();
   assert.equal(input.value,'Új, rövidített szöveg.');
-  const change = input.nextSibling;
-  assert.ok(change && change.className === 'ai-change',
-    'Beillesztés után AI-módosítás jelzés kell a mezőnél.');
-  assert.equal(change.children[0].textContent,'AI-módosítás');
-  const restore = change.children.find(node => node.textContent === 'Visszaállítás');
+  const badge = label.children.find(node => node.className === 'ai-badge');
+  assert.ok(badge,'Az AI-módosítás jelzésnek a Kézi jelzés mellett, a címkénél kell lennie.');
+  assert.equal(badge.textContent,'AI-módosítás');
+  const restore = label.children.find(node => node.textContent === 'Visszaállítás');
   assert.ok(restore,'Hiányzik a visszaállítás gomb.');
   restore.clickHandler();
   assert.equal(input.value,'Régi szöveg.','A visszaállítás az AI előtti szöveget adja vissza.');
+
+  // Meglévő szöveg megtartása: a jelölőnégyzettel a javaslat hozzáfűződik.
+  const second = await sendChat();
+  const keep = second.children.find(node => node.className === 'ai-keep');
+  assert.ok(keep,'Hiányzik a meglévő szöveg megtartását választó jelölőnégyzet.');
+  keep.children[0].checked = true;
+  const apply2 = second.children.find(node => node.className === 'ai-suggestion-actions')
+    .children.find(node => node.textContent === 'Beillesztés');
+  apply2.clickHandler();
+  assert.equal(input.value,'Régi szöveg.\n\nÚj, rövidített szöveg.',
+    'Bekapcsolt jelölőnégyzettel a meglévő szöveg megmarad, a javaslat hozzáfűződik.');
+  assert.equal(label.children.filter(node => node.className === 'ai-badge').length,1,
+    'Többszöri módosításnál is csak egy AI-módosítás jelzés maradhat.');
+  assert.equal(label.children.filter(node => node.textContent === 'Visszaállítás').length,1,
+    'Többszöri módosításnál is csak egy visszaállítás gomb maradhat.');
+  label.children.find(node => node.textContent === 'Visszaállítás').clickHandler();
+  assert.equal(input.value,'Régi szöveg.','A visszaállítás minden AI-módosítást visszavon.');
 });
 
 test('A szerkezetleírás alpontjai külön beviteli mezőként célpontok',async () => {

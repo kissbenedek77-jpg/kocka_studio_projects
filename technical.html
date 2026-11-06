@@ -110,6 +110,9 @@
     .ai-badge{background:#e2edf0;color:#146081;border-radius:999px;padding:.05rem .5rem;
       font-size:.72rem;font-weight:700}
     .ai-change .reset-field{margin-top:0}
+    .doc-field>label .ai-badge,.block-tools .ai-badge{margin-left:.35rem}
+    .doc-field>label .reset-field,.block-tools .reset-field{margin-top:0;font-weight:500;
+      padding:.15rem .5rem;font-size:.75rem;min-height:1.7rem}
     /* Az aktív beviteli mező: finom jelzés, hogy a chat kérése erre vonatkozik. */
     .doc-field textarea.active-input,.doc-field input.active-input,
     .doc-line.active-input,.doc-text.active-input{
@@ -177,7 +180,7 @@
     // beviteli mezője is lehet (például a szerkezetleírás alpontjai), ezért a
     // célpont nem a fejezet kulcsa, hanem az adott mezőé.
     const chatTargets=new Map();
-    let activeTarget=null;
+    let activeTarget=null,pinnedTarget=null;
     function registerChatTarget(id,target){
       if(!id||!target||!target.input)return;
       target.input.dataset.chatTarget=id;
@@ -218,6 +221,18 @@
     function refreshActiveField(){
       const nodes=chatTargetInputs();
       if(!nodes.length){setActiveTarget(null);return}
+      // A kattintással kiválasztott mező addig marad az AI célpontja, amíg
+      // teljesen ki nem kerül a viewportból. Csak utána veszi át a helyét a
+      // képernyőn látható első mező.
+      if(pinnedTarget){
+        const rect=pinnedTarget.input.getBoundingClientRect?
+          pinnedTarget.input.getBoundingClientRect():null;
+        const height=rect?Number(rect.height)||0:0;
+        const viewport=window.innerHeight||0;
+        const visible=Boolean(rect)&&height>0&&rect.bottom>0&&rect.top<viewport;
+        if(visible){setActiveTarget(pinnedTarget);return}
+        pinnedTarget=null;
+      }
       // A nézet tetején egy kis térköz van: az a mező aktiválódik, amelyik e
       // vonal alatt látszik először. Így a felső szélén kilógó mező nem veszi
       // el a jelölést a következő mezőtől.
@@ -544,7 +559,7 @@
     function renderOutline(data){
       const root=document.getElementById('groups');root.replaceChildren();
       fieldInputs.clear();blockInputs.clear();fieldRefresh.clear();markerButtons.clear();
-      chatTargets.clear();activeTarget=null;aiBlocks.clear();
+      chatTargets.clear();activeTarget=null;pinnedTarget=null;aiBlocks.clear();aiChanges.clear();
       placeholderValues=data.placeholderValues||{};
       editablePlaceholders=new Set(data.editablePlaceholders||[]);
       const fields=new Map((data.fields||[]).map(field=>[field.key,field]));
@@ -628,29 +643,69 @@
     // felhasználó ott dönthet a beillesztésről. Beillesztés után a mező
     // „AI-módosítás” jelzést és visszaállítás gombot kap.
     const aiBlocks=new Map();
+    // A mezőnkénti AI-módosítások: egy mezőhöz egy „AI-módosítás” jelzés és egy
+    // visszaállítás gomb tartozik, akkor is, ha több részletet írt át az AI.
+    const aiChanges=new Map();
     function removeAiBlocks(input){
       const entry=aiBlocks.get(input);
-      if(entry){
-        if(entry.suggestion)entry.suggestion.remove();
-        if(entry.change)entry.change.remove();
-      }
+      if(entry&&entry.suggestion)entry.suggestion.remove();
       aiBlocks.delete(input);
+    }
+    function fieldScope(input){
+      let node=input;
+      while(node&&node!==form){
+        if(hasClass(node,'doc-field')||hasClass(node,'doc-block'))return node;
+        node=node.parentNode;
+      }
+      return input.parentNode;
+    }
+    function fieldMarkerHost(scope){
+      if(hasClass(scope,'doc-field')){
+        const label=scope.querySelector('label');
+        if(label)return label;
+      }
+      const tools=scope.querySelector('.block-tools');
+      if(tools)return tools;
+      const label=scope.querySelector('label');
+      return label||null;
+    }
+    function restoreAiChanges(scope){
+      const entry=aiChanges.get(scope);
+      if(!entry)return;
+      for(const change of [...entry.changes].reverse())change.target.apply(change.original);
+      if(entry.badge)entry.badge.remove();
+      if(entry.restore)entry.restore.remove();
+      aiChanges.delete(scope);
+      message('Az AI előtti szöveg visszaállítva.','success');
     }
     function markAiChange(input,target,original){
       removeAiBlocks(input);
-      const row=document.createElement('div');row.className='ai-change';
-      const badge=document.createElement('span');badge.className='ai-badge';badge.textContent='AI-módosítás';
-      const restore=document.createElement('button');restore.type='button';restore.className='reset-field';
-      restore.textContent='Visszaállítás';
-      restore.title='Az AI előtti szöveg visszaállítása.';
-      row.append(badge,restore);
-      input.parentNode.insertBefore(row,input.nextSibling);
-      aiBlocks.set(input,{change:row});
-      restore.addEventListener('click',()=>{
-        target.apply(original);
-        removeAiBlocks(input);
-        message('Az AI előtti szöveg visszaállítva.','success');
-      });
+      const scope=fieldScope(input);
+      const entry=aiChanges.get(scope)||{changes:[],badge:null,restore:null};
+      entry.changes.push({target,original});
+      const host=fieldMarkerHost(scope);
+      if(host){
+        if(!entry.badge){
+          entry.badge=document.createElement('span');
+          entry.badge.className='ai-badge';
+          entry.badge.textContent='AI-módosítás';
+        }
+        if(!entry.restore){
+          entry.restore=document.createElement('button');
+          entry.restore.type='button';
+          entry.restore.className='reset-field';
+          entry.restore.textContent='Visszaállítás';
+          entry.restore.title='Az AI előtti szöveg visszaállítása.';
+          entry.restore.addEventListener('click',event=>{
+            if(event&&event.preventDefault)event.preventDefault();
+            if(event&&event.stopPropagation)event.stopPropagation();
+            restoreAiChanges(scope);
+          });
+        }
+        if(entry.badge.parentNode!==host)host.append(entry.badge);
+        if(entry.restore.parentNode!==host)host.append(entry.restore);
+      }
+      aiChanges.set(scope,entry);
     }
     function inlineDraft(text,target){
       const input=target.input;
@@ -661,18 +716,24 @@
       title.textContent='AI-javaslat – ellenőrizd, majd illeszd be:';
       const area=document.createElement('textarea');area.value=text;area.rows=3;
       area.setAttribute('aria-label','AI-javaslat');
+      // A meglévő szöveg megtartható: a jelölőnégyzettel a javaslat a meglévő
+      // szöveg után fűződik, kikapcsolva pedig felülírja azt.
+      const keep=document.createElement('label');keep.className='ai-keep';
+      const check=document.createElement('input');check.type='checkbox';
+      keep.append(check,document.createTextNode(' Meglévő szöveg megtartása és hozzáfűzés'));
       const actions=document.createElement('div');actions.className='ai-suggestion-actions';
       const apply=document.createElement('button');apply.type='button';apply.textContent='Beillesztés';
       const cancel=document.createElement('button');cancel.type='button';cancel.className='secondary';
       cancel.textContent='Mégse';
       actions.append(apply,cancel);
-      box.append(title,area,actions);
+      box.append(title,area,keep,actions);
       input.parentNode.insertBefore(box,input.nextSibling);
       aiBlocks.set(input,{suggestion:box});
       cancel.addEventListener('click',()=>{box.remove();aiBlocks.delete(input)});
       apply.addEventListener('click',()=>{
         const original=String(input.value||'');
-        const value=area.value.trim();
+        let value=area.value.trim();
+        if(check.checked&&original.trim())value=original.trimEnd()+'\n\n'+value;
         if(!value){message('A javaslat üres, ezért nem illesztem be.','error');return}
         target.apply(value);
         markAiChange(input,target,original);
@@ -752,7 +813,7 @@
       const target=event&&event.target;
       if(!target)return;
       for(const item of chatTargets.values())
-        if(item.input===target){setActiveTarget(item);return}
+        if(item.input===target){pinnedTarget=item;setActiveTarget(item);return}
     });
     if(typeof ResizeObserver==='function'&&chatNode)
       new ResizeObserver(()=>setChatHeight()).observe(chatNode);
