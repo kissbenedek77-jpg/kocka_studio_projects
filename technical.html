@@ -6,7 +6,7 @@
   <title>Műszaki leírás szerkesztése · Kocka Stúdió</title>
   <style>
     :root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#19313c;background:#f2f5f5}
-    html{scroll-padding-bottom:calc(var(--chat-height,0px) + 1rem)}
+    html{scroll-padding-top:1.5rem;scroll-padding-bottom:calc(var(--chat-height,0px) + 1rem)}
     *{box-sizing:border-box}body{margin:0}header{background:#163746;color:white;padding:1.25rem max(1rem,calc((100vw - 1060px)/2))}
     header h1{font-size:1.45rem;margin:.25rem 0}header p{margin:.25rem 0;color:#d3e1e5}
     main{max-width:1060px;margin:auto;padding:1.1rem;padding-bottom:calc(var(--chat-height,0px) + 1.6rem);min-width:0}a{color:#146081;overflow-wrap:anywhere}header a{color:white}header strong{overflow-wrap:anywhere}
@@ -95,8 +95,10 @@
     #chat .chat-body{padding:.8rem 1.1rem 1rem;overflow:auto;min-height:0;flex:1 1 auto}
     #chat.collapsed .chat-target,#chat.collapsed .chat-body{display:none}
     #chat .draft-note{font-size:.88rem}
-    .doc-field.active-field{border-color:#8ec6d2;background:#f1f9fa;box-shadow:0 0 0 3px #9ed2dc33}
-    .doc-field.active-field>label{color:#146081}
+    /* Az aktív beviteli mező: finom jelzés, hogy a chat kérése erre vonatkozik. */
+    .doc-field textarea.active-input,.doc-field input.active-input,
+    .doc-line.active-input,.doc-text.active-input{
+      border-color:#8ec6d2;background:#f1f9fa;box-shadow:0 0 0 3px #9ed2dc33}
     @media(max-width:700px){#chat{max-height:46vh;width:100%}#chat .chat-head,#chat .chat-target{padding-left:.9rem;padding-right:.9rem}#chat .chat-body{padding:.7rem .9rem .9rem}}
     @media(max-width:700px){.doc-section>summary.doc-section-title{padding:1rem}.doc-section-body{padding:0 1rem 1rem}header{padding:1rem}.actions{padding:.8rem 0 max(.8rem,env(safe-area-inset-bottom))}}
     @media(max-width:480px){main{padding:.75rem;padding-bottom:calc(var(--chat-height,0px) + 1.2rem)}.actions{display:grid;grid-template-columns:minmax(0,1fr);gap:.6rem}.actions button{width:100%;min-height:44px}.notice,.doc-section{overflow-wrap:anywhere}}
@@ -115,7 +117,7 @@
       </div>
       <p class="chat-target" id="chatTarget" aria-live="polite">Görgess egy szerkeszthető mezőhöz: a kérés mindig a képernyőn látható első mezőre vonatkozik.</p>
       <div class="chat-body" id="chatBody">
-        <p class="draft-note">Írd le, min változtasson azon a mezőn, amelyik éppen a képernyőn van (az első látható mező). Az AI csak ennek a mezőnek a szövegét alakítja át; a javaslatot előbb átnézheted, és csak a „Beillesztés” után kerül az űrlapba. Számot, anyagot és megfelelőséget nem talál ki.</p>
+        <p class="draft-note">Írd le, min változtasson azon a beviteli mezőn, amelyik éppen a képernyőn van (az első látható mező). Az AI csak ennek az egy mezőnek a szövegét alakítja át; a javaslatot előbb átnézheted, és csak a „Beillesztés” után kerül az űrlapba. Számot, anyagot és megfelelőséget nem talál ki.</p>
         <div id="chatLog" class="chat-log" aria-live="polite"></div>
         <label for="chatMessage">Üzenet az AI-nak</label>
         <textarea id="chatMessage" rows="2" maxlength="2000" placeholder="Például: fogalmazd rövidebbre ezt a bekezdést."></textarea>
@@ -135,7 +137,7 @@
     const autoDraftButton=document.getElementById('autoDraft');let aiReady=false;
     const chatNode=document.getElementById('chat'),chatToggle=document.getElementById('chatToggle'),
       chatTarget=document.getElementById('chatTarget');
-    let chatKeys=new Set(),activeField=null,activeQueued=false;
+    let chatKeys=new Set(),activeQueued=false;
     const draftable=key=>key==='EPITES_JELLEGE'||/^(HELYSZIN:|KONCEPCIO:|SZERKEZET:)/.test(key)||
       ['GEPESZET:szellozes','GEPESZET:energiaellatas','KORNYEZET:kitermelt_asvanyi_nyersanyag','VILLAMOS:teljesitmeny'].includes(key);
     function openFirstDraftField(){
@@ -147,21 +149,31 @@
       if(input.focus)input.focus();
       return true;
     }
-    // Az aktív mező a képernyőn éppen látható első szerkeszthető mező. A chat
-    // kérése és a válasz is erre a mezőre vonatkozik. A jelölés finom színnel
-    // történik, hogy a hosszú dokumentumban is látszódjon, hol jár a szerkesztés.
+    // Az aktív célpont mindig egyetlen beviteli mező (textarea vagy input),
+    // nem a teljes fejezet: a chat kérése és a válasz is erre a mezőre
+    // vonatkozik. A jelölés finom színnel történik, hogy a hosszú dokumentumban
+    // is látszódjon, melyik mezővel dolgozik éppen az AI.
     function hasClass(node,name){return Boolean(node)&&(' '+(node.className||'')+' ').includes(' '+name+' ')}
     function toggleClass(node,name,on){
       if(!node)return;
       if(on&&!hasClass(node,name))node.className=(node.className?node.className+' ':'')+name;
       if(!on&&hasClass(node,name))node.className=(' '+node.className+' ').replace(' '+name+' ',' ').trim();
     }
-    function chatFieldNodes(){
-      return [...form.querySelectorAll('.doc-field')].filter(node=>{
-        const input=node.querySelector('[data-key]');
-        return Boolean(input&&chatKeys.has(input.dataset.key));
-      });
+    // A chat célpontjai: azonosító -> {id,input,label,apply}. Egy fejezetnek több
+    // beviteli mezője is lehet (például a szerkezetleírás alpontjai), ezért a
+    // célpont nem a fejezet kulcsa, hanem az adott mezőé.
+    const chatTargets=new Map();
+    let activeTarget=null;
+    function registerChatTarget(id,target){
+      if(!id||!target||!target.input)return;
+      target.input.dataset.chatTarget=id;
+      chatTargets.set(id,{id,input:target.input,label:String(target.label||id),apply:target.apply});
     }
+    function clearChatTargets(prefix){
+      for(const id of [...chatTargets.keys()])
+        if(!prefix||id===prefix||id.startsWith(prefix+'#'))chatTargets.delete(id);
+    }
+    function chatTargetInputs(){return [...chatTargets.values()].map(target=>target.input)}
     function chatHeight(){
       if(!chatNode||chatNode.hidden)return 0;
       const rect=chatNode.getBoundingClientRect?chatNode.getBoundingClientRect():null;
@@ -172,31 +184,32 @@
       if(root&&root.style&&root.style.setProperty)
         root.style.setProperty('--chat-height',chatHeight()+'px');
     }
-    function activeFieldInput(){return activeField?activeField.querySelector('[data-key]'):null}
-    function activeFieldKey(){const input=activeFieldInput();return input?String(input.dataset.key||''):''}
-    function activeFieldLabel(){
-      if(!activeField)return '';
-      const label=activeField.querySelector('label');
-      const text=String(label&&label.textContent||'')||activeFieldKey();
-      return text.replace(/\s+/g,' ').trim();
+    function activeTargetInput(){return activeTarget?activeTarget.input:null}
+    function activeTargetId(){return activeTarget?activeTarget.id:''}
+    function activeTargetLabel(){
+      return activeTarget?String(activeTarget.label||activeTarget.id).replace(/\s+/g,' ').trim():'';
     }
     function updateChatTarget(){
       if(!chatTarget)return;
-      const key=activeFieldKey();
-      chatTarget.textContent=key
-        ? 'A kérés a(z) „'+activeFieldLabel()+'” mezőre vonatkozik; a többi fejezet nem változik.'
-        : 'Görgess egy szerkeszthető mezőhöz: a kérés mindig a képernyőn látható első mezőre vonatkozik.';
+      const id=activeTargetId();
+      chatTarget.textContent=id
+        ? 'A kérés a(z) „'+activeTargetLabel()+'” beviteli mezőre vonatkozik; más mező nem változik.'
+        : 'Görgess egy szerkeszthető beviteli mezőhöz: a kérés mindig a képernyőn látható első mezőre vonatkozik.';
     }
-    function setActiveField(node){
-      if(activeField===node)return;
-      toggleClass(activeField,'active-field',false);
-      activeField=node;
-      toggleClass(activeField,'active-field',true);
+    function setActiveTarget(target){
+      if(activeTarget===target)return;
+      toggleClass(activeTarget&&activeTarget.input,'active-input',false);
+      activeTarget=target;
+      toggleClass(activeTarget&&activeTarget.input,'active-input',true);
       updateChatTarget();
     }
     function refreshActiveField(){
-      const nodes=chatFieldNodes();
-      if(!nodes.length){setActiveField(null);return}
+      const nodes=chatTargetInputs();
+      if(!nodes.length){setActiveTarget(null);return}
+      // A nézet tetején egy kis térköz van: az a mező aktiválódik, amelyik e
+      // vonal alatt látszik először. Így a felső szélén kilógó mező nem veszi
+      // el a jelölést a következő mezőtől.
+      const topGap=24;
       const limit=(window.innerHeight||0)-chatHeight()-8;
       let chosen=null,measured=false;
       for(const node of nodes){
@@ -205,14 +218,14 @@
         const height=Number(rect.height)||0;
         if(height||Number(rect.width))measured=true;
         if(height<=0)continue;        // zárt accordion rejtett mezője
-        if(rect.bottom<=8)continue;    // már feljebb van a képernyőn
+        if(rect.bottom<=topGap)continue; // a felső térköz fölött van
         if(rect.top>=limit)continue;   // a látható terület alatt van
         chosen=node;break;
       }
       // Ha a böngésző még nem mért elrendezést (minden méret nulla), az első
       // mezőt jelöljük, hogy a chat célpontja mindig egyértelmű legyen.
       if(!chosen&&!measured)chosen=nodes[0];
-      setActiveField(chosen);
+      setActiveTarget(chosen?chatTargets.get(chosen.dataset.chatTarget):null);
     }
     function scheduleActiveField(){
       if(activeQueued)return;
@@ -348,6 +361,9 @@
       const input=fieldInput(field);input.id='field-'+String(field.key).replace(/[^A-Za-z0-9_-]/g,'-');
       label.htmlFor=input.id;
       wrapper.append(input);
+      if(chatKeys.has(field.key))
+        registerChatTarget(field.key,{input,label:field.help,
+          apply:text=>{input.value=text;autoSize(input)}});
       if(field.manual){
         const reset=document.createElement('button');reset.type='button';reset.className='reset-field';reset.textContent='Visszaállítás';
         reset.title='A mező törlése; a következő generálás vagy a sablon alapértéke kerül a helyére.';
@@ -373,6 +389,12 @@
       const input=blockControl(entry,entry.type==='heading');
       wrapper.append(input);
       if(entry.type!=='heading'){
+        // A sablon fix bekezdése is önálló beviteli mező: a chat csak ezt a
+        // bekezdést írhatja át, nem az egész fejezetet.
+        const firstLine=String(entry.text||'').split('\n').find(line=>line.trim())||'Fejezetszöveg';
+        registerChatTarget('BLOCK:'+entry.id,{input,
+          label:firstLine.trim().slice(0,80),
+          apply:text=>{input.value=text;autoSize(input)}});
         const tools=document.createElement('div');tools.className='block-tools';
         tools.append(badge('Fix szöveg','fix-badge'));
         if(blockInputs.get(entry.id)?.block?.manual)tools.append(badge('Kézi','manual-badge'));
@@ -480,10 +502,17 @@
       const rebuild=()=>{hidden.value=blocks.map(block=>(block.title?block.title+'\n':'')+block.body.join('\n').trim()).join('\n\n').trim()};
       const paint=text=>{
         blocks=splitStructure(text);host.replaceChildren();
-        blocks.forEach(block=>{
+        if(chatKeys.has(field.key))clearChatTargets(field.key);
+        blocks.forEach((block,index)=>{
           if(block.title){const h=document.createElement('h3');h.className='doc-structure-subheading';h.textContent=block.title;host.append(h)}
           const area=document.createElement('textarea');area.className='doc-text';area.rows=3;area.value=block.body.join('\n').trim();
           area.addEventListener('input',()=>{block.body=area.value.split('\n');rebuild();autoSize(area)});
+          // A szerkezetleírás alpontjai külön beviteli mezők: a chat egy
+          // alkalommal csak azt az egy alpontot fogalmazza újra.
+          if(chatKeys.has(field.key))
+            registerChatTarget(field.key+'#'+(index+1),{input:area,
+              label:block.title?field.help+' – '+block.title:field.help,
+              apply:newText=>{area.value=newText;block.body=newText.split('\n');rebuild();autoSize(area)}});
           host.append(area);
         });
         rebuild();
@@ -503,6 +532,7 @@
     function renderOutline(data){
       const root=document.getElementById('groups');root.replaceChildren();
       fieldInputs.clear();blockInputs.clear();fieldRefresh.clear();markerButtons.clear();
+      chatTargets.clear();activeTarget=null;
       placeholderValues=data.placeholderValues||{};
       editablePlaceholders=new Set(data.editablePlaceholders||[]);
       const fields=new Map((data.fields||[]).map(field=>[field.key,field]));
@@ -585,11 +615,15 @@
     function showDraft(sections){
       const host=document.getElementById('draftRows');host.replaceChildren();let shown=0;
       for(const [key,text] of Object.entries(sections||{})){
-        const input=[...form.querySelectorAll('[data-key]')].find(item=>item.dataset.key===key);
+        const target=chatTargets.get(key);
+        const input=target?target.input:
+          [...form.querySelectorAll('[data-key]')].find(item=>item.dataset.key===key);
         if(!input||!text)continue;
         const row=document.createElement('div');row.className='draft-row';row.dataset.key=key;row.dataset.original=input.value;
         const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=true;
-        label.append(check,document.createTextNode(input.closest('div').querySelector('label')?.textContent||key));
+        const name=target?target.label:
+          (input.closest('div').querySelector('label')?.textContent||key);
+        label.append(check,document.createTextNode(name));
         const field=document.createElement('textarea');field.value=text;field.setAttribute('aria-label',key+' AI-tervezet');
         row.append(label,field);host.append(row);shown++}
       if(!shown){message('Az AI nem adott beilleszthető módosítást.','error');return false}
@@ -647,17 +681,12 @@
     });
     window.addEventListener('scroll',scheduleActiveField,{passive:true});
     window.addEventListener('resize',()=>{setChatHeight();scheduleActiveField()});
-    // Kattintásra is az a mező lesz aktív, amelyikbe a szerkesztő éppen beír.
+    // Kattintásra is az a beviteli mező lesz aktív, amelyikbe a szerkesztő éppen beír.
     form.addEventListener('focusin',event=>{
-      let node=event&&event.target;
-      while(node&&node!==form){
-        if(hasClass(node,'doc-field')){
-          const input=node.querySelector('[data-key]');
-          if(input&&chatKeys.has(input.dataset.key))setActiveField(node);
-          return;
-        }
-        node=node.parentNode;
-      }
+      const target=event&&event.target;
+      if(!target)return;
+      for(const item of chatTargets.values())
+        if(item.input===target){setActiveTarget(item);return}
     });
     if(typeof ResizeObserver==='function'&&chatNode)
       new ResizeObserver(()=>setChatHeight()).observe(chatNode);
@@ -665,11 +694,11 @@
       const text=chatMessage.value.trim();
       if(!text){message('Írj be egy mondatot az AI-nak.','error');return}
       if(!aiReady){message('Az AI nincs beállítva, ezért a chat nem használható.','error');return}
-      const focusKey=activeFieldKey();
-      if(!focusKey){message('Görgess egy szerkeszthető mezőhöz: a kérés arra a mezőre vonatkozik, amelyik éppen a képernyőn van.','error');return}
-      const focusInput=activeFieldInput();
+      const focusKey=activeTargetId();
+      if(!focusKey){message('Görgess egy szerkeszthető beviteli mezőhöz: a kérés arra a mezőre vonatkozik, amelyik éppen a képernyőn van.','error');return}
+      const focusInput=activeTargetInput();
       const focusValue=focusInput?String(focusInput.value||''):'';
-      const focusLabel=activeFieldLabel();
+      const focusLabel=activeTargetLabel();
       logChat(text,true);chatMessage.value='';chatSend.disabled=true;message('Az AI válaszol…');
       try{
         const result=await rpc('dashboardTechnicalChat',uid,{message:text,focusKey,focusValue,focusLabel});
@@ -708,14 +737,18 @@
       let applied=0,changed=0;
       for(const row of document.querySelectorAll('#draftRows .draft-row')){
         if(!row.querySelector('input[type=checkbox]').checked)continue;
-        const input=[...form.querySelectorAll('[data-key]')].find(item=>item.dataset.key===row.dataset.key);
+        const key=row.dataset.key;
+        const target=chatTargets.get(key);
+        const input=target?target.input:
+          [...form.querySelectorAll('[data-key]')].find(item=>item.dataset.key===key);
         if(!input)continue;
         if(input.value!==row.dataset.original){changed++;continue}
         const text=row.querySelector('textarea').value.trim();if(!text)continue;
+        if(target){target.apply(text);applied++;continue}
         input.value=text;autoSize(input);
-        const refresh=fieldRefresh.get(row.dataset.key);if(refresh)refresh(text);
+        const refresh=fieldRefresh.get(key);if(refresh)refresh(text);
         applied++}
-      message(applied+' fejezet bekerült az űrlapba. '+(changed?changed+' időközben módosított mezőt kihagytam. ':'')+'A dokumentum frissítése előtt mentsd az űrlapot.',applied?'success':'error');
+      message(applied+' beviteli mező bekerült az űrlapba. '+(changed?changed+' időközben módosított mezőt kihagytam. ':'')+'A dokumentum frissítése előtt mentsd az űrlapot.',applied?'success':'error');
       if(applied)preview.hidden=true;
     });
     form.addEventListener('submit',async event=>{event.preventDefault();const button=document.getElementById('save');

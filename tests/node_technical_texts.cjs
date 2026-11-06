@@ -166,6 +166,17 @@ test('A chat az aktív mező szövegére szűkíti a kérést', () => {
     focusValue:'   ',focusLabel:'Meglévő állapot'},{'HELYSZIN:elozmenyek':'Előzmény'}),/még üres/);
   assert.throws(()=>chatInput({message:'Írd át.',focusKey:'DOKUMENTUM:kiadas_datuma',
     focusValue:'2026.10.07.'},{}),/nem kérhető/);
+  // A szerkezetleírás egy alpontja és a sablon egy fix bekezdése is önálló célpont.
+  const sub = chatInput({message:'Rövidítsd.',focusKey:'SZERKEZETEK LEÍRÁSA#2',
+    focusValue:'Tégla falazat.',focusLabel:'Szerkezetek leírása – Teherhordó szerkezetek'},{
+    'SZERKEZETEK LEÍRÁSA':'Alapozás\nSávalap.'});
+  assert.deepEqual(Object.keys(sub.notes),['SZERKEZETEK LEÍRÁSA#2']);
+  assert.match(chatPrompt({...sub,projectType:'Lakóház'}),/SZERKEZETEK LEÍRÁSA#2/);
+  const block = chatInput({message:'Fogalmazd újra.',focusKey:'BLOCK:b12',
+    focusValue:'Kérelmező: Kiss Anna.',focusLabel:'Kérelmező'},{});
+  assert.deepEqual(Object.keys(block.notes),['BLOCK:b12']);
+  assert.throws(()=>chatInput({message:'Írd át.',focusKey:'BLOCK:x12',focusValue:'Szöveg.'},{}),
+    /nem kérhető/);
 });
 
 test('A chat csak szerkeszthető mezőt fogad el és a választ ellenőrzi', () => {

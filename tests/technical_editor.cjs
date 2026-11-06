@@ -108,7 +108,7 @@ function createContext(payload, calls) {
 
 test('A chat a lap alján rögzítve jelenik meg, a látható mezőt pedig finom szín jelöli',() => {
   assert.match(html,/#chat\{position:fixed/,'A chat a képernyő alján rögzített legyen.');
-  assert.match(html,/\.doc-field\.active-field\{/,'Az aktív mezőnek saját kiemelése legyen.');
+  assert.match(html,/\.doc-field textarea\.active-input/,'Az aktív beviteli mezőnek saját kiemelése legyen.');
   assert.match(html,/--chat-height/,'A chat magasságát a tartalom és a mentősáv kövesse.');
   assert.match(html,/#chatToggle/,'A chat összecsukható legyen.');
 });
@@ -141,21 +141,28 @@ test('A chat a képernyőn látható első mezőre vonatkozik',async () => {
     }
   };
   walk(groups);
-  const wrapperFor = key => all.find(node => node.dataset?.key === key)?.parentNode;
-  const first = wrapperFor('HELYSZIN:meglevo_allapot');
-  const second = wrapperFor('KONCEPCIO:rendeltetes');
+  const inputFor = key => all.find(node => node.dataset?.key === key);
+  const first = inputFor('HELYSZIN:meglevo_allapot');
+  const second = inputFor('KONCEPCIO:rendeltetes');
   assert.ok(first && second,'Hiányoznak a szerkeszthető mezők.');
-  assert.match(first.className,/active-field/,'Az első látható mező aktív jelölést kap.');
-  assert.doesNotMatch(second.className,/active-field/);
+  assert.match(first.className,/active-input/,'Az első látható beviteli mező aktív jelölést kap.');
+  assert.doesNotMatch(second.className,/active-input/);
 
   // Görgetés után a második mező kerül a képernyő tetejére: az lesz aktív.
   first.rect = {top:-320,height:60,bottom:-260,width:600};
   second.rect = {top:120,height:60,bottom:180,width:600};
   window.scrollHandler();
-  assert.doesNotMatch(first.className,/active-field/,'A kigörgetett mező már nem aktív.');
-  assert.match(second.className,/active-field/,'A látható első mező lesz aktív.');
+  assert.doesNotMatch(first.className,/active-input/,'A kigörgetett mező már nem aktív.');
+  assert.match(second.className,/active-input/,'A látható első mező lesz aktív.');
   assert.match(ids.get('chatTarget').textContent,/Rendeltetés/,
-    'A chat a kijelölt mezőt nevezi meg.');
+    'A chat a kijelölt beviteli mezőt nevezi meg.');
+
+  // A felső térköz (24 px) fölött kilógó mező még nem aktív, a következő igen.
+  first.rect = {top:-20,height:40,bottom:20,width:600};
+  second.rect = {top:40,height:60,bottom:100,width:600};
+  window.scrollHandler();
+  assert.match(second.className,/active-input/,
+    'A felső térköz alatt látszó mező aktiválódik.');
 
   ids.get('chatMessage').value = 'Fogalmazd rövidebbre.';
   ids.get('chatSend').clickHandler();
@@ -165,6 +172,39 @@ test('A chat a képernyőn látható első mezőre vonatkozik',async () => {
   assert.equal(chat.args[1].focusKey,'KONCEPCIO:rendeltetes');
   assert.equal(chat.args[1].focusValue,'Lakóház.');
   assert.equal(chat.args[1].focusLabel,'Rendeltetés');
+});
+
+test('A szerkezetleírás alpontjai külön beviteli mezőként célpontok',async () => {
+  const calls = [];
+  const payload = {
+    sheetUrl:'https://docs.google.com/spreadsheets/d/x/edit',aiConfigured:true,
+    outline:[
+      {type:'heading',level:'chapter',number:1,text:'Szerkezetek leírása',readonly:true},
+      {type:'field',key:'SZERKEZETEK LEÍRÁSA',range:true,readonly:false}
+    ],
+    blocks:[],
+    fields:[{key:'SZERKEZETEK LEÍRÁSA',help:'Szerkezetek leírása',
+      value:'Alapozás\nAz épület alatt sávalap készül, a talaj teherbírása megfelelő.\n\nTeherhordó szerkezetek\nAz épület tartószerkezete teherhordó téglafalakból áll.',
+      manual:false,default:''}],
+    chatKeys:['SZERKEZETEK LEÍRÁSA'],
+    valueRows:[],placeholderValues:{},editablePlaceholders:[],missingFields:[]
+  };
+  const {ids} = createContext(payload,calls);
+  await new Promise(resolve => setTimeout(resolve,20));
+  const groups = ids.get('groups');
+  const all = [];
+  const walk = node => {
+    for (const child of node.children || []) {
+      if (child && typeof child === 'object') { all.push(child); walk(child); }
+    }
+  };
+  walk(groups);
+  const areas = all.filter(node => node.tagName === 'TEXTAREA');
+  assert.equal(areas.length,2,'A szerkezetleírás két alpontja két külön mező.');
+  assert.equal(areas[0].dataset.chatTarget,'SZERKEZETEK LEÍRÁSA#1');
+  assert.equal(areas[1].dataset.chatTarget,'SZERKEZETEK LEÍRÁSA#2');
+  assert.match(areas[0].className,/active-input/,
+    'A szerkezetleírás első alpontja az aktív beviteli mező.');
 });
 
 test('A /technical oldal a dokumentum sorrendjében, szerkeszthető blokkokkal jelenik meg',async () => {
@@ -214,6 +254,8 @@ test('A /technical oldal a dokumentum sorrendjében, szerkeszthető blokkokkal j
   const block = all.find(node => node.dataset?.blockId === 'b1');
   assert.ok(block,'Hiányzik a szerkeszthető fix szövegblokk.');
   assert.equal(block.value,'Kézi szöveg');
+  assert.equal(block.dataset.chatTarget,'BLOCK:b1',
+    'A sablon fix bekezdése önálló chat-célpont.');
   const field = all.find(node => node.dataset?.key === 'TERV_TARGYA');
   assert.ok(field,'Hiányzik a dokumentumhelyhez rendelt mező.');
   const textOf = node => String(node.textContent || '') +

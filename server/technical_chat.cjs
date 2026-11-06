@@ -9,9 +9,20 @@ const CHAT_KEYS = new Set([...DRAFTABLE_KEYS,
   'RETEGRENDEK_JOVAHAGYOTT_SZOVEG','TERVEZOI_NYILATKOZAT_JOVAHAGYOTT_SZOVEG',
   'TERV_TARGYA','SZAKAG:egyeztetes','TERV_HIVATKOZAS']);
 const MAX_TEXT = 7000;
+const BLOCK_KEY = /^BLOCK:b\d{1,5}$/;
+const SUB_KEY = /^(.*)#(\d{1,2})$/;
 
 function cleanLabel(value) {
   return String(value || '').replace(/\s+/g,' ').trim().slice(0,120);
+}
+
+// A chat célpontja egyetlen beviteli mező: szöveges mező, a szerkezetleírás egy
+// alpontja (KULCS#sorszám) vagy a sablon egy fix bekezdése (BLOCK:b…).
+function focusAllowed(key) {
+  if (CHAT_KEYS.has(key)) return true;
+  if (BLOCK_KEY.test(key)) return true;
+  const match = SUB_KEY.exec(key);
+  return Boolean(match && CHAT_KEYS.has(match[1]) && Number(match[2]) > 0);
 }
 
 function chatInput(input, current) {
@@ -34,8 +45,8 @@ function chatInput(input, current) {
   const focusKey = String(input.focusKey || '').trim();
   const focusLabel = cleanLabel(input.focusLabel);
   if (focusKey) {
-    if (!CHAT_KEYS.has(focusKey))
-      throw new Error('A kijelölt mezőhöz nem kérhető AI-szöveg. Válassz szöveges fejezetet.');
+    if (!focusAllowed(focusKey))
+      throw new Error('A kijelölt beviteli mezőhöz nem kérhető AI-szöveg. Válassz szöveges mezőt.');
     const focusValue = String(input.focusValue ?? '').trim();
     const text = focusValue || String(source[focusKey] ?? '').trim();
     if (!text)
