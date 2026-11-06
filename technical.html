@@ -99,7 +99,9 @@
       <textarea id="chatMessage" rows="3" maxlength="2000" placeholder="Például: a helyiségek leírásában emeld ki a kertkapcsolatot."></textarea>
       <div class="chat-actions"><button id="chatSend" type="button">Küldés</button></div>
     </section>
-    <form id="form" hidden><div id="groups" class="document"></div><div class="actions"><button id="save" type="submit">Műszaki leírás mentése</button><button id="draft" type="button" class="secondary">AI-szövegtervezet készítése</button><button id="autoDraft" type="button" class="secondary">AI-val kitöltés projektadatból</button><span>Mentés után a DRAFT műszaki leírás frissül.</span></div></form>
+    <form id="form" hidden><div id="groups" class="document"></div>
+      <p class="draft-note" id="aiHint">Az „AI-szövegtervezet” a Helyszín, Koncepció, Szerkezetek, Gépészet, Villamos és Környezet mezőkbe írt tényjegyzetekből dolgozik. Az „AI-val kitöltés projektadatból” a teljes DRAFT-ot elkészíti, a helyszín- és koncepciófejezeteket is beírja; ez 1–2 percig is eltarthat.</p>
+      <div class="actions"><button id="save" type="submit">Műszaki leírás mentése</button><button id="draft" type="button" class="secondary">AI-szövegtervezet készítése</button><button id="autoDraft" type="button" class="secondary">AI-val kitöltés projektadatból</button><span>Mentés után a DRAFT műszaki leírás frissül.</span></div></form>
     <section id="draftPreview" hidden aria-labelledby="draftTitle"><h2 id="draftTitle">AI-tervezet – ellenőrzésre</h2><p class="draft-note">A kijelölt fejezeteket szerkesztheted. A „Beillesztés” csak az űrlap mezőit módosítja; utána mentsd őket. A számokat, anyagokat és műszaki állításokat ellenőrizd.</p><div id="draftRows"></div><button id="applyDraft" type="button">Kijelölt fejezetek beillesztése</button></section>
   </main>
   <script>
@@ -110,6 +112,15 @@
     const autoDraftButton=document.getElementById('autoDraft');let aiReady=false;
     const draftable=key=>key==='EPITES_JELLEGE'||/^(HELYSZIN:|KONCEPCIO:|SZERKEZET:)/.test(key)||
       ['GEPESZET:szellozes','GEPESZET:energiaellatas','KORNYEZET:kitermelt_asvanyi_nyersanyag','VILLAMOS:teljesitmeny'].includes(key);
+    function openFirstDraftField(){
+      const input=[...form.querySelectorAll('[data-key]')].find(item=>draftable(item.dataset.key));
+      if(!input)return false;
+      let node=input.parentNode;
+      while(node&&node!==form){if(node.tagName==='DETAILS'){node.open=true;break}node=node.parentNode}
+      if(input.scrollIntoView)input.scrollIntoView({behavior:'smooth',block:'center'});
+      if(input.focus)input.focus();
+      return true;
+    }
     document.getElementById('projectUid').textContent=uid;
     document.getElementById('dashboardLink').href='/dashboard?project='+encodeURIComponent(uid)+'&step=5';
     function message(text,kind=''){status.className=kind?'notice '+kind:'';status.textContent=text}
@@ -488,11 +499,23 @@
         draftButton.disabled=!data.aiConfigured;draftButton.title=data.aiConfigured?'':'A GEMINI_API_KEY nincs beállítva.';
         autoDraftButton.disabled=!data.aiConfigured;autoDraftButton.title=data.aiConfigured?'A projekt tényadataiból minden fejezetet megír, elment, majd létrehozza a DRAFT dokumentumot.':'A GEMINI_API_KEY nincs beállítva.';
         aiReady=Boolean(data.aiConfigured);
+        const ready=[...form.querySelectorAll('[data-key]')]
+          .filter(input=>draftable(input.dataset.key)&&input.value.trim()).length;
+        const hint=document.getElementById('aiHint');
+        if(hint)hint.textContent=ready
+          ? 'Az AI-szövegtervezet a kitöltött tényjegyzetekből dolgozik ('+ready+' mező). '+
+            'Az AI-val kitöltés projektadatból a teljes DRAFT-ot elkészíti; ez 1–2 percig is eltarthat.'
+          : 'Az AI-szövegtervezethez előbb írj tényjegyzetet a Helyszín, Koncepció vagy Szerkezetek mezőkbe. '+
+            'Az AI-val kitöltés projektadatból a projekt tényadataiból a teljes DRAFT-ot elkészíti.';
         form.hidden=false;chat.hidden=!aiReady;message('A dokumentum szövegei betöltve.','success')
       }catch(error){message(error.message||String(error),'error')}}
     draftButton.addEventListener('click',async()=>{
       const inputs=[...form.querySelectorAll('[data-key]')].filter(input=>draftable(input.dataset.key)&&input.value.trim());
-      if(!inputs.length){message('Előbb írj tényszerű pontokat legalább egy szöveges fejezethez.','error');return}
+      if(!inputs.length){
+        message('Az AI-szövegtervezet a tényjegyzetekből dolgozik. Nyisd ki a Helyszín, Koncepció vagy Szerkezetek mezőt, és írj be legalább egy tényt.','error');
+        openFirstDraftField();
+        return;
+      }
       const notes=Object.fromEntries(inputs.map(input=>[input.dataset.key,input.value]));
       draftButton.disabled=true;message('AI-tervezet készül…');
       try{
@@ -526,8 +549,11 @@
       if(!confirm('A rendszer a projekt tényszerű adataiból megírja a fejezetszövegeket, elmenti a műszaki adatlapra, majd létrehozza vagy frissíti a DRAFT dokumentumot. A hiányzó adat helyén [KIEGÉSZÍTENDŐ: …] jelölés marad. Folytatod?'))return;
       const tab=window.open('about:blank','_blank');
       if(tab){tab.opener=null;tab.document.title='Műszaki leírás készítése…'}
+      const originalLabel=autoDraftButton.textContent;
       autoDraftButton.disabled=true;draftButton.disabled=true;
-      message('A műszaki leírás szövegezése folyamatban…');
+      autoDraftButton.textContent='AI dolgozik… (1–2 perc)';
+      autoDraftButton.setAttribute('aria-busy','true');
+      message('A műszaki leírás szövegezése folyamatban… Ez a projekt méretétől függően 1–2 percig is eltarthat.');
       try{
         const result=await rpc('dashboardGenerateTechnical',uid);
         if(result.url&&tab)tab.location.replace(result.url);
@@ -535,7 +561,11 @@
         await load();
         message(result.message+(result.url?' A dokumentum új lapon megnyílt.':'')+' Az elkészült szövegeket itt szerkesztheted, majd mentsd.','success')
       }catch(error){if(tab)tab.close();message(error.message||String(error),'error')}
-      finally{autoDraftButton.disabled=!aiReady;draftButton.disabled=!aiReady}
+      finally{
+        autoDraftButton.textContent=originalLabel;
+        autoDraftButton.setAttribute('aria-busy','false');
+        autoDraftButton.disabled=!aiReady;draftButton.disabled=!aiReady;
+      }
     });
     document.getElementById('applyDraft').addEventListener('click',()=>{
       let applied=0,changed=0;

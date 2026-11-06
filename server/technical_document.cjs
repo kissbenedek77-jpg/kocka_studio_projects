@@ -112,6 +112,15 @@ function hungarianToday(now = new Date()) {
 // folyószövegben viszont egyértelmű hiányjelölés, hogy a véglegesítés
 // elutasítsa a piszkozatot.
 const DATA_MARKER = /^(?:TERVEZESI_ADATOK:|EPITMENYERTEK:|SZAMITOTT_EPITMENYERTEK$|PARKOLOEGYENLEG_ERTEKELES$|BEEPITESI_MERLEG$|ADAT_EGYEZTETES$|TERVJEGYZEK$|IRATJEGYZEK$)/;
+// A generálás a DRAFT-ba illesztett helyszín- és koncepciófejezetek helyőrzőit
+// is kitölti. Ha nincs jegyzet, a szokásos hiányjelölés kerül a helyére, hogy
+// nyers {{...}} ne maradjon a dokumentumban.
+const NARRATIVE_FIELD_KEYS = [
+  'HELYSZIN:elozmenyek','HELYSZIN:meglevo_allapot','HELYSZIN:terep_es_viz',
+  'HELYSZIN:megkozelites','KONCEPCIO:rendeltetes','KONCEPCIO:elhelyezes',
+  'KONCEPCIO:tomeg_es_szintek','KONCEPCIO:tajolas','KONCEPCIO:homlokzat',
+  'KONCEPCIO:funkcio','SZAKAG:egyeztetes','TERV_HIVATKOZAS'
+];
 const GAP_LABELS = {
   'TERV_TARGYA':'a terv tárgya és az engedélyezési eljárás megnevezése',
   'EPITES_JELLEGE':'az építés jellege',
@@ -352,6 +361,11 @@ function technicalReplacements({project, sheetRows, programRows, fieldRows, pdfF
       !validIsoDate(date))
     delete manual['OVEZET:ellenorzes_allapota'];
   const values = {...documentValues(project),...manual};
+  // A DRAFT-ba illesztett narratív fejezetek helyőrzői akkor is kapjanak értéket,
+  // ha a felhasználó még nem írt jegyzetet: így nem marad nyers {{...}} a
+  // dokumentumban, hanem a szokásos hiányjelölés jelenik meg.
+  for (const key of NARRATIVE_FIELD_KEYS)
+    if (!String(values[key] ?? '').trim()) values[key] = gapText(key);
   // A terv tárgya az építés jellegéből; a kézzel mentett érték marad felülíratlan.
   if (!String(values.TERV_TARGYA || '').trim()) {
     const target = tervTargya(project);

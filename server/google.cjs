@@ -15,6 +15,7 @@ const {FIELD_SHEET,MANUAL_FIELDS,CHAPTER_KEYS,EPITMENYERTEK_ROWS,fieldSheetRows,
 const {valueTableRowRequests,findValueTable} = require('./value_table.cjs');
 const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs');
 const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
+const {technicalSupplementRequests} = require('./technical_upgrade.cjs');
 const {sectionTexts,sectionReplaceRequests,sectionStyleRequests,hasTemplateSections,retegrendStyleRequests,structureHeadingRequests,appendixRequests} = require('./technical_texts.cjs');
 const {BLOCK_SHEET,BLOCK_HEADER,BLOCK_ID,templateOutline,blockOverrides,blockRequests} = require('./technical_blocks.cjs');
 const {placeholderTarget,columnLetter,CLIENT_FIELD_MAP,ADDRESS_PARTS,composeAddress} = require('./placeholder_map.cjs');
@@ -1725,9 +1726,26 @@ function googleClient(config, refreshToken = '', authOverride = null) {
           'táblázatot a dokumentumban.');
       }
     }
-    // A friss sablon már tartalmazza a helyszín- és koncepciófejezetek helyét,
-    // ezért a régi sablonhoz készült kiegészítő beszúrás nem kell. A táblázat
-    // sorait és oszlopait fentebb már a tényleges adatokhoz igazítottuk.
+    // A sablonból hiányzó helyszín- és koncepciófejezetek helyőrzőit a DRAFT
+    // kapja meg, hogy az AI-jegyzetekből készült szöveg a dokumentumba kerüljön.
+    // A beszúrás ismételhető: a már meglévő fejezetcímeket nem duplikálja.
+    if (type === 'muszakiLeiras') {
+      try {
+        const additions = technicalSupplementRequests(document);
+        if (additions.length) {
+          await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({documentId,
+            requestBody:{requests:additions,
+              ...(document.revisionId ? {writeControl:{requiredRevisionId:document.revisionId}} : {})}}));
+          document = (await googleQuota.run('docsRead',1,() => docs.documents.get({
+            documentId,includeTabsContent:false
+          }))).data;
+        }
+      } catch (error) {
+        if (error.status === 429) throw error;
+        warn('A helyszín- és koncepciófejezetek nem illeszthetők be a dokumentumba ('+
+          (error.message||String(error))+'). A dokumentum a sablon szerinti fejezetekkel készül el.');
+      }
+    }
     const conditional = conditionalRequests(source,document,mergeValues);
     if (conditional.length) {
       await googleQuota.run('docsWrite',1,() => docs.documents.batchUpdate({

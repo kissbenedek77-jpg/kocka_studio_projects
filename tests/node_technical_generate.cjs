@@ -27,7 +27,7 @@ function mockTechnical({roomContent,fetch:fetchImpl}={}) {
   const roomRows=[['Helyiség','Terület (m²)'],['Földszint',''],['Nappali','30,00'],
     ['Földszint összesen','30,00'],['Teljes összesen','30,00']];
   const folders=['írásos','_Belső','PDFA','DWG','Adat társtervezőktől','PLN','Render'];
-  const state={fieldsWrite:null,fieldsWrites:[],docWrite:null,fetchBody:null,fieldRows};
+  const state={fieldsWrite:null,fieldsWrites:[],docWrite:null,docWrites:[],fetchBody:null,fieldRows};
   google.sheets=()=>({spreadsheets:{
     get:async options=>options.includeGridData?{data:{sheets:[{data:[{startRow:1,
       rowData:[{values:[{hyperlink:'https://drive.google.com/drive/folders/generate-root'}]}]}]}]}}:
@@ -70,10 +70,22 @@ function mockTechnical({roomContent,fetch:fetchImpl}={}) {
       return {data:{files}};},
     copy:async()=>({data:{id:'generated-technical-doc'}})
   }});
-  const body={content:[{paragraph:{elements:[{startIndex:1,textRun:{
-    content:'{{TERV_TARGYA}} {{HELYSZIN:meglevo_allapot}} {{HELYISEGLISTA}} {{TERVEZESI_PROGRAM:b}}\n'}}]}}]};
+  let bodyIndex=1;
+  const paragraphItem=text=>{
+    const start=bodyIndex;
+    bodyIndex+=text.length+1;
+    return {startIndex:start,endIndex:bodyIndex,
+      paragraph:{elements:[{startIndex:start,textRun:{content:text+'\n'}}]}};
+  };
+  const body={content:[
+    paragraphItem('{{TERV_TARGYA}} {{HELYSZIN:meglevo_allapot}} {{HELYISEGLISTA}} {{TERVEZESI_PROGRAM:b}}'),
+    paragraphItem('Adatok'),
+    paragraphItem('Beépítési paraméterek'),
+    paragraphItem('Épület adatai'),
+    paragraphItem('Tűzvédelem')
+  ]};
   google.docs=()=>({documents:{get:async()=>({data:{revisionId:'r1',body,namedRanges:{}}}),
-    batchUpdate:async options=>{state.docWrite=options;return {data:{}};}}});
+    batchUpdate:async options=>{state.docWrite=options;state.docWrites.push(options);return {data:{}};}}});
   process.env.GEMINI_API_KEY='test-key';process.env.GEMINI_TECHNICAL_MODEL='gemini-2.5-flash';
   global.fetch=fetchImpl||(async(url,options)=>{
     state.fetchBody=JSON.parse(options.body);
@@ -124,6 +136,25 @@ test('A műszaki leírás egy kéréssel, AI-val elkészül és a fejezetek ment
     assert.ok(prompt.includes('1000'),'A tervezési adat kerüljön az AI elé.');
     assert.ok(prompt.includes('EK-01 Helyszínrajz'),'A tervlapok kerüljenek az AI elé.');
     assert.match(prompt,/KIEGÉSZÍTENDŐ/,'A hiányzó adat jelölésének szabálya hiányzik.');
+  }finally{
+    harness.restore();
+  }
+});
+
+test('A generálás a DRAFT-ba illeszti a helyszín- és koncepciófejezeteket',async()=>{
+  const harness=mockTechnical({roomContent:[
+    '| Helyiség szintjének neve | Helyiség neve | Mért terület',
+    '1 | Földszint | nappali | 30,00'].join('\n')});
+  try{
+    await technicalClient('technical-generate-narrative')
+      .ensureDocument('ABC123','muszakiLeiras');
+    const inserted=harness.state.docWrites
+      .flatMap(write=>write.requestBody.requests || [])
+      .map(item=>item.insertText?.text || '').join('\n');
+    assert.match(inserted,/Helyszín és tervelőzmények/,
+      'A helyszín- és koncepciófejezetek helyőrzőinek a DRAFT-ba kell kerülniük.');
+    assert.match(inserted,/HELYSZIN:elozmenyek/);
+    assert.match(inserted,/KONCEPCIO:rendeltet/);
   }finally{
     harness.restore();
   }
