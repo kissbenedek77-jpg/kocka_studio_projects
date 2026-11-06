@@ -48,6 +48,8 @@ class Node {
       if (selector === 'label') return node.tagName === 'LABEL';
       if (selector === 'input[type=checkbox]')
         return node.tagName === 'INPUT' && node.type === 'checkbox';
+      if (selector.startsWith('.'))
+        return (' ' + String(node.className || '') + ' ').includes(' ' + selector.slice(1) + ' ');
       return false;
     };
     const walk = node => {
@@ -60,7 +62,9 @@ class Node {
     walk(this); return found;
   }
   get scrollHeight(){return 80}
-  getBoundingClientRect(){return {left:0,top:0,width:0,height:0}}
+  getBoundingClientRect(){
+    return this.rect || {left:0,top:0,right:600,width:600,height:40,bottom:40};
+  }
   scrollIntoView(){}
   focus(){}
   select(){}
@@ -70,16 +74,24 @@ function createContext(payload, calls) {
   const ids = new Map();
   for (const id of ['status','form','draft','draftPreview','autoDraft','projectUid',
     'dashboardLink','sheetLink','chat','chatSend','chatMessage','chatLog','groups',
-    'draftRows','applyDraft']) ids.set(id,new Node(id === 'form' ? 'form' : 'div'));
+    'chatTarget','chatToggle','chatBody','draftRows','applyDraft'])
+    ids.set(id,new Node(id === 'form' ? 'form' : 'div'));
+  // A valódi oldalon a mezők a formon belül vannak; a teszthez is így kötjük be.
+  ids.get('form').append(ids.get('groups'));
   const document = {
     getElementById:id => ids.get(id) || new Node('div'),
     createElement:tag => new Node(tag),
     createTextNode:text => ({textContent:String(text)}),
-    querySelectorAll:() => []
+    querySelectorAll:() => [],
+    documentElement:{style:{values:{},setProperty(name,value){this.values[name] = value}}}
+  };
+  const window = {
+    open:() => null, innerHeight:900,
+    addEventListener(type,handler){ if (type === 'scroll') this.scrollHandler = handler; }
   };
   const context = vm.createContext({
     document, location:{search:'?uid=ABC123',pathname:'/technical',replace(){}},
-    window:{open:() => null},
+    window,
     fetch:async (_url,options) => {
       const body = JSON.parse(options.body); calls.push(body);
       const result = body.name === 'dashboardSaveTechnicalFields'
@@ -91,8 +103,69 @@ function createContext(payload, calls) {
     URLSearchParams, confirm:() => true
   });
   vm.runInContext(script,context);
-  return {context,ids};
+  return {context,ids,window};
 }
+
+test('A chat a lap alján rögzítve jelenik meg, a látható mezőt pedig finom szín jelöli',() => {
+  assert.match(html,/#chat\{position:fixed/,'A chat a képernyő alján rögzített legyen.');
+  assert.match(html,/\.doc-field\.active-field\{/,'Az aktív mezőnek saját kiemelése legyen.');
+  assert.match(html,/--chat-height/,'A chat magasságát a tartalom és a mentősáv kövesse.');
+  assert.match(html,/#chatToggle/,'A chat összecsukható legyen.');
+});
+
+test('A chat a képernyőn látható első mezőre vonatkozik',async () => {
+  const calls = [];
+  const payload = {
+    sheetUrl:'https://docs.google.com/spreadsheets/d/x/edit',aiConfigured:true,
+    outline:[
+      {type:'heading',level:'chapter',number:1,text:'Helyszín és tervelőzmények',readonly:true},
+      {type:'fields',keys:['HELYSZIN:meglevo_allapot'],context:'',readonly:false},
+      {type:'heading',level:'chapter',number:2,text:'Tervezési program',readonly:true},
+      {type:'fields',keys:['KONCEPCIO:rendeltetes'],context:'',readonly:false}
+    ],
+    blocks:[],
+    fields:[
+      {key:'HELYSZIN:meglevo_allapot',help:'Meglévő állapot',value:'Régi ház áll a telken.',manual:false},
+      {key:'KONCEPCIO:rendeltetes',help:'Rendeltetés',value:'Lakóház.',manual:false}
+    ],
+    chatKeys:['HELYSZIN:meglevo_allapot','KONCEPCIO:rendeltetes'],
+    valueRows:[],placeholderValues:{},editablePlaceholders:[],missingFields:[]
+  };
+  const {ids,window} = createContext(payload,calls);
+  await new Promise(resolve => setTimeout(resolve,20));
+  const groups = ids.get('groups');
+  const all = [];
+  const walk = node => {
+    for (const child of node.children || []) {
+      if (child && typeof child === 'object') { all.push(child); walk(child); }
+    }
+  };
+  walk(groups);
+  const wrapperFor = key => all.find(node => node.dataset?.key === key)?.parentNode;
+  const first = wrapperFor('HELYSZIN:meglevo_allapot');
+  const second = wrapperFor('KONCEPCIO:rendeltetes');
+  assert.ok(first && second,'Hiányoznak a szerkeszthető mezők.');
+  assert.match(first.className,/active-field/,'Az első látható mező aktív jelölést kap.');
+  assert.doesNotMatch(second.className,/active-field/);
+
+  // Görgetés után a második mező kerül a képernyő tetejére: az lesz aktív.
+  first.rect = {top:-320,height:60,bottom:-260,width:600};
+  second.rect = {top:120,height:60,bottom:180,width:600};
+  window.scrollHandler();
+  assert.doesNotMatch(first.className,/active-field/,'A kigörgetett mező már nem aktív.');
+  assert.match(second.className,/active-field/,'A látható első mező lesz aktív.');
+  assert.match(ids.get('chatTarget').textContent,/Rendeltetés/,
+    'A chat a kijelölt mezőt nevezi meg.');
+
+  ids.get('chatMessage').value = 'Fogalmazd rövidebbre.';
+  ids.get('chatSend').clickHandler();
+  await new Promise(resolve => setTimeout(resolve,20));
+  const chat = calls.find(call => call.name === 'dashboardTechnicalChat');
+  assert.ok(chat,'A chat kérés nem indult el.');
+  assert.equal(chat.args[1].focusKey,'KONCEPCIO:rendeltetes');
+  assert.equal(chat.args[1].focusValue,'Lakóház.');
+  assert.equal(chat.args[1].focusLabel,'Rendeltetés');
+});
 
 test('A /technical oldal a dokumentum sorrendjében, szerkeszthető blokkokkal jelenik meg',async () => {
   const calls = [];

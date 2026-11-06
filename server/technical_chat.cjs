@@ -8,6 +8,11 @@ const CHAT_KEYS = new Set([...DRAFTABLE_KEYS,
   'HELYISEGLISTA','TUZVEDELMI_LEIRAS_JOVAHAGYOTT_SZOVEG','SZERKEZETEK LEÍRÁSA',
   'RETEGRENDEK_JOVAHAGYOTT_SZOVEG','TERVEZOI_NYILATKOZAT_JOVAHAGYOTT_SZOVEG',
   'TERV_TARGYA','SZAKAG:egyeztetes','TERV_HIVATKOZAS']);
+const MAX_TEXT = 7000;
+
+function cleanLabel(value) {
+  return String(value || '').replace(/\s+/g,' ').trim().slice(0,120);
+}
 
 function chatInput(input, current) {
   if (!input || typeof input !== 'object' || Array.isArray(input))
@@ -19,18 +24,40 @@ function chatInput(input, current) {
   const notes = {};
   for (const [key,value] of Object.entries(source)) {
     const text = String(value ?? '').trim();
-    if (!CHAT_KEYS.has(key) || !text || text.length > 7000) continue;
+    if (!CHAT_KEYS.has(key) || !text || text.length > MAX_TEXT) continue;
     notes[key] = text;
+  }
+  // A felület a képernyőn éppen látható első mezőt küldi el. Ilyenkor a chat
+  // kizárólag arra a mezőre vonatkozik: a kérés és a válasz ugyanarra a
+  // fejezetre hat, a többi szöveg érintetlen marad. A felületről küldött,
+  // még nem mentett szöveg elsőbbséget kap a táblában tárolt értékkel szemben.
+  const focusKey = String(input.focusKey || '').trim();
+  const focusLabel = cleanLabel(input.focusLabel);
+  if (focusKey) {
+    if (!CHAT_KEYS.has(focusKey))
+      throw new Error('A kijelölt mezőhöz nem kérhető AI-szöveg. Válassz szöveges fejezetet.');
+    const focusValue = String(input.focusValue ?? '').trim();
+    const text = focusValue || String(source[focusKey] ?? '').trim();
+    if (!text)
+      throw new Error('A kijelölt mező'+(focusLabel?' („'+focusLabel+'”)':'')+
+        ' még üres. Előbb írj be szöveget, utána kérd az AI-t.');
+    if (text.length > MAX_TEXT)
+      throw new Error('A kijelölt mező szövege legfeljebb '+MAX_TEXT+' karakter lehet a chathez.');
+    return {message,notes:{[focusKey]:text},focusKey,focusLabel};
   }
   if (!Object.keys(notes).length)
     throw new Error('Nincs szerkeszthető fejezetszöveg. Előbb töltsd ki a szöveges mezőket.');
-  return {message,notes};
+  return {message,notes,focusKey:'',focusLabel:''};
 }
 
-function chatPrompt({message,notes,projectType}) {
+function chatPrompt({message,notes,projectType,focusKey,focusLabel}) {
+  const target = focusKey
+    ? `A kérés kizárólag a(z) ${JSON.stringify(focusLabel || focusKey)} mezőre (${focusKey}) vonatkozik.
+Csak ezt a kulcsot add vissza, a többi fejezetet ne módosítsd.`
+    : 'Csak a felsorolt fejezetek szövegét írd át, és csak azt, amelyiket a kérés érinti.';
   return `Építészeti műszaki leírás fejezetszövegeit kell módosítanod a felhasználó kérése szerint.
 A felhasználó kérése: ${JSON.stringify(message)}
-Csak a felsorolt fejezetek szövegét írd át, és csak azt, amelyiket a kérés érinti.
+${target}
 A kérést a tényadatok keretei között hajtsd végre: ne találj ki anyagot, rétegrendet, méretet,
 számot, teljesítményt, jogszabályt, HÉSZ-előírást vagy megfelelőségi állítást.
 Az eredeti számokat, mértékegységeket és a terv szerinti állapotot tartsd meg.

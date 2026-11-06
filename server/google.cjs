@@ -29,7 +29,7 @@ const {MARKER:PLAN_MARKER,planRows,layoutRequests,alignRequests,findTable} = req
 const {retegekFromText,retegrendFacts,retegrendValues} = require('./retegrend.cjs');
 const {pdfToText} = require('./pdf_text.cjs');
 const {floorCount,bedroomCount,hasOffice,PROGRAM_LETTERS} = require('./technical_program.cjs');
-const {chatInput,chatPrompt,parseChatResult} = require('./technical_chat.cjs');
+const {chatInput,chatPrompt,parseChatResult,CHAT_KEYS} = require('./technical_chat.cjs');
 const {latestRenderCoverFile,coverImageObject,publicImageUrl,coverImageRequest} = require('./cover_image.cjs');
 const {PHASE_COUNT,projectPhases,phaseChange} = require('./phases.cjs');
 const {googleQuota} = require('./quota.cjs');
@@ -774,6 +774,9 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       ...Object.keys(previewValues).filter(key => placeholderTarget(key))]);
     return {sheetUrl:sheet.url,aiConfigured:Boolean(process.env.GEMINI_API_KEY),
       autoChapters:AUTO_CHAPTERS,
+      // A chat csak ezekhez a szöveges mezőkhöz kérhet szöveget. A felület ebből
+      // tudja, mely mezők jelölhetők aktívként, és melyikre vonatkozik a kérés.
+      chatKeys:[...CHAT_KEYS],
       outline:outline.entries,
       missingFields:outline.missingFields,
       placeholderValues:previewValues,

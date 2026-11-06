@@ -150,6 +150,24 @@ test('A tervezési program a projekt adatait és a helyiséglistát használja',
   assert.match(programLines([],{},{}).at(-1).join('\n'),/KIEGÉSZÍTENDŐ/);
 });
 
+test('A chat az aktív mező szövegére szűkíti a kérést', () => {
+  const input = chatInput({message:'Fogalmazd rövidebbre.',focusKey:'HELYSZIN:meglevo_allapot',
+    focusValue:'A telken jelenleg egy régi ház áll.',focusLabel:'Meglévő állapot'},{
+    'HELYSZIN:meglevo_allapot':'Tárolt régi szöveg.',
+    'HELYSZIN:elozmenyek':'A telek 2019-ben került a család tulajdonába.'});
+  assert.deepEqual(Object.keys(input.notes),['HELYSZIN:meglevo_allapot']);
+  assert.equal(input.notes['HELYSZIN:meglevo_allapot'],'A telken jelenleg egy régi ház áll.',
+    'A felületen szerkesztett, még nem mentett szöveg számít.');
+  const prompt = chatPrompt({...input,projectType:'Lakóház'});
+  assert.match(prompt,/kizárólag/);
+  assert.match(prompt,/HELYSZIN:meglevo_allapot/);
+  assert.doesNotMatch(prompt,/"HELYSZIN:elozmenyek"/);
+  assert.throws(()=>chatInput({message:'Írd át.',focusKey:'HELYSZIN:meglevo_allapot',
+    focusValue:'   ',focusLabel:'Meglévő állapot'},{'HELYSZIN:elozmenyek':'Előzmény'}),/még üres/);
+  assert.throws(()=>chatInput({message:'Írd át.',focusKey:'DOKUMENTUM:kiadas_datuma',
+    focusValue:'2026.10.07.'},{}),/nem kérhető/);
+});
+
 test('A chat csak szerkeszthető mezőt fogad el és a választ ellenőrzi', () => {
   const input = chatInput({message:'Rövidítsd a tűzvédelmet.'},{
     'TUZVEDELMI_LEIRAS_JOVAHAGYOTT_SZOVEG':'Hosszú tűzvédelmi szöveg.',
