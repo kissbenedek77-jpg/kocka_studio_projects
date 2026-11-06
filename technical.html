@@ -41,6 +41,13 @@
     .doc-auto .marker{background:#e5edef;border-radius:4px;padding:0 .25rem;font-family:monospace;font-size:.85em}
     .doc-auto-label{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;color:#7b929a;font-weight:700;margin-bottom:.25rem}
     .doc-context{color:#526873;font-size:.9rem;margin:.45rem 0 .1rem;white-space:pre-wrap;overflow-wrap:anywhere}
+    button.marker{border:1px dashed #b9c9ce;background:#eef4f5;color:#24506b;border-radius:4px;padding:0 .3rem;font:inherit;font-size:.92em;cursor:pointer;text-decoration:underline dotted;min-height:1.6rem}
+    button.marker:hover{background:#e2edf0;border-color:#287b82}
+    button.marker.readonly{background:#e8eef0;color:#7b929a;cursor:default;text-decoration:none;border-style:solid;opacity:.75}
+    .marker-label{background:#e5edef;border-radius:4px;padding:0 .25rem;font-size:.9em;color:#526873}
+    .placeholder-editor{display:inline-flex;gap:.35rem;align-items:center;flex-wrap:wrap;background:#eef4f5;padding:.25rem .4rem;border-radius:6px}
+    .placeholder-editor input{min-height:2rem;border:1px solid #9fb3bb;border-radius:4px;padding:.25rem .4rem;font:inherit;min-width:12rem}
+    .placeholder-editor button{padding:.25rem .55rem;font-size:.82rem;min-height:2rem}
     .doc-table-note{background:#f4f7f8;border:1px dashed #c4d2d6;border-radius:8px;padding:.7rem .9rem;margin:.7rem 0;color:#526873;font-size:.92rem}
     .doc-note{color:#526873;font-size:.92rem;margin:.6rem 0}
     .doc-readonly{white-space:pre-wrap;overflow-wrap:anywhere;color:#3f5a63;line-height:1.55;margin:.35rem 0;padding:.2rem .55rem}
@@ -123,16 +130,81 @@
       if(key.startsWith('TERVEZESI_PROGRAM:'))return 'Tervezési program és fejezetszövegek';
       return 'Projekt és helyiségek'}
     const fieldInputs=new Map(),blockInputs=new Map(),fieldRefresh=new Map();
+    const markerButtons=new Map();
+    let placeholderValues={},editablePlaceholders=new Set();
+    const AUTO_LABELS={
+      TERVJEGYZEK:'A tervjegyzék a PDFA mappa tervlapjaiból automatikusan készül.',
+      IRATJEGYZEK:'Az iratjegyzék a dokumentumokból automatikusan készül.',
+      BEEPITESI_MERLEG:'A beépítési mérleg a tervezési adatokból automatikusan készül.',
+      ADAT_EGYEZTETES:'Az adategyeztetés a tervezési adatokból automatikusan készül.',
+      PARKOLOEGYENLEG_ERTEKELES:'A parkolóegyenleg a tervezési adatokból automatikusan készül.'
+    };
     function badge(text,className){const span=document.createElement('span');span.className=className;span.textContent=text;return span}
+    function registerMarker(key,button){
+      if(!markerButtons.has(key))markerButtons.set(key,new Set());
+      markerButtons.get(key).add(button);
+    }
+    function markerText(key,value){return value||'{{'+key+'}}'}
+    function setMarkerValue(key,value){
+      placeholderValues[key]=value;
+      const buttons=markerButtons.get(key);
+      if(buttons)buttons.forEach(button=>{
+        button.textContent=markerText(key,value);
+        button.title='Kattints a módosításhoz ('+key+')';
+      });
+    }
+    function markerNode(key){
+      if(AUTO_LABELS[key])return badge(AUTO_LABELS[key],'marker-label');
+      const hasValue=Object.prototype.hasOwnProperty.call(placeholderValues,key);
+      const value=hasValue?placeholderValues[key]:'';
+      const editable=editablePlaceholders.has(key);
+      const button=document.createElement('button');button.type='button';button.className='marker';
+      button.dataset.key=key;button.dataset.editable=editable?'1':'0';
+      button.textContent=markerText(key,value);
+      if(!editable){button.className+=' readonly';button.disabled=true;button.title='Automatikus számított érték – itt nem módosítható.';return button}
+      button.title='Kattints a módosításhoz ('+key+')';
+      button.addEventListener('click',()=>openPlaceholderEditor(button,key,value));
+      registerMarker(key,button);
+      return button;
+    }
     function autoText(text){
       const root=document.createElement('div');root.className='auto-text';
       let last=0;const re=/\{\{([^{}]+)\}\}/g;let match;
       while((match=re.exec(text))){
         if(match.index>last)root.append(document.createTextNode(text.slice(last,match.index)));
-        root.append(badge(match[0],'marker'));last=match.index+match[0].length;
+        root.append(markerNode(match[1]));last=match.index+match[0].length;
       }
       if(last<text.length)root.append(document.createTextNode(text.slice(last)));
       return root;
+    }
+    function openPlaceholderEditor(button,key,value){
+      const wrapper=document.createElement('span');wrapper.className='placeholder-editor';
+      const input=document.createElement('input');input.type='text';input.value=value||'';
+      input.placeholder='Érték…';input.setAttribute('aria-label',key+' új értéke');
+      const save=document.createElement('button');save.type='button';save.textContent='Mentés';
+      const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Mégse';
+      wrapper.append(input,save,cancel);
+      button.replaceWith(wrapper);input.focus();input.select();
+      const close=()=>{
+        input.removeEventListener('keydown',onKey);
+        wrapper.replaceWith(button);
+      };
+      const onKey=event=>{
+        if(event.key==='Enter'){event.preventDefault();save.click()}
+        if(event.key==='Escape'){event.preventDefault();close()}
+      };
+      cancel.addEventListener('click',close);
+      input.addEventListener('keydown',onKey);
+      save.addEventListener('click',async()=>{
+        if(!confirm('Mentés a(z) "'+key+'" mező módosítása a megfelelő táblába?'))return;
+        save.disabled=true;input.disabled=true;cancel.disabled=true;
+        try{
+          const result=await rpc('dashboardSaveProjectValue',uid,key,input.value);
+          setMarkerValue(key,input.value);
+          close();
+          message(result.message||result.syncMessage||'A helyőrző frissítve.',result.synced===false?'warning':'success');
+        }catch(error){message(error.message||String(error),'error');save.disabled=false;input.disabled=false;cancel.disabled=false}
+      });
     }
     function autoSize(input){
       if(input.tagName!=='TEXTAREA'||input.rows>8)return;
@@ -320,7 +392,9 @@
     }
     function renderOutline(data){
       const root=document.getElementById('groups');root.replaceChildren();
-      fieldInputs.clear();blockInputs.clear();fieldRefresh.clear();
+      fieldInputs.clear();blockInputs.clear();fieldRefresh.clear();markerButtons.clear();
+      placeholderValues=data.placeholderValues||{};
+      editablePlaceholders=new Set(data.editablePlaceholders||[]);
       const fields=new Map((data.fields||[]).map(field=>[field.key,field]));
       const blocks=new Map((data.blocks||[]).map(block=>[block.id,block]));
       const outline=Array.isArray(data.outline)?data.outline:[];
@@ -367,7 +441,7 @@
         if(entry.type==='valueTable'){renderValueTable(current,data,fields);continue}
         if(entry.type==='auto'){
           const node=document.createElement('div');node.className='doc-auto';
-          node.append(badge('Automatikus – projektadatból','doc-auto-label'),autoText(entry.preview||entry.text||''));
+          node.append(badge('Automatikus – projektadatból','doc-auto-label'),autoText(entry.text||''));
           current.append(node);continue;
         }
         if(entry.type==='table'){

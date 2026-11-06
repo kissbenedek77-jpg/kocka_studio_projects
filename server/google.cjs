@@ -17,6 +17,7 @@ const {draftInputs,draftPrompt,parseDraftResult} = require('./technical_ai.cjs')
 const {AUTO_CHAPTERS,autoFacts,autoPrompt,parseAutoResult} = require('./technical_auto.cjs');
 const {sectionTexts,sectionReplaceRequests,sectionStyleRequests,hasTemplateSections,retegrendStyleRequests,structureHeadingRequests,appendixRequests} = require('./technical_texts.cjs');
 const {BLOCK_SHEET,BLOCK_HEADER,BLOCK_ID,templateOutline,blockOverrides,blockRequests} = require('./technical_blocks.cjs');
+const {placeholderTarget,columnLetter,CLIENT_FIELD_MAP,ADDRESS_PARTS,composeAddress} = require('./placeholder_map.cjs');
 const {findMarker,insertRequests,findEmptyTable,fillRequests,
   layoutRequests:roomLayoutRequests,styleRequests:roomStyleRequests,
   rowStyleRequests:roomRowStyleRequests,
@@ -752,6 +753,12 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     for (const [key,entry] of current)
       if (entry.value) previewValues[key] = entry.value;
     try {
+      const parts = await sheetParts(sheet.id,["'Munkalap1'!A1:M20"]);
+      Object.assign(previewValues,technicalSheetValues(parts[0]?.values || []));
+    } catch (error) {
+      if (error.status === 429) throw error;
+    }
+    try {
       const template = await technicalTemplateDocument();
       outline = templateOutline(template,{manualKeys:MANUAL_FIELDS.map(([key]) => key),
         values:previewValues});
@@ -761,10 +768,15 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       // A sablon átmeneti olvasási hibája esetén a mezők külön listában
       // jelennek meg; a mentés ettől még működik.
     }
+    const editablePlaceholders = new Set([...Object.keys(CLIENT_FIELD_MAP),
+      ...MANUAL_FIELDS.map(([key]) => key),
+      ...Object.keys(previewValues).filter(key => placeholderTarget(key))]);
     return {sheetUrl:sheet.url,aiConfigured:Boolean(process.env.GEMINI_API_KEY),
       autoChapters:AUTO_CHAPTERS,
       outline:outline.entries,
       missingFields:outline.missingFields,
+      placeholderValues:previewValues,
+      editablePlaceholders:[...editablePlaceholders],
       blocks:outline.blocks.map(block => ({id:block.id,text:block.text,
         value:overrides.get(block.id) || '',manual:Boolean(overrides.get(block.id))})),
       valueRows:[1,5].map(number => ({number,key:`EPITMENYERTEK:terulet_${number}_m2`,
@@ -886,6 +898,50 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     if (!options.sync) return result;
     const sync = await syncTechnicalDraft(uid);
     return {...result,synced:sync.synced,syncMessage:sync.syncMessage};
+  }
+
+  // A /technical oldalon kattintásra módosítható helyőrzők mentése a forrástáblába.
+  // Csak azokat a helyőrzőket írjuk vissza, amelyekhez egyértelműen tartozik
+  // tábla/cella (tervezési adatlap, ügyféladatlap vagy műszaki mezőlap).
+  async function saveProjectValue(uid,key,value) {
+    const normalized = String(key || '').trim();
+    if (normalized.length < 2 || normalized.length > 120)
+      throw new Error('Érvénytelen helyőrző.');
+    const target = placeholderTarget(normalized);
+    if (!target)
+      throw new Error('Ez a helyőrző automatikusan számított, itt nem módosítható.');
+    const text = String(value ?? '').trim();
+    if (text.length > 10000) throw new Error('Túl hosszú érték.');
+    if (target.type === 'field')
+      return saveTechnicalFields(uid,{[normalized]:text},{sync:true});
+    if (target.type === 'munkalap') {
+      const sheet = await ensureProjectDataSheet(uid);
+      await sheetWrite(() => sheets.spreadsheets.values.update({spreadsheetId:sheet.id,
+        range:`'Munkalap1'!${target.cell}`,valueInputOption:'RAW',
+        requestBody:{values:[[text]]}}));
+      const sync = await syncTechnicalDraft(uid);
+      return {...sync,message:'A(z) '+normalized+' frissítve.'};
+    }
+    const {row,rowNumber} = await project(uid);
+    const data = rowToData(row);
+    data[target.field] = text;
+    const updates = [{field:target.field,value:text}];
+    const composed = ADDRESS_PARTS[target.field];
+    if (composed) {
+      data[composed] = composeAddress(data);
+      updates.push({field:composed,value:data[composed]});
+    }
+    const sheetRows = updates.map(update => {
+      const column = FIELDS.indexOf(update.field);
+      if (column < 0) throw new Error('Ismeretlen ügyféladat: '+update.field);
+      return {range:`${quote(config.sheetName)}!${columnLetter(column)}${rowNumber}`,
+        values:[[update.value]]};
+    });
+    await sheetWrite(() => sheets.spreadsheets.values.batchUpdate({spreadsheetId:book,
+      requestBody:{valueInputOption:'RAW',data:sheetRows}}));
+    googleCache.clear(`rows:${book}`);
+    const sync = await syncTechnicalDraft(uid);
+    return {...sync,message:'A(z) '+normalized+' frissítve.'};
   }
 
   async function draftTechnicalText(uid,input) {
@@ -3184,7 +3240,7 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     uploadAudio, summarizeAudio, draftTechnicalText, generateTechnicalDocument, technicalChat,
     syncProject, reinitializeDraftDocuments, resetTechnicalContent, startProject, closeProject,
     archiveProject,deleteProject,prepareEmail,
-    restartProject, getTechnicalFields, saveTechnicalFields, setPhase,auditProjectPdfs};
+    restartProject, getTechnicalFields, saveTechnicalFields, saveProjectValue, setPhase,auditProjectPdfs};
 }
 
 module.exports = {googleClient, extractFolderLinks};

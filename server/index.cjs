@@ -334,6 +334,7 @@ async function rpc(name, args, session) {
   if (name === 'dashboardGetTechnicalFields') return google.getTechnicalFields(uid);
   if (name === 'dashboardSaveTechnicalFields') return google.saveTechnicalFields(uid,args[1],
     {sync:true,blocks:args[2]});
+  if (name === 'dashboardSaveProjectValue') return google.saveProjectValue(uid,args[1],args[2]);
   if (name === 'dashboardDraftTechnicalText') return google.draftTechnicalText(uid,args[1]);
   if (name === 'dashboardTechnicalChat') return google.technicalChat(uid,args[1]);
   if (name === 'dashboardGenerateTechnical') return google.generateTechnicalDocument(uid);

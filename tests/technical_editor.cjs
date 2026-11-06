@@ -24,6 +24,17 @@ class Node {
   addEventListener(type,handler){
     if (type === 'submit') this.submitHandler = handler;
     if (type === 'click') this.clickHandler = handler;
+    if (type === 'keydown') this.keydownHandler = handler;
+    if (type === 'input') this.inputHandler = handler;
+  }
+  removeEventListener(){}
+  replaceWith(other){
+    if (!this.parentNode) return;
+    const list = this.parentNode.children;
+    const index = list.indexOf(this);
+    if (index >= 0) list[index] = other;
+    other.parentNode = this.parentNode;
+    this.parentNode = null;
   }
   setAttribute(name,value){this.attributes[name] = value}
   closest(){return this}
@@ -51,6 +62,8 @@ class Node {
   get scrollHeight(){return 80}
   getBoundingClientRect(){return {left:0,top:0,width:0,height:0}}
   scrollIntoView(){}
+  focus(){}
+  select(){}
 }
 
 function createContext(payload, calls) {
@@ -89,7 +102,8 @@ test('A /technical oldal a dokumentum sorrendjében, szerkeszthető blokkokkal j
       {type:'heading',level:'chapter',number:1,text:'Adatok',ordinal:0,readonly:true},
       {type:'text',id:'b1',text:'Fix szöveg',ordinal:1,readonly:false},
       {type:'fields',keys:['TERV_TARGYA'],context:'Tárgy: {{TERV_TARGYA}}',ordinal:2,readonly:false},
-      {type:'auto',text:'{{Teljes név}}',preview:'Lovas Krisztián',ordinal:3},
+      {type:'auto',text:'Település: {{telepules}}',preview:'Település: Dombóvár',ordinal:3},
+      {type:'auto',text:'Szintek: {{szintek}}',preview:'Szintek: {{szintek}}',ordinal:3},
       {type:'table',note:'Táblázat'},
       {type:'heading',level:'chapter',number:4,text:'Építményérték számítása',ordinal:4,readonly:true},
       {type:'valueTable',chapter:4},
@@ -110,6 +124,8 @@ test('A /technical oldal a dokumentum sorrendjében, szerkeszthető blokkokkal j
       {number:1,key:'EPITMENYERTEK:terulet_1_m2',label:'Lakóépület',unit:'nettó alapterület / m²',price:'600'},
       {number:5,key:'EPITMENYERTEK:terulet_5_m2',label:'Pince',unit:'nettó alapterület / m²',price:'400'}
     ],
+    placeholderValues:{'telepules':'Dombóvár'},
+    editablePlaceholders:['telepules'],
     missingFields:[]
   };
   const {ids} = createContext(payload,calls);
@@ -130,8 +146,43 @@ test('A /technical oldal a dokumentum sorrendjében, szerkeszthető blokkokkal j
   const textOf = node => String(node.textContent || '') +
     (node.children || []).map(child => typeof child === 'string' ? child : textOf(child)).join('');
   assert.ok(all.some(node => node.className === 'doc-auto' &&
-    textOf(node).includes('Lovas Krisztián')),
+    textOf(node).includes('Dombóvár')),
     'Az automatikus szöveg előnézete hiányzik.');
+  const marker = all.find(node => node.dataset?.key === 'telepules');
+  assert.ok(marker,'Hiányzik a helyben szerkeszthető helyőrző.');
+  assert.equal(marker.tagName,'BUTTON');
+  assert.equal(marker.dataset.editable,'1');
+  assert.equal(marker.textContent,'Dombóvár');
+  const computed = all.find(node => node.dataset?.key === 'szintek');
+  assert.ok(computed,'A számított helyőrző nem jelenik meg.');
+  assert.equal(computed.dataset.editable,'0');
+  assert.equal(computed.disabled,true);
+  const collect = root => {
+    const found = [];
+    const walk = node => {
+      for (const child of node.children || []) {
+        if (!child || typeof child !== 'object') continue;
+        found.push(child); walk(child);
+      }
+    };
+    walk(root); return found;
+  };
+  const parent = marker.parentNode;
+  marker.clickHandler();
+  const editorNodes = collect(parent);
+  const editor = editorNodes.find(node => node.className === 'placeholder-editor');
+  assert.ok(editor,'A helyőrző kattintásra nem nyílik szerkesztő.');
+  const editorInput = editorNodes.find(node => node.tagName === 'INPUT');
+  editorInput.value = 'Kalocsa';
+  const saveButton = editorNodes.find(node => node.tagName === 'BUTTON' &&
+    node.textContent === 'Mentés');
+  saveButton.clickHandler();
+  await new Promise(resolve => setTimeout(resolve,20));
+  const inlineSave = calls.find(call => call.name === 'dashboardSaveProjectValue');
+  assert.ok(inlineSave,'A helyőrző mentése nem indult el.');
+  assert.equal(inlineSave.args[1],'telepules');
+  assert.equal(inlineSave.args[2],'Kalocsa');
+  assert.equal(marker.textContent,'Kalocsa');
   assert.ok(all.some(node => node.className === 'doc-table-note'));
   assert.ok(all.some(node => node.className === 'doc-section'),'Hiányzik az accordion-szekció.');
   assert.ok(all.filter(node => node.className === 'doc-section').every(node => !node.open),
