@@ -21,6 +21,25 @@ class Node {
     }
   }
   replaceChildren(...items){this.children = []; this.append(...items)}
+  insertBefore(node,reference){
+    if (!node || typeof node !== 'object') return;
+    node.parentNode = this;
+    const index = reference ? this.children.indexOf(reference) : -1;
+    if (index < 0) this.children.push(node);
+    else this.children.splice(index,0,node);
+  }
+  remove(){
+    if (!this.parentNode) return;
+    const list = this.parentNode.children;
+    const index = list.indexOf(this);
+    if (index >= 0) list.splice(index,1);
+    this.parentNode = null;
+  }
+  get nextSibling(){
+    if (!this.parentNode) return null;
+    const list = this.parentNode.children;
+    return list[list.indexOf(this)+1] || null;
+  }
   addEventListener(type,handler){
     if (type === 'submit') this.submitHandler = handler;
     if (type === 'click') this.clickHandler = handler;
@@ -177,6 +196,53 @@ test('A chat a képernyőn látható első mezőre vonatkozik',async () => {
   assert.equal(chat.args[1].focusKey,'TERVEZESI_PROGRAM:c');
   assert.equal(chat.args[1].focusValue,'A környéken kialakult építészeti arculat nincs.');
   assert.equal(chat.args[1].focusLabel,'Tervezési program c) pontjának végleges szövege');
+});
+
+test('Az AI-javaslat a mezőnél jelenik meg, beillesztés után visszaállítható',async () => {
+  const calls = [];
+  const payload = {
+    sheetUrl:'https://docs.google.com/spreadsheets/d/x/edit',aiConfigured:true,
+    outline:[
+      {type:'heading',level:'chapter',number:1,text:'Adatok',readonly:true},
+      {type:'fields',keys:['TERV_TARGYA'],context:'',readonly:false}
+    ],
+    blocks:[],
+    fields:[{key:'TERV_TARGYA',help:'A terv tárgya',value:'Régi szöveg.',manual:false}],
+    chatKeys:['TERV_TARGYA'],
+    sections:{'TERV_TARGYA':'Új, rövidített szöveg.'},
+    valueRows:[],placeholderValues:{},editablePlaceholders:[],missingFields:[]
+  };
+  const {ids} = createContext(payload,calls);
+  await new Promise(resolve => setTimeout(resolve,20));
+  const groups = ids.get('groups');
+  const all = [];
+  const walk = node => {
+    for (const child of node.children || []) {
+      if (child && typeof child === 'object') { all.push(child); walk(child); }
+    }
+  };
+  walk(groups);
+  const input = all.find(node => node.dataset?.key === 'TERV_TARGYA');
+  assert.ok(input,'Hiányzik a szerkeszthető mező.');
+  ids.get('chatMessage').value = 'Rövidítsd.';
+  ids.get('chatSend').clickHandler();
+  await new Promise(resolve => setTimeout(resolve,20));
+  const suggestion = input.nextSibling;
+  assert.ok(suggestion && suggestion.className === 'ai-suggestion',
+    'A javaslatnak a mezőnél, helyben kell megjelennie, nem külön szakaszban.');
+  const actions = suggestion.children.find(node => node.className === 'ai-suggestion-actions');
+  const apply = actions.children.find(node => node.textContent === 'Beillesztés');
+  assert.ok(apply,'Hiányzik a beillesztés gomb.');
+  apply.clickHandler();
+  assert.equal(input.value,'Új, rövidített szöveg.');
+  const change = input.nextSibling;
+  assert.ok(change && change.className === 'ai-change',
+    'Beillesztés után AI-módosítás jelzés kell a mezőnél.');
+  assert.equal(change.children[0].textContent,'AI-módosítás');
+  const restore = change.children.find(node => node.textContent === 'Visszaállítás');
+  assert.ok(restore,'Hiányzik a visszaállítás gomb.');
+  restore.clickHandler();
+  assert.equal(input.value,'Régi szöveg.','A visszaállítás az AI előtti szöveget adja vissza.');
 });
 
 test('A szerkezetleírás alpontjai külön beviteli mezőként célpontok',async () => {

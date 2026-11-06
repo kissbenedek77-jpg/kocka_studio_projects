@@ -14,8 +14,8 @@
     .error{background:#fff0ed;border-left-color:#bb4b41}.success{background:#e8f4e9;border-left-color:#43844c}
     .warning{background:#fff7e6;border-left-color:#a9782a}
     .document{max-width:900px;margin:auto}
-    #chat,#draftPreview{background:white;border:1px solid #d8e1e4;border-radius:12px;padding:1.2rem;margin:1rem 0}
-    #chat h2,#draftPreview h2{font-size:1.12rem;margin:.1rem 0 1rem}
+    #chat{background:white;border:1px solid #d8e1e4;border-radius:12px;padding:1.2rem;margin:1rem 0}
+    #chat h2{font-size:1.12rem;margin:.1rem 0 1rem}
     #chat label{display:block;font-weight:600;margin-bottom:.35rem}
     #chat textarea{width:100%;min-height:5.2rem;resize:vertical;border:1px solid #9fb3bb;border-radius:8px;padding:.7rem;font:inherit;line-height:1.45;background:#fff;color:#19313c}
     #chat textarea:focus{outline:3px solid #9ed2dc;border-color:#287b82}
@@ -98,6 +98,18 @@
     #chat .chat-input-row{display:flex;gap:.45rem;align-items:flex-end;min-width:0}
     #chat textarea{flex:1 1 auto;width:auto;min-width:0;min-height:2.1rem;max-height:5.5rem;resize:none;padding:.45rem .55rem;font-size:.9rem;line-height:1.35}
     #chat .chat-input-row button{padding:.45rem .9rem;min-height:2.1rem;font-size:.88rem;flex:none}
+    /* Helyben megjelenő AI-javaslat és az AI-módosítás jelzése. */
+    .ai-suggestion{background:#f1f9fa;border:1px solid #8ec6d2;border-radius:8px;
+      padding:.5rem .6rem;margin:.45rem 0;display:grid;gap:.4rem}
+    .ai-suggestion-title{font-size:.78rem;font-weight:700;color:#24506b}
+    .ai-suggestion textarea{width:100%;min-height:4.5rem;border:1px solid #9fb3bb;
+      border-radius:6px;padding:.45rem .55rem;font:inherit;font-size:.9rem;resize:vertical}
+    .ai-suggestion-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+    .ai-suggestion-actions button{padding:.4rem .8rem;font-size:.85rem;min-height:2.1rem}
+    .ai-change{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.3rem 0}
+    .ai-badge{background:#e2edf0;color:#146081;border-radius:999px;padding:.05rem .5rem;
+      font-size:.72rem;font-weight:700}
+    .ai-change .reset-field{margin-top:0}
     /* Az aktív beviteli mező: finom jelzés, hogy a chat kérése erre vonatkozik. */
     .doc-field textarea.active-input,.doc-field input.active-input,
     .doc-line.active-input,.doc-text.active-input{
@@ -130,13 +142,12 @@
     <form id="form" hidden><div id="groups" class="document"></div>
       <p class="draft-note" id="aiHint">Az „AI-szövegtervezet” a Szerkezetek, Gépészet, Villamos és Környezet mezőkbe írt tényjegyzetekből dolgozik. Az „AI-val kitöltés projektadatból” a teljes DRAFT-ot elkészíti; ez 1–2 percig is eltarthat.</p>
       <div class="actions"><button id="save" type="submit">Műszaki leírás mentése</button><button id="draft" type="button" class="secondary">AI-szövegtervezet készítése</button><button id="autoDraft" type="button" class="secondary">AI-val kitöltés projektadatból</button><span>Mentés után a DRAFT műszaki leírás frissül.</span></div></form>
-    <section id="draftPreview" hidden aria-labelledby="draftTitle"><h2 id="draftTitle">AI-tervezet – ellenőrzésre</h2><p class="draft-note">A kijelölt fejezeteket szerkesztheted. A „Beillesztés” csak az űrlap mezőit módosítja; utána mentsd őket. A számokat, anyagokat és műszaki állításokat ellenőrizd.</p><div id="draftRows"></div><button id="applyDraft" type="button">Kijelölt fejezetek beillesztése</button></section>
   </main>
   <script>
     'use strict';
     const uid=new URLSearchParams(location.search).get('uid')||'';
     const status=document.getElementById('status'),form=document.getElementById('form');
-    const draftButton=document.getElementById('draft'),preview=document.getElementById('draftPreview');
+    const draftButton=document.getElementById('draft');
     const autoDraftButton=document.getElementById('autoDraft');let aiReady=false;
     const chatNode=document.getElementById('chat'),chatToggle=document.getElementById('chatToggle'),
       chatTarget=document.getElementById('chatTarget');
@@ -533,7 +544,7 @@
     function renderOutline(data){
       const root=document.getElementById('groups');root.replaceChildren();
       fieldInputs.clear();blockInputs.clear();fieldRefresh.clear();markerButtons.clear();
-      chatTargets.clear();activeTarget=null;
+      chatTargets.clear();activeTarget=null;aiBlocks.clear();
       placeholderValues=data.placeholderValues||{};
       editablePlaceholders=new Set(data.editablePlaceholders||[]);
       const fields=new Map((data.fields||[]).map(field=>[field.key,field]));
@@ -613,22 +624,74 @@
         refreshActiveField();
       });
     }
+    // Az AI-javaslat a mezőnél, helyben jelenik meg: nem ugrik el a lap, és a
+    // felhasználó ott dönthet a beillesztésről. Beillesztés után a mező
+    // „AI-módosítás” jelzést és visszaállítás gombot kap.
+    const aiBlocks=new Map();
+    function removeAiBlocks(input){
+      const entry=aiBlocks.get(input);
+      if(entry){
+        if(entry.suggestion)entry.suggestion.remove();
+        if(entry.change)entry.change.remove();
+      }
+      aiBlocks.delete(input);
+    }
+    function markAiChange(input,target,original){
+      removeAiBlocks(input);
+      const row=document.createElement('div');row.className='ai-change';
+      const badge=document.createElement('span');badge.className='ai-badge';badge.textContent='AI-módosítás';
+      const restore=document.createElement('button');restore.type='button';restore.className='reset-field';
+      restore.textContent='Visszaállítás';
+      restore.title='Az AI előtti szöveg visszaállítása.';
+      row.append(badge,restore);
+      input.parentNode.insertBefore(row,input.nextSibling);
+      aiBlocks.set(input,{change:row});
+      restore.addEventListener('click',()=>{
+        target.apply(original);
+        removeAiBlocks(input);
+        message('Az AI előtti szöveg visszaállítva.','success');
+      });
+    }
+    function inlineDraft(text,target){
+      const input=target.input;
+      if(!input||!text)return false;
+      removeAiBlocks(input);
+      const box=document.createElement('div');box.className='ai-suggestion';
+      const title=document.createElement('div');title.className='ai-suggestion-title';
+      title.textContent='AI-javaslat – ellenőrizd, majd illeszd be:';
+      const area=document.createElement('textarea');area.value=text;area.rows=3;
+      area.setAttribute('aria-label','AI-javaslat');
+      const actions=document.createElement('div');actions.className='ai-suggestion-actions';
+      const apply=document.createElement('button');apply.type='button';apply.textContent='Beillesztés';
+      const cancel=document.createElement('button');cancel.type='button';cancel.className='secondary';
+      cancel.textContent='Mégse';
+      actions.append(apply,cancel);
+      box.append(title,area,actions);
+      input.parentNode.insertBefore(box,input.nextSibling);
+      aiBlocks.set(input,{suggestion:box});
+      cancel.addEventListener('click',()=>{box.remove();aiBlocks.delete(input)});
+      apply.addEventListener('click',()=>{
+        const original=String(input.value||'');
+        const value=area.value.trim();
+        if(!value){message('A javaslat üres, ezért nem illesztem be.','error');return}
+        target.apply(value);
+        markAiChange(input,target,original);
+        message('A javaslat bekerült a mezőbe. Mentés előtt ellenőrizd.','success');
+      });
+      return true;
+    }
     function showDraft(sections){
-      const host=document.getElementById('draftRows');host.replaceChildren();let shown=0;
+      let shown=0;
       for(const [key,text] of Object.entries(sections||{})){
         const target=chatTargets.get(key);
         const input=target?target.input:
           [...form.querySelectorAll('[data-key]')].find(item=>item.dataset.key===key);
         if(!input||!text)continue;
-        const row=document.createElement('div');row.className='draft-row';row.dataset.key=key;row.dataset.original=input.value;
-        const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=true;
-        const name=target?target.label:
-          (input.closest('div').querySelector('label')?.textContent||key);
-        label.append(check,document.createTextNode(name));
-        const field=document.createElement('textarea');field.value=text;field.setAttribute('aria-label',key+' AI-tervezet');
-        row.append(label,field);host.append(row);shown++}
+        const effective=target||{input,apply:value=>{input.value=value;autoSize(input)}};
+        if(inlineDraft(text,effective))shown++;
+      }
       if(!shown){message('Az AI nem adott beilleszthető módosítást.','error');return false}
-      preview.hidden=false;preview.scrollIntoView({behavior:'smooth',block:'start'});return true;
+      return true;
     }
     async function load(){if(!/^[A-Za-z0-9-]{4,64}$/.test(uid)){message('Érvénytelen projektazonosító.','error');return}
       message('Adatok betöltése…');try{const data=await rpc('dashboardGetTechnicalFields',uid);
@@ -662,7 +725,7 @@
       try{
         const result=await rpc('dashboardDraftTechnicalText',uid,notes);
         if(showDraft(result.sections))
-          message('A tervezet elkészült. Ellenőrizd és szerkeszd beillesztés előtt.','success')
+          message('A tervezet elkészült; a javaslatok a mezőknél jelennek meg. Ellenőrizd, majd illeszd be.','success')
       }catch(error){message(error.message||String(error),'error')}
       finally{draftButton.disabled=false}
     });
@@ -709,7 +772,7 @@
         const result=await rpc('dashboardTechnicalChat',uid,{message:text,focusKey,focusValue,focusLabel});
         logChat(result.reply||'A javaslat elkészült.');
         if(showDraft(result.sections))
-          message('Az AI javaslata elkészült. Ellenőrizd, majd illeszd be és mentsd.','success')
+          message('Az AI javaslata a mezőnél jelenik meg. Ellenőrizd, majd illeszd be és mentsd.','success')
       }catch(error){message(error.message||String(error),'error')}
       finally{chatSend.disabled=false}
     });
@@ -737,24 +800,6 @@
         autoDraftButton.setAttribute('aria-busy','false');
         autoDraftButton.disabled=!aiReady;draftButton.disabled=!aiReady;
       }
-    });
-    document.getElementById('applyDraft').addEventListener('click',()=>{
-      let applied=0,changed=0;
-      for(const row of document.querySelectorAll('#draftRows .draft-row')){
-        if(!row.querySelector('input[type=checkbox]').checked)continue;
-        const key=row.dataset.key;
-        const target=chatTargets.get(key);
-        const input=target?target.input:
-          [...form.querySelectorAll('[data-key]')].find(item=>item.dataset.key===key);
-        if(!input)continue;
-        if(input.value!==row.dataset.original){changed++;continue}
-        const text=row.querySelector('textarea').value.trim();if(!text)continue;
-        if(target){target.apply(text);applied++;continue}
-        input.value=text;autoSize(input);
-        const refresh=fieldRefresh.get(key);if(refresh)refresh(text);
-        applied++}
-      message(applied+' beviteli mező bekerült az űrlapba. '+(changed?changed+' időközben módosított mezőt kihagytam. ':'')+'A dokumentum frissítése előtt mentsd az űrlapot.',applied?'success':'error');
-      if(applied)preview.hidden=true;
     });
     form.addEventListener('submit',async event=>{event.preventDefault();const button=document.getElementById('save');
       const values={};fieldInputs.forEach(({input},key)=>{
