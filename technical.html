@@ -673,6 +673,8 @@
       const entry=aiChanges.get(scope);
       if(!entry)return;
       for(const change of [...entry.changes].reverse())change.target.apply(change.original);
+      // A mező saját (mentett) visszaállítás gombja újra látható lesz.
+      for(const node of entry.manualResets||[])node.hidden=false;
       if(entry.badge)entry.badge.remove();
       if(entry.restore)entry.restore.remove();
       aiChanges.delete(scope);
@@ -681,8 +683,14 @@
     function markAiChange(input,target,original){
       removeAiBlocks(input);
       const scope=fieldScope(input);
-      const entry=aiChanges.get(scope)||{changes:[],badge:null,restore:null};
+      const entry=aiChanges.get(scope)||{changes:[],badge:null,restore:null,manualResets:null};
       entry.changes.push({target,original});
+      // Az AI-módosítás jelzése a „Kézi” mellett, felül van; a mező alatti külön
+      // visszaállítás gombot elrejtjük, hogy ne legyen kettő.
+      if(!entry.manualResets){
+        entry.manualResets=[...scope.children].filter(node=>hasClass(node,'reset-field'));
+        for(const node of entry.manualResets)node.hidden=true;
+      }
       const host=fieldMarkerHost(scope);
       if(host){
         if(!entry.badge){

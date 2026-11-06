@@ -223,7 +223,7 @@ test('Az AI-javaslat a mezőnél jelenik meg, beillesztés után visszaállítha
       {type:'fields',keys:['TERV_TARGYA'],context:'',readonly:false}
     ],
     blocks:[],
-    fields:[{key:'TERV_TARGYA',help:'A terv tárgya',value:'Régi szöveg.',manual:false}],
+    fields:[{key:'TERV_TARGYA',help:'A terv tárgya',value:'Régi szöveg.',manual:true}],
     chatKeys:['TERV_TARGYA'],
     sections:{'TERV_TARGYA':'Új, rövidített szöveg.'},
     valueRows:[],placeholderValues:{},editablePlaceholders:[],missingFields:[]
@@ -260,10 +260,16 @@ test('Az AI-javaslat a mezőnél jelenik meg, beillesztés után visszaállítha
   const badge = label.children.find(node => node.className === 'ai-badge');
   assert.ok(badge,'Az AI-módosítás jelzésnek a Kézi jelzés mellett, a címkénél kell lennie.');
   assert.equal(badge.textContent,'AI-módosítás');
+  const manualReset = wrapper.children.find(node => node.className === 'reset-field');
+  assert.ok(manualReset,'A kézi mező saját visszaállítás gombja a mező alatt van.');
+  assert.equal(manualReset.hidden,true,
+    'AI-módosításnál a mező alatti visszaállítás gomb nem látszhat, csak a felső.');
   const restore = label.children.find(node => node.textContent === 'Visszaállítás');
   assert.ok(restore,'Hiányzik a visszaállítás gomb.');
   restore.clickHandler();
   assert.equal(input.value,'Régi szöveg.','A visszaállítás az AI előtti szöveget adja vissza.');
+  assert.equal(manualReset.hidden,false,
+    'Visszaállítás után a mező saját visszaállítás gombja újra látható.');
 
   // Meglévő szöveg megtartása: a jelölőnégyzettel a javaslat hozzáfűződik.
   const second = await sendChat();
