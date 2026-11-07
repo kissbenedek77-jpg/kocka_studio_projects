@@ -278,7 +278,7 @@
         key.includes('TUZVEDELMI'))return 'Jóváhagyott szövegek';
       if(key.startsWith('TERVEZESI_PROGRAM:'))return 'Tervezési program és fejezetszövegek';
       return 'Projekt és helyiségek'}
-    const fieldInputs=new Map(),blockInputs=new Map(),fieldRefresh=new Map();
+    const fieldInputs=new Map(),blockInputs=new Map(),fieldRefresh=new Map(),fieldResets=new Map();
     const markerButtons=new Map();
     let placeholderValues={},editablePlaceholders=new Set();
     const AUTO_LABELS={
@@ -391,12 +391,19 @@
       if(chatKeys.has(field.key))
         registerChatTarget(field.key,{input,label:field.help,
           apply:text=>{input.value=text;autoSize(input)}});
+      const resetField=()=>{
+        input.value='';
+        const mark=label.querySelector('.manual-badge');if(mark)mark.remove();
+        removeAiMarker(wrapper);
+        form.requestSubmit();
+      };
+      fieldResets.set(wrapper,resetField);
       if(field.manual){
-        const reset=document.createElement('button');reset.type='button';reset.className='reset-field';reset.textContent='Visszaállítás';
-        reset.title='A mező törlése; a következő generálás vagy a sablon alapértéke kerül a helyére.';
-        reset.addEventListener('click',()=>{input.value='';
-          const mark=label.querySelector('.manual-badge');if(mark)mark.remove();
-          reset.remove();form.requestSubmit()});wrapper.append(reset);
+        const reset=document.createElement('button');reset.type='button';reset.className='reset-field';
+        reset.textContent='Visszaállítás';
+        reset.title='A mező törlése; a sablon alapértéke kerül a helyére.';
+        reset.addEventListener('click',event=>{if(event&&event.preventDefault)event.preventDefault();if(event&&event.stopPropagation)event.stopPropagation();resetField()});
+        label.append(' ',reset);
       }
       parent.append(wrapper);fieldInputs.set(field.key,{input,field});
     }
@@ -415,6 +422,13 @@
       const wrapper=document.createElement('div');wrapper.className='doc-block';
       const input=blockControl(entry,entry.type==='heading');
       wrapper.append(input);
+      const resetField=()=>{
+        input.value=entry.text;
+        const mark=wrapper.querySelector('.manual-badge');if(mark)mark.remove();
+        removeAiMarker(wrapper);
+        form.requestSubmit();
+      };
+      fieldResets.set(wrapper,resetField);
       if(entry.type!=='heading'){
         // A sablon fix bekezdése is önálló beviteli mező: a chat csak ezt a
         // bekezdést írhatja át, nem az egész fejezetet.
@@ -424,16 +438,15 @@
           apply:text=>{input.value=text;autoSize(input)}});
         const tools=document.createElement('div');tools.className='block-tools';
         tools.append(badge('Fix szöveg','fix-badge'));
-        if(blockInputs.get(entry.id)?.block?.manual)tools.append(badge('Kézi','manual-badge'));
+        if(blockInputs.get(entry.id)?.block?.manual){
+          tools.append(badge('Kézi','manual-badge'));
+          const reset=document.createElement('button');reset.type='button';reset.className='reset-field';
+          reset.textContent='Visszaállítás';
+          reset.title='A blokk visszaállítása a sablon szövegére.';
+          reset.addEventListener('click',event=>{if(event&&event.preventDefault)event.preventDefault();if(event&&event.stopPropagation)event.stopPropagation();resetField()});
+          tools.append(reset);
+        }
         wrapper.append(tools);
-      }
-      if(blockInputs.get(entry.id)?.block?.manual){
-        const reset=document.createElement('button');reset.type='button';reset.className='reset-field';reset.textContent='Visszaállítás';
-        reset.title='A blokk visszaállítása a sablon szövegére.';
-        reset.addEventListener('click',()=>{input.value=entry.text;
-          const mark=wrapper.querySelector('.manual-badge');if(mark)mark.remove();
-          reset.remove();form.requestSubmit()});
-        wrapper.append(reset);
       }
       parent.append(wrapper);
     }
@@ -548,18 +561,27 @@
       hidden.dataset.original=hidden.value;
       fieldInputs.set(field.key,{input:hidden,field});
       fieldRefresh.set(field.key,paint);
+      const resetField=()=>{
+        hidden.value='';
+        paint(field.default||'');
+        const mark=label.querySelector('.manual-badge');if(mark)mark.remove();
+        removeAiMarker(wrapper);
+        form.requestSubmit();
+      };
+      fieldResets.set(wrapper,resetField);
       if(field.manual){
-        const reset=document.createElement('button');reset.type='button';reset.className='reset-field';reset.textContent='Visszaállítás';
+        const reset=document.createElement('button');reset.type='button';reset.className='reset-field';
+        reset.textContent='Visszaállítás';
         reset.title='A szerkezetleírás visszaállítása a sablon szövegére.';
-        reset.addEventListener('click',()=>{hidden.value='';paint(field.default||'');const mark=label.querySelector('.manual-badge');if(mark)mark.remove();reset.remove();form.requestSubmit()});
-        wrapper.append(reset);
+        reset.addEventListener('click',event=>{if(event&&event.preventDefault)event.preventDefault();if(event&&event.stopPropagation)event.stopPropagation();resetField()});
+        label.append(' ',reset);
       }
       parent.append(wrapper);
     }
     function renderOutline(data){
       const root=document.getElementById('groups');root.replaceChildren();
       fieldInputs.clear();blockInputs.clear();fieldRefresh.clear();markerButtons.clear();
-      chatTargets.clear();activeTarget=null;pinnedTarget=null;aiBlocks.clear();aiChanges.clear();
+      chatTargets.clear();activeTarget=null;pinnedTarget=null;aiBlocks.clear();fieldResets.clear();
       placeholderValues=data.placeholderValues||{};
       editablePlaceholders=new Set(data.editablePlaceholders||[]);
       const fields=new Map((data.fields||[]).map(field=>[field.key,field]));
@@ -643,9 +665,6 @@
     // felhasználó ott dönthet a beillesztésről. Beillesztés után a mező
     // „AI-módosítás” jelzést és visszaállítás gombot kap.
     const aiBlocks=new Map();
-    // A mezőnkénti AI-módosítások: egy mezőhöz egy „AI-módosítás” jelzés és egy
-    // visszaállítás gomb tartozik, akkor is, ha több részletet írt át az AI.
-    const aiChanges=new Map();
     function removeAiBlocks(input){
       const entry=aiBlocks.get(input);
       if(entry&&entry.suggestion)entry.suggestion.remove();
@@ -669,51 +688,39 @@
       const label=scope.querySelector('label');
       return label||null;
     }
-    function restoreAiChanges(scope){
-      const entry=aiChanges.get(scope);
-      if(!entry)return;
-      for(const change of [...entry.changes].reverse())change.target.apply(change.original);
-      // A mező saját (mentett) visszaállítás gombja újra látható lesz.
-      for(const node of entry.manualResets||[])node.hidden=false;
-      if(entry.badge)entry.badge.remove();
-      if(entry.restore)entry.restore.remove();
-      aiChanges.delete(scope);
-      message('Az AI előtti szöveg visszaállítva.','success');
+    function removeAiMarker(scope){
+      const host=fieldMarkerHost(scope);
+      if(!host)return;
+      host.querySelectorAll('.ai-badge').forEach(node=>node.remove());
+      host.querySelectorAll('.reset-field').forEach(node=>node.remove());
     }
-    function markAiChange(input,target,original){
+    // Egyetlen visszaállítás gomb van, a mező fejlécénél (a „Kézi” mellett), és
+    // az eredeti, sablon szerinti állapotot állítja vissza.
+    function markAiChange(input){
       removeAiBlocks(input);
       const scope=fieldScope(input);
-      const entry=aiChanges.get(scope)||{changes:[],badge:null,restore:null,manualResets:null};
-      entry.changes.push({target,original});
-      // Az AI-módosítás jelzése a „Kézi” mellett, felül van; a mező alatti külön
-      // visszaállítás gombot elrejtjük, hogy ne legyen kettő.
-      if(!entry.manualResets){
-        entry.manualResets=[...scope.children].filter(node=>hasClass(node,'reset-field'));
-        for(const node of entry.manualResets)node.hidden=true;
-      }
       const host=fieldMarkerHost(scope);
-      if(host){
-        if(!entry.badge){
-          entry.badge=document.createElement('span');
-          entry.badge.className='ai-badge';
-          entry.badge.textContent='AI-módosítás';
-        }
-        if(!entry.restore){
-          entry.restore=document.createElement('button');
-          entry.restore.type='button';
-          entry.restore.className='reset-field';
-          entry.restore.textContent='Visszaállítás';
-          entry.restore.title='Az AI előtti szöveg visszaállítása.';
-          entry.restore.addEventListener('click',event=>{
-            if(event&&event.preventDefault)event.preventDefault();
-            if(event&&event.stopPropagation)event.stopPropagation();
-            restoreAiChanges(scope);
-          });
-        }
-        if(entry.badge.parentNode!==host)host.append(entry.badge);
-        if(entry.restore.parentNode!==host)host.append(entry.restore);
+      if(!host)return;
+      if(!host.querySelector('.ai-badge')){
+        const badge=document.createElement('span');
+        badge.className='ai-badge';
+        badge.textContent='AI-módosítás';
+        host.append(badge);
       }
-      aiChanges.set(scope,entry);
+      if(!host.querySelector('.reset-field')){
+        const reset=document.createElement('button');
+        reset.type='button';
+        reset.className='reset-field';
+        reset.textContent='Visszaállítás';
+        reset.title='Az eredeti (sablon szerinti) szöveg visszaállítása.';
+        reset.addEventListener('click',event=>{
+          if(event&&event.preventDefault)event.preventDefault();
+          if(event&&event.stopPropagation)event.stopPropagation();
+          const fn=fieldResets.get(scope);
+          if(fn)fn();else removeAiMarker(scope);
+        });
+        host.append(reset);
+      }
     }
     function inlineDraft(text,target){
       const input=target.input;
@@ -744,7 +751,7 @@
         if(check.checked&&original.trim())value=original.trimEnd()+'\n\n'+value;
         if(!value){message('A javaslat üres, ezért nem illesztem be.','error');return}
         target.apply(value);
-        markAiChange(input,target,original);
+        markAiChange(input);
         message('A javaslat bekerült a mezőbe. Mentés előtt ellenőrizd.','success');
       });
       return true;

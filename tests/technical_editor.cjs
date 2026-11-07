@@ -21,6 +21,10 @@ class Node {
     }
   }
   replaceChildren(...items){this.children = []; this.append(...items)}
+  requestSubmit(){
+    if (this.submitHandler) return this.submitHandler({preventDefault(){}});
+    return undefined;
+  }
   insertBefore(node,reference){
     if (!node || typeof node !== 'object') return;
     node.parentNode = this;
@@ -260,18 +264,13 @@ test('Az AI-javaslat a mezőnél jelenik meg, beillesztés után visszaállítha
   const badge = label.children.find(node => node.className === 'ai-badge');
   assert.ok(badge,'Az AI-módosítás jelzésnek a Kézi jelzés mellett, a címkénél kell lennie.');
   assert.equal(badge.textContent,'AI-módosítás');
-  const manualReset = wrapper.children.find(node => node.className === 'reset-field');
-  assert.ok(manualReset,'A kézi mező saját visszaállítás gombja a mező alatt van.');
-  assert.equal(manualReset.hidden,true,
-    'AI-módosításnál a mező alatti visszaállítás gomb nem látszhat, csak a felső.');
-  const restore = label.children.find(node => node.textContent === 'Visszaállítás');
-  assert.ok(restore,'Hiányzik a visszaállítás gomb.');
-  restore.clickHandler();
-  assert.equal(input.value,'Régi szöveg.','A visszaállítás az AI előtti szöveget adja vissza.');
-  assert.equal(manualReset.hidden,false,
-    'Visszaállítás után a mező saját visszaállítás gombja újra látható.');
+  assert.equal(label.children.filter(node => node.textContent === 'Visszaállítás').length,1,
+    'Csak egy visszaállítás gomb lehet, felül.');
+  assert.equal(wrapper.children.some(node => node.className === 'reset-field'),false,
+    'A mező alatt nem lehet külön visszaállítás gomb.');
 
   // Meglévő szöveg megtartása: a jelölőnégyzettel a javaslat hozzáfűződik.
+  payload.sections['TERV_TARGYA']='Hozzáfűzött mondat.';
   const second = await sendChat();
   const keep = second.children.find(node => node.className === 'ai-keep');
   assert.ok(keep,'Hiányzik a meglévő szöveg megtartását választó jelölőnégyzet.');
@@ -279,14 +278,22 @@ test('Az AI-javaslat a mezőnél jelenik meg, beillesztés után visszaállítha
   const apply2 = second.children.find(node => node.className === 'ai-suggestion-actions')
     .children.find(node => node.textContent === 'Beillesztés');
   apply2.clickHandler();
-  assert.equal(input.value,'Régi szöveg.\n\nÚj, rövidített szöveg.',
+  assert.equal(input.value,'Új, rövidített szöveg.\n\nHozzáfűzött mondat.',
     'Bekapcsolt jelölőnégyzettel a meglévő szöveg megmarad, a javaslat hozzáfűződik.');
   assert.equal(label.children.filter(node => node.className === 'ai-badge').length,1,
     'Többszöri módosításnál is csak egy AI-módosítás jelzés maradhat.');
   assert.equal(label.children.filter(node => node.textContent === 'Visszaállítás').length,1,
     'Többszöri módosításnál is csak egy visszaállítás gomb maradhat.');
+
+  // A felső gomb az eredeti (sablon szerinti) állapotot állítja vissza: üres
+  // mező, amelyből a dokumentum a sablon alapértékét használja.
   label.children.find(node => node.textContent === 'Visszaállítás').clickHandler();
-  assert.equal(input.value,'Régi szöveg.','A visszaállítás minden AI-módosítást visszavon.');
+  assert.equal(input.value,'','A visszaállítás az eredeti, üres állapotot adja vissza.');
+  assert.equal(label.children.some(node => node.className === 'ai-badge'),false);
+  assert.equal(label.children.some(node => node.textContent === 'Visszaállítás'),false);
+  await new Promise(resolve => setTimeout(resolve,20));
+  assert.ok(calls.some(call => call.name === 'dashboardSaveTechnicalFields'),
+    'A visszaállítás menti az eredeti állapotot.');
 });
 
 test('A szerkezetleírás alpontjai külön beviteli mezőként célpontok',async () => {
