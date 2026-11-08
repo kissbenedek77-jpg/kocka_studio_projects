@@ -1,4 +1,8 @@
 'use strict';
+// A naplógyűjtőt a többi modul előtt kell betölteni és bekötni, hogy a
+// betöltés közbeni üzenetek is bekerüljenek a dashboardon látható naplóba.
+const logBuffer = require('./log_buffer.cjs');
+logBuffer.install();
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -324,6 +328,9 @@ async function rpc(name, args, session) {
     return config.baseUrl+'/download/'+token;
   }
   if (name === 'dashboardListProjects') return google.listProjects();
+  // A dashboard alsó sávjában megjelenő szervernapló (Railway deploy log).
+  // Csak a bejelentkezett tulajdonos érheti el, mert az RPC végpont védett.
+  if (name === 'dashboardLogs') return logBuffer.read(Number(args[0]) || 0, Number(args[1]) || 100);
   if (name === 'dashboardListClientSubmissions') return google.listClientSubmissions();
   if (name === 'dashboardMarkClientSubmissionRead') return google.markClientSubmissionRead(uid);
   if (name === 'getDashboardProject') return google.dashboardProject(uid);

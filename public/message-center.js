@@ -238,51 +238,67 @@
     '.ks-msg-remove:focus-visible{outline:2px solid #4f8562;outline-offset:1px}',
     '.ks-msg-remove svg{width:15px;height:15px}',
     '.ks-msg-empty{padding:22px 16px;color:#627069;font-size:13px;text-align:center}',
-    // A dashboard felső sávja: a belső (munkaterületi) oszlop szélességében,
-    // középen. Összecsukva helyet foglal, kinyitva a tartalom fölé lóg.
-    '.ks-msgbar{position:sticky;top:0;z-index:15;width:100%;margin:0 auto;border:1px solid #d7dad4;border-radius:0 0 10px 10px;background:#fff;box-shadow:0 8px 22px rgba(16,27,22,.14);font:14px/1.45 Arial,sans-serif;color:#26312e}',
+    // A dashboard alsó sávja: a belső (munkaterületi) oszlop szélességében,
+    // középen, a lap aljára rögzítve. Nem vesz el helyet a folyamatból, ezért
+    // a fenti sticky elemeket nem mozdítja el; kinyitva felfelé lóg.
+    '.ks-msgbar{position:fixed;left:50%;transform:translateX(-50%);bottom:0;z-index:15;width:min(calc(100vw - 626px),1054px);border:1px solid #d7dad4;border-bottom:0;border-radius:10px 10px 0 0;background:#fff;box-shadow:0 -8px 22px rgba(16,27,22,.14);font:14px/1.45 Arial,sans-serif;color:#26312e}',
     '.ks-msgbar[hidden]{display:none!important}',
-    '.ks-msgbar-head{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:7px 12px;border:0;background:#3e3e3e;color:#fff;font:inherit;text-align:left;cursor:pointer}',
+    '.ks-msgbar-head{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:7px 12px;border:0;background:#3e3e3e;color:#fff;font:inherit;text-align:left;cursor:pointer;border-radius:9px 9px 0 0}',
     '.ks-msgbar-head:hover{background:#2f2f2f}',
     '.ks-msgbar-head:focus-visible{outline:3px solid #b79a69;outline-offset:-3px}',
     '.ks-msgbar-icon{display:flex;flex:none;width:20px;height:20px}',
     '.ks-msgbar-icon svg{width:20px;height:20px}',
     '.ks-msgbar-title{flex:none;font-weight:700}',
     '.ks-msgbar-count{flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#4f8562;color:#fff;font-size:11px;font-weight:700}',
-    '.ks-msgbar[data-level=warning] .ks-msgbar-count{background:#a9782a}',
-    '.ks-msgbar[data-level=error] .ks-msgbar-count{background:#a6372f}',
+    '.ks-msgbar-count.warning{background:#a9782a}.ks-msgbar-count.error{background:#a6372f}',
+    '.ks-msgbar-count.log{background:#4a6470}',
+    '.ks-msgbar-count[hidden]{display:none!important}',
     '.ks-msgbar-latest{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#d9ded8;font-size:13px}',
     '.ks-msgbar-chevron{display:flex;flex:none;width:20px;height:20px;transition:transform .18s}',
     '.ks-msgbar[data-state=open] .ks-msgbar-chevron{transform:rotate(180deg)}',
     '.ks-msgbar-chevron svg{width:20px;height:20px}',
-    '.ks-msgbar-body{position:absolute;left:-1px;right:-1px;top:100%;display:block;max-height:0;opacity:0;overflow:auto;pointer-events:none;visibility:hidden;background:#fff;border:0 solid #d7dad4;border-radius:0 0 10px 10px;box-shadow:0 18px 40px rgba(16,27,22,.2);transition:max-height .2s ease,opacity .15s ease}',
-    '.ks-msgbar[data-state=open] .ks-msgbar-body{max-height:min(50vh,420px);opacity:1;pointer-events:auto;visibility:visible;border-width:0 1px 1px}',
+    '.ks-msgbar-body{position:absolute;left:-1px;right:-1px;bottom:100%;display:block;max-height:0;opacity:0;overflow:auto;pointer-events:none;visibility:hidden;background:#fff;border:0 solid #d7dad4;border-radius:10px 10px 0 0;box-shadow:0 -18px 40px rgba(16,27,22,.2);transition:max-height .2s ease,opacity .15s ease}',
+    '.ks-msgbar[data-state=open] .ks-msgbar-body{max-height:min(50vh,420px);opacity:1;pointer-events:auto;visibility:visible;border-width:1px 1px 0}',
     '@media(prefers-reduced-motion:reduce){.ks-msgbar-body{transition:none}}',
+    '.ks-msgbar-tabs{display:flex;gap:4px;padding:8px 10px 0;border-bottom:1px solid #eef0ec;background:#fafbf9;position:sticky;top:0;z-index:1}',
+    '.ks-msgbar-tab{min-height:32px;padding:5px 10px;border:0;border-bottom:2px solid transparent;background:transparent;color:#5b6b63;font:inherit;font-size:13px;font-weight:700;cursor:pointer}',
+    '.ks-msgbar-tab[aria-selected=true]{color:#26312e;border-bottom-color:#a88952}',
+    '.ks-msgbar-tab:focus-visible{outline:2px solid #4f8562;outline-offset:1px}',
+    '.ks-msgbar-panel[hidden]{display:none!important}',
+    '.ks-msg-item-log{grid-template-columns:22px minmax(0,1fr);background:#fbfbf8}',
+    '.ks-msg-item-log .ks-msg-text{font-family:Consolas,"Courier New",monospace;font-size:12px}',
+    '.ks-msg-log-time{color:#7b8a82;margin-right:6px}',
     '.ks-msgbar-foot{display:flex;justify-content:flex-end;padding:7px 10px;border-top:1px solid #eef0ec;background:#fafbf9}',
     '.ks-msgbar-clear{min-height:32px;padding:5px 12px;border:0;border-radius:5px;background:transparent;color:#7d241e;font:inherit;font-size:13px;font-weight:700;cursor:pointer}',
     '.ks-msgbar-clear:hover{background:#fff2f0}',
     '.ks-msgbar-clear:focus-visible{outline:2px solid #4f8562;outline-offset:1px}',
-    '@media(min-width:1100px){.ks-msgbar{width:calc(100% - 582px)}}',
-    '@media(min-width:851px) and (max-width:1099.98px){.ks-msgbar{width:calc(100% - 236px)}}',
+    '@media(max-width:1099.98px){.ks-msgbar{width:calc(100vw - 280px)}}',
+    '@media(max-width:849.98px){.ks-msgbar{width:calc(100vw - 44px)}}',
+    '@media(max-width:600px){.ks-msgbar{width:calc(100vw - 24px)}}',
+    // A dashboard alsó navigációja az üzenetsáv fölé kerül, hogy ne takarják
+    // egymást. A felső sticky elemekhez nem nyúlunk.
+    'body[data-ks-page=dashboard] .foot-nav{bottom:var(--ks-msgbar-height,0px)}',
     '@media(max-width:700px){',
     '.ks-msg-launcher{top:auto;bottom:calc(84px + var(--chat-height,0px) + env(safe-area-inset-bottom));right:0;width:46px;min-height:48px}',
     '.ks-msg-panel{top:0;right:0;left:0;transform:none;width:auto;max-height:min(70vh,520px);border-radius:0 0 12px 12px;border-width:0 0 1px}',
-    '.ks-msgbar{border-radius:0 0 8px 8px}',
+    '.ks-msgbar{border-radius:8px 8px 0 0}',
     '.ks-msgbar[data-state=open] .ks-msgbar-body{max-height:min(60vh,380px)}',
     '}'
   ].join('');
 
-  // Az üzenetsorok közös kirajzolása: a felső sáv és a lebegő panel ugyanazt
-  // használja.
-  function renderRows(doc, list, empty, items, store) {
-    const counts = store.counts();
+  // Az üzenetsorok közös kirajzolása: az alsó sáv és a lebegő panel ugyanazt
+  // használja. Napló módban (options.log) a sorok monospace megjelenésűek és
+  // nincs egyedi törlőgombjuk.
+  function renderRows(doc, list, empty, items, store, options) {
+    const log = Boolean(options && options.log);
+    const total = items.length;
     list.replaceChildren();
-    empty.hidden = counts.total > 0;
-    if (!counts.total) return;
+    empty.hidden = total > 0;
+    if (!total) return;
     const fragment = doc.createDocumentFragment();
     for (const item of items) {
       const row = doc.createElement('li');
-      row.className = 'ks-msg-item ' + item.level;
+      row.className = 'ks-msg-item ' + item.level + (log ? ' ks-msg-item-log' : '');
       row.dataset.level = item.level;
 
       const icon = doc.createElement('span');
@@ -292,10 +308,16 @@
 
       const text = doc.createElement('div');
       text.className = 'ks-msg-text';
+      if (log) {
+        const stamp = doc.createElement('span');
+        stamp.className = 'ks-msg-log-time';
+        stamp.textContent = timeText(item.time);
+        text.append(stamp);
+      }
       const bodyText = doc.createElement('span');
       bodyText.textContent = item.text;
       text.append(bodyText);
-      if (item.links.length) {
+      if (!log && item.links.length) {
         const links = doc.createElement('span');
         links.className = 'ks-msg-links';
         for (const link of item.links) {
@@ -311,32 +333,36 @@
         text.append(links);
       }
 
-      const meta = doc.createElement('div');
-      meta.className = 'ks-msg-meta';
-      const stamp = doc.createElement('span');
-      stamp.textContent = timeText(item.time);
-      meta.append(stamp);
-      if (item.count > 1) {
-        const repeat = doc.createElement('span');
-        repeat.textContent = '×' + item.count;
-        meta.append(repeat);
+      if (!log) {
+        const meta = doc.createElement('div');
+        meta.className = 'ks-msg-meta';
+        const stamp = doc.createElement('span');
+        stamp.textContent = timeText(item.time);
+        meta.append(stamp);
+        if (item.count > 1) {
+          const repeat = doc.createElement('span');
+          repeat.textContent = '×' + item.count;
+          meta.append(repeat);
+        }
+        if (item.sticky) {
+          const pinned = doc.createElement('span');
+          pinned.textContent = 'rögzített';
+          meta.append(pinned);
+        }
+        text.append(meta);
       }
-      if (item.sticky) {
-        const pinned = doc.createElement('span');
-        pinned.textContent = 'rögzített';
-        meta.append(pinned);
+
+      row.append(icon, text);
+      if (!log && store) {
+        const removeButton = doc.createElement('button');
+        removeButton.type = 'button';
+        removeButton.className = 'ks-msg-remove';
+        removeButton.title = 'Üzenet törlése';
+        removeButton.setAttribute('aria-label', 'Üzenet törlése');
+        removeButton.innerHTML = SVG.close;
+        removeButton.addEventListener('click', () => store.remove(item.id));
+        row.append(removeButton);
       }
-      text.append(meta);
-
-      const removeButton = doc.createElement('button');
-      removeButton.type = 'button';
-      removeButton.className = 'ks-msg-remove';
-      removeButton.title = 'Üzenet törlése';
-      removeButton.setAttribute('aria-label', 'Üzenet törlése');
-      removeButton.innerHTML = SVG.close;
-      removeButton.addEventListener('click', () => store.remove(item.id));
-
-      row.append(icon, text, removeButton);
       fragment.append(row);
     }
     list.append(fragment);
@@ -367,16 +393,21 @@
     catch (_) { try { element.focus(); } catch (__) { /* nem fókuszálható */ } }
   }
 
-  // A dashboard felső üzenetsávja.
-  function mountTopbar(doc, root, store) {
-    const host = (doc.querySelector && doc.querySelector('main.shell')) || doc.body;
+  // A dashboard alsó üzenetsávja. Két nézet: a felhasználói üzenetek és a
+  // szervernapló (a Railway deploy log). A sáv fixen a lap alján van, ezért a
+  // fenti sticky elemeket nem mozdítja el.
+  const MAX_LOG_ITEMS = 300;
+  function mountBottombar(doc, root, store) {
     const rootStyle = doc.documentElement && doc.documentElement.style;
+    const logItems = [];
+    const logSeen = new Set();
 
     const bar = doc.createElement('div');
     bar.className = 'ks-msgbar';
     bar.dataset.state = 'collapsed';
+    bar.dataset.tab = 'messages';
     bar.setAttribute('role', 'region');
-    bar.setAttribute('aria-label', 'Üzenetek');
+    bar.setAttribute('aria-label', 'Üzenetek és napló');
     bar.hidden = true;
 
     const head = doc.createElement('button');
@@ -389,24 +420,65 @@
     const title = doc.createElement('span');
     title.className = 'ks-msgbar-title';
     title.textContent = 'Üzenetek';
-    const count = doc.createElement('span');
-    count.className = 'ks-msgbar-count';
+    const messageCount = doc.createElement('span');
+    messageCount.className = 'ks-msgbar-count';
+    messageCount.title = 'Üzenetek';
+    const logCount = doc.createElement('span');
+    logCount.className = 'ks-msgbar-count log';
+    logCount.title = 'Napló';
     const latest = doc.createElement('span');
     latest.className = 'ks-msgbar-latest';
     latest.setAttribute('aria-live', 'polite');
     const chevron = doc.createElement('span');
     chevron.className = 'ks-msgbar-chevron';
     chevron.innerHTML = SVG.chevron;
-    head.append(icon, title, count, latest, chevron);
+    head.append(icon, title, messageCount, logCount, latest, chevron);
 
     const body = doc.createElement('div');
     body.className = 'ks-msgbar-body';
-    const list = doc.createElement('ul');
-    list.className = 'ks-msg-list';
-    list.setAttribute('aria-live', 'polite');
-    const empty = doc.createElement('p');
-    empty.className = 'ks-msg-empty';
-    empty.textContent = 'Nincs megjeleníthető üzenet.';
+
+    const tabs = doc.createElement('div');
+    tabs.className = 'ks-msgbar-tabs';
+    tabs.setAttribute('role', 'tablist');
+    const messagesTab = doc.createElement('button');
+    messagesTab.type = 'button';
+    messagesTab.className = 'ks-msgbar-tab';
+    messagesTab.setAttribute('role', 'tab');
+    messagesTab.setAttribute('aria-selected', 'true');
+    messagesTab.dataset.tab = 'messages';
+    messagesTab.textContent = 'Üzenetek';
+    const logTab = doc.createElement('button');
+    logTab.type = 'button';
+    logTab.className = 'ks-msgbar-tab';
+    logTab.setAttribute('role', 'tab');
+    logTab.setAttribute('aria-selected', 'false');
+    logTab.dataset.tab = 'log';
+    logTab.textContent = 'Napló';
+    tabs.append(messagesTab, logTab);
+
+    const messagePanel = doc.createElement('div');
+    messagePanel.className = 'ks-msgbar-panel';
+    messagePanel.dataset.panel = 'messages';
+    const messageList = doc.createElement('ul');
+    messageList.className = 'ks-msg-list';
+    messageList.setAttribute('aria-live', 'polite');
+    const messageEmpty = doc.createElement('p');
+    messageEmpty.className = 'ks-msg-empty';
+    messageEmpty.textContent = 'Nincs megjeleníthető üzenet.';
+    messagePanel.append(messageList, messageEmpty);
+
+    const logPanel = doc.createElement('div');
+    logPanel.className = 'ks-msgbar-panel';
+    logPanel.dataset.panel = 'log';
+    logPanel.hidden = true;
+    const logList = doc.createElement('ul');
+    logList.className = 'ks-msg-list ks-msg-log';
+    logList.setAttribute('aria-live', 'polite');
+    const logEmpty = doc.createElement('p');
+    logEmpty.className = 'ks-msg-empty';
+    logEmpty.textContent = 'Nincs naplóbejegyzés.';
+    logPanel.append(logList, logEmpty);
+
     const foot = doc.createElement('div');
     foot.className = 'ks-msgbar-foot';
     const clearButton = doc.createElement('button');
@@ -414,15 +486,13 @@
     clearButton.className = 'ks-msgbar-clear';
     clearButton.textContent = 'Összes törlése';
     foot.append(clearButton);
-    body.append(list, empty, foot);
+    body.append(tabs, messagePanel, logPanel, foot);
     bar.append(head, body);
+    doc.body.append(bar);
 
-    if (host.firstChild && host.insertBefore) host.insertBefore(bar, host.firstChild);
-    else host.append(bar);
-
-    // A sticky elemek (projektválasztó, idővonal) ettől a magasságtól tolódnak
-    // lejjebb. Kinyitva 0, mert a nyitott sáv a tartalom fölé lóg.
-    function setStickyOffset(value) {
+    // A dashboard alsó navigációja a sáv fölé kerül. A fenti sticky elemekhez
+    // nem nyúlunk, mert a sáv fix pozíciójú.
+    function setBottomOffset(value) {
       if (rootStyle && rootStyle.setProperty) rootStyle.setProperty('--ks-msgbar-height', value);
     }
 
@@ -439,6 +509,15 @@
     if (typeof root.ResizeObserver === 'function' && doc.body)
       new root.ResizeObserver(syncWidth).observe(doc.body);
 
+    function activeTab() {
+      return bar.dataset.tab === 'log' ? 'log' : 'messages';
+    }
+
+    function setTab(tab) {
+      bar.dataset.tab = tab === 'log' ? 'log' : 'messages';
+      apply();
+    }
+
     function setState(next) {
       bar.dataset.state = next === 'open' ? 'open' : 'collapsed';
       apply();
@@ -447,36 +526,84 @@
     function apply() {
       syncWidth();
       const counts = store.counts();
-      const active = counts.total > 0;
+      const logs = logItems.length;
+      const active = counts.total > 0 || logs > 0;
       const open = bar.dataset.state === 'open';
       bar.hidden = !active;
+      setBottomOffset(active ? BAR_HEIGHT : '0px');
       if (!active) {
         bar.dataset.state = 'collapsed';
-        setStickyOffset('0px');
         return;
       }
-      setStickyOffset(open ? '0px' : BAR_HEIGHT);
       head.setAttribute('aria-expanded', String(open));
       head.setAttribute('title', open ? 'Üzenetek összecsukása' : 'Üzenetek kinyitása');
-    }
-
-    function render(items) {
-      const counts = store.counts();
-      count.textContent = counts.total ? String(counts.total) : '0';
-      bar.dataset.level = severityLevel(counts);
-      const newest = items[items.length - 1];
+      // Ha csak az egyik nézetben van bejegyzés, azt mutatjuk alapból.
+      if (counts.total === 0 && logs > 0) bar.dataset.tab = 'log';
+      else if (counts.total > 0 && logs === 0) bar.dataset.tab = 'messages';
+      const tab = activeTab();
+      messagesTab.setAttribute('aria-selected', String(tab === 'messages'));
+      logTab.setAttribute('aria-selected', String(tab === 'log'));
+      messagePanel.hidden = tab !== 'messages';
+      logPanel.hidden = tab !== 'log';
+      messageCount.textContent = counts.total ? String(counts.total) : '';
+      messageCount.hidden = counts.total === 0;
+      messageCount.className = 'ks-msgbar-count' + (counts.error ? ' error' : counts.warning ? ' warning' : '');
+      logCount.textContent = logs ? String(logs) : '';
+      logCount.hidden = logs === 0;
+      messagesTab.textContent = 'Üzenetek' + (counts.total ? ' (' + counts.total + ')' : '');
+      logTab.textContent = 'Napló' + (logs ? ' (' + logs + ')' : '');
+      const messages = store.list();
+      const newestMessage = messages.length ? messages[messages.length - 1] : null;
+      const newestLog = logItems.length ? logItems[logItems.length - 1] : null;
+      let newest = tab === 'log' ? newestLog : newestMessage;
+      if (!newest) newest = tab === 'log' ? newestMessage : newestLog;
       latest.textContent = newest ? newest.text : '';
       latest.title = newest ? newest.text : '';
-      clearButton.hidden = counts.total === 0;
-      renderRows(doc, list, empty, items, store);
+      clearButton.hidden = !active;
+    }
+
+    function render() {
+      const messages = store.list();
+      renderRows(doc, messageList, messageEmpty, messages, store);
+      renderRows(doc, logList, logEmpty, logItems, null, {log: true});
       apply();
+    }
+
+    // A szervernapló új bejegyzései. A sorszám (id) alapján kiszűrjük az
+    // ismétlődéseket, és legfeljebb MAX_LOG_ITEMS bejegyzést tartunk meg.
+    function appendLog(entries) {
+      if (!Array.isArray(entries) || !entries.length) return;
+      for (const entry of entries) {
+        if (!entry || typeof entry !== 'object') continue;
+        const id = String(entry.id ?? '');
+        const text = String(entry.text ?? '').trim();
+        if (!id || !text || logSeen.has(id)) continue;
+        logSeen.add(id);
+        logItems.push({
+          id,
+          time: Number(entry.time) || Date.now(),
+          level: ['error','warning','success','note','info'].includes(entry.level) ? entry.level : 'info',
+          text
+        });
+      }
+      while (logItems.length > MAX_LOG_ITEMS) logSeen.delete(logItems.shift().id);
+      render();
+    }
+
+    function clearAll() {
+      store.clear();
+      logItems.length = 0;
+      logSeen.clear();
+      render();
     }
 
     head.addEventListener('click', () => {
       setState(bar.dataset.state === 'open' ? 'collapsed' : 'open');
       if (bar.dataset.state === 'open') focusQuietly(head);
     });
-    clearButton.addEventListener('click', () => store.clear());
+    messagesTab.addEventListener('click', () => setTab('messages'));
+    logTab.addEventListener('click', () => setTab('log'));
+    clearButton.addEventListener('click', clearAll);
     bar.addEventListener('keydown', event => {
       if (event.key === 'Escape' && bar.dataset.state === 'open') {
         event.stopPropagation();
@@ -486,12 +613,14 @@
     });
 
     store.subscribe(render);
-    setStickyOffset('0px');
+    setBottomOffset('0px');
     return {
-      variant: 'topbar',
+      variant: 'bottombar',
       setState,
       getState: () => bar.dataset.state,
-      element: bar
+      element: bar,
+      appendLog,
+      clear: clearAll
     };
   }
 
@@ -654,9 +783,9 @@
       style.textContent = STYLE;
       doc.head.appendChild(style);
 
-      // A dashboardon a felső sáv, minden más oldalon a jobb széli fül.
+      // A dashboardon az alsó sáv, minden más oldalon a jobb széli fül.
       const page = doc.body.dataset ? String(doc.body.dataset.ksPage || '') : '';
-      ui = page === 'dashboard' ? mountTopbar(doc, root, store) : mountDock(doc, root, store);
+      ui = page === 'dashboard' ? mountBottombar(doc, root, store) : mountDock(doc, root, store);
     }
 
     const api = {
@@ -664,29 +793,29 @@
       beginRun: () => store.beginRun(),
       remove: id => store.remove(id),
       removeByKey: key => store.removeByKey(key),
-      clear: () => store.clear(),
+      clear: () => { mount(); if (ui && ui.clear) ui.clear(); else store.clear(); },
+      appendLog: entries => { mount(); if (ui && ui.appendLog) ui.appendLog(entries); },
       list: () => store.list(),
       counts: () => store.counts(),
       open: () => {
         mount();
         if (!ui) return;
-        if (ui.variant === 'topbar') ui.setState('open');
-        else ui.setState('open');
+        ui.setState('open');
       },
       close: () => {
         mount();
         if (!ui) return;
-        ui.setState(ui.variant === 'topbar' ? 'collapsed' : 'closed');
+        ui.setState(ui.variant === 'bottombar' ? 'collapsed' : 'closed');
       },
       minimize: () => {
         mount();
         if (!ui) return;
-        ui.setState(ui.variant === 'topbar' ? 'collapsed' : 'minimized');
+        ui.setState(ui.variant === 'bottombar' ? 'collapsed' : 'minimized');
       },
       toggle: () => {
         mount();
         if (!ui) return;
-        if (ui.variant === 'topbar') ui.setState(ui.getState() === 'open' ? 'collapsed' : 'open');
+        if (ui.variant === 'bottombar') ui.setState(ui.getState() === 'open' ? 'collapsed' : 'open');
         else ui.setState(ui.element.hidden ? 'open' : 'closed');
       }
     };

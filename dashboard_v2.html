@@ -198,7 +198,7 @@
     }
     function busyState(value,message='Dolgozom…'){
       if(value&&window.KsMessages)window.KsMessages.beginRun();
-      busy=value;$('busyOverlay').hidden=!value;$('busyText').textContent=message;document.querySelectorAll('button:not(.ks-msg-launcher):not(.ks-msg-btn):not(.ks-msg-remove):not(.ks-msgbar-head):not(.ks-msgbar-clear)').forEach(button=>{button.disabled=value});if(!value&&project)render()}
+      busy=value;$('busyOverlay').hidden=!value;$('busyText').textContent=message;document.querySelectorAll('button:not(.ks-msg-launcher):not(.ks-msg-btn):not(.ks-msg-remove):not(.ks-msgbar-head):not(.ks-msgbar-clear):not(.ks-msgbar-tab)').forEach(button=>{button.disabled=value});if(!value&&project)render()}
     function element(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node}
     function actionIcon(text){const label=String(text||'').trim();
       if(label==='✓')return 'check';if(label==='▶')return 'play';
@@ -767,7 +767,29 @@
       renderProjectOptions();if(project){render();markSubmissionRead()}}
       catch(error){notice(error.message||String(error),'error')}},120000);
     function renderProjectOptions(){const active=$('projectSelect'),archive=$('archiveSelect'),filter=$('statusFilter').value;active.replaceChildren(new Option('Válassz projektet…',''));archive.replaceChildren(new Option('Válassz lezárt projektet…',''));projects.forEach(item=>{const state=item.clientSubmission||{};const badge=state.unread?' 🔔':state.status==='incomplete'?' ⚠ Hiányos':state.status==='complete'?' ✓ Teljes':'';const option=new Option(projectColor(item.stage)+' '+item.name+' · '+(item.clientName||'Névtelen megbízó')+badge,item.uid);if(item.closed)archive.add(option);else if(filter==='all'||filter===item.stage)active.add(option)});active.value=selectedUid;if(!active.value&&selectedUid&&filter!=='all')active.value=''}
-    async function loadProjects(){busyState(true,'Projektlista frissítése…');try{projects=await rpc('dashboardListProjects');$('app').hidden=false;renderProjectOptions();$('newProject').href=CLIENT_FORM_URL;if(selectedUid&&projects.some(item=>item.uid===selectedUid&&!item.closed)){if(!project||project.uid!==selectedUid)await selectProject(selectedUid,true);else await refreshProject()}else if(!project){$('projectArea').hidden=true;$('timeline').hidden=true;$('empty').hidden=false}}catch(error){$('app').hidden=true;notice(error.message||String(error),'error')}finally{busyState(false)}}
+    // A szervernapló (a Railway deploy log) lekérése a dashboard alsó sávjába.
+    // Csak az új bejegyzéseket kérjük le a kurzor után, ezért a forgalom kicsi.
+    let serverLogCursor=0,serverLogTimer=null;
+    async function refreshServerLogs(){
+      if(!window.KsMessages||typeof window.KsMessages.appendLog!=='function')return;
+      try{
+        const data=await rpc('dashboardLogs',serverLogCursor,100);
+        if(!data)return;
+        if(Number.isFinite(Number(data.cursor))&&Number(data.cursor)>serverLogCursor)
+          serverLogCursor=Number(data.cursor);
+        if(Array.isArray(data.entries)&&data.entries.length)
+          window.KsMessages.appendLog(data.entries);
+      }catch(error){
+        // A napló lekérése nem írhat újabb hibát a naplóba: csendben kihagyjuk.
+      }
+    }
+    function startServerLogPolling(){
+      if(serverLogTimer)return;
+      refreshServerLogs();
+      serverLogTimer=setInterval(()=>{if(!document.hidden)refreshServerLogs()},5000);
+      document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshServerLogs()});
+    }
+    async function loadProjects(){busyState(true,'Projektlista frissítése…');try{projects=await rpc('dashboardListProjects');$('app').hidden=false;startServerLogPolling();renderProjectOptions();$('newProject').href=CLIENT_FORM_URL;if(selectedUid&&projects.some(item=>item.uid===selectedUid&&!item.closed)){if(!project||project.uid!==selectedUid)await selectProject(selectedUid,true);else await refreshProject()}else if(!project){$('projectArea').hidden=true;$('timeline').hidden=true;$('empty').hidden=false}}catch(error){$('app').hidden=true;notice(error.message||String(error),'error')}finally{busyState(false)}}
     $('projectSelect').addEventListener('change',event=>selectProject(event.target.value));
     $('statusFilter').addEventListener('change',renderProjectOptions);
     $('timelineBody').addEventListener('scroll',()=>{$('timelineLabelScroll').scrollLeft=$('timelineBody').scrollLeft});

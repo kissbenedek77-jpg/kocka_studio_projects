@@ -214,14 +214,14 @@ body[data-runtime=node] .fa-action.fa-glyph::before{font-size:16px;margin-right:
 body[data-runtime=node] .tree-kind.fa-action,body[data-runtime=node] .tree-status.fa-action{font-size:0}
 body[data-runtime=node] .tree-kind.fa-action::before,body[data-runtime=node] .tree-status.fa-action::before{font-size:15px;margin-right:0}
 body[data-runtime=node] .tree-toggle.fa-action::before{font-size:15px}
-body[data-ks-page=dashboard] .project-select-sticky{position:sticky;top:var(--ks-msgbar-height,0px);z-index:12;padding:6px 0;background:var(--ks-bg);box-shadow:0 5px 12px #26312e14}
+body[data-ks-page=dashboard] .project-select-sticky{position:sticky;top:0;z-index:12;padding:6px 0;background:var(--ks-bg);box-shadow:0 5px 12px #26312e14}
 body[data-ks-page=dashboard] .project-select-sticky select{display:block;width:100%}
 body[data-ks-page=dashboard] .project-tools{justify-content:flex-end;margin:10px 0 0;align-items:flex-end}
 body[data-ks-page=dashboard] .project-tools .status-filter{flex:0 0 160px;width:160px;min-width:160px}
 body[data-ks-page=dashboard] .project-tools .ks-toolbar-actions{flex-wrap:nowrap}
 body[data-ks-page=dashboard] .timeline:not([hidden]){display:contents}
 body[data-ks-page=dashboard] .timeline-head{margin:16px 0 0;padding:10px 12px;background:var(--ks-surface);border:1px solid var(--ks-border);border-bottom:0}
-body[data-ks-page=dashboard] .timeline-body{position:sticky;top:calc(var(--ks-msgbar-height,0px) + 56px);z-index:11;padding:8px 12px;background:var(--ks-surface);border-inline:1px solid var(--ks-border);box-shadow:0 5px 12px #26312e14}
+body[data-ks-page=dashboard] .timeline-body{position:sticky;top:56px;z-index:11;padding:8px 12px;background:var(--ks-surface);border-inline:1px solid var(--ks-border);box-shadow:0 5px 12px #26312e14}
 body[data-ks-page=dashboard] .timeline-bottom{display:flex;align-items:flex-start;gap:8px;min-width:0;padding:0 12px;background:var(--ks-surface);border-inline:1px solid var(--ks-border)}
 body[data-ks-page=dashboard] .timeline-label-scroll{flex:1 1 auto;min-width:0;overflow:hidden}
 body[data-ks-page=dashboard] .timeline-bottom .timeline-lengths{flex:1 1 auto;min-width:0}

@@ -143,6 +143,22 @@ test('Node szerver: health elérhető, dashboard belépést kér, RPC nem nyilv�
     assert.match(await expiredLogin.text(),/A munkamenet lejárt/);
     const projectDashboard = await fetch(base + '/dashboard?project=ABCD-1234', {redirect:'manual'});
     assert.equal(projectDashboard.headers.get('location'), '/auth/login?return=%2Fdashboard%3Fproject%3DABCD-1234');
+    // A dashboard alsó sávja a szervernaplót is megkapja; az indulási sor már benne van.
+    const logsResponse = await fetch(base+'/api/rpc',{method:'POST',
+      headers:{Cookie:'kocka_session='+session,Origin:'http://127.0.0.1:3000',
+        'x-kocka-rpc':'1','Content-Type':'application/json'},
+      body:JSON.stringify({name:'dashboardLogs',args:[0,50]})});
+    assert.equal(logsResponse.status,200);
+    const logsResult = (await logsResponse.json()).result;
+    assert.ok(Array.isArray(logsResult.entries),'a napló bejegyzéslistát ad vissza');
+    assert.ok(logsResult.entries.some(entry => /listening on/.test(entry.text)),
+      'a szerver indulási sora is a naplóban van');
+    assert.ok(logsResult.entries.every(entry => entry.id > 0 && entry.time > 0),
+      'minden bejegyzésnek van azonosítója és időpontja');
+    const logsWithoutAuth = await fetch(base+'/api/rpc',{method:'POST',
+      headers:{Origin:'http://127.0.0.1:3000','x-kocka-rpc':'1','Content-Type':'application/json'},
+      body:JSON.stringify({name:'dashboardLogs',args:[0,10]})});
+    assert.equal(logsWithoutAuth.status,401,'a napló csak bejelentkezve érhető el');
     const oldDashboardLink = await fetch(base + '/?view=dashboard&project=ABCD-1234', {redirect:'manual'});
     assert.equal(oldDashboardLink.headers.get('location'), '/dashboard?project=ABCD-1234');
     const home=await fetch(base+'/',{redirect:'manual'});

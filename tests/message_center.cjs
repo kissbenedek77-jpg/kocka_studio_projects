@@ -210,46 +210,81 @@ test('Új hiba esetén a panel magától kinyílik, figyelmeztetésnél nem', ()
   assert.equal(panel.hidden, false, 'az új hiba kinyitja a panelt');
 });
 
-test('A dashboardon felső sáv jelenik meg a jobb széli fül helyett', () => {
+test('A dashboardon alsó sáv jelenik meg a jobb széli fül helyett', () => {
   const doc = fakeDocument('dashboard');
   const api = createBrowserApi({document: doc, sessionStorage: null});
   const bar = collect(doc.body, node => node.className === 'ks-msgbar')[0];
   const launcher = collect(doc.body, node => node.className === 'ks-msg-launcher');
-  assert.ok(bar, 'a felső üzenetsáv elkészül');
+  assert.ok(bar, 'az alsó üzenetsáv elkészül');
   assert.equal(launcher.length, 0, 'a jobb széli fül megszűnik a dashboardon');
   assert.equal(bar.hidden, true, 'üzenet nélkül a sáv rejtett');
   assert.equal(doc.documentElement.style.values['--ks-msgbar-height'], '0px',
-    'üzenet nélkül nincs sticky eltolás');
+    'üzenet nélkül nincs alsó eltolás');
 
   api.notice('Hiba történt.', 'error');
   assert.equal(bar.hidden, false, 'aktív állapotban a sáv látszik');
   assert.equal(bar.dataset.state, 'collapsed', 'alapból összecsukott');
   assert.equal(doc.documentElement.style.values['--ks-msgbar-height'], '46px',
-    'összecsukva helyet foglal, így letolja a többi sticky elemet');
+    'a látható sáv fölé kerül az alsó navigáció');
 
   const head = collect(bar, node => node.className === 'ks-msgbar-head')[0];
   head.handlers.click();
   assert.equal(bar.dataset.state, 'open', 'kattintásra kinyílik');
-  assert.equal(doc.documentElement.style.values['--ks-msgbar-height'], '0px',
-    'kinyitva a tartalom fölé lóg, nem tolja le a sticky elemeket');
+  assert.equal(doc.documentElement.style.values['--ks-msgbar-height'], '46px',
+    'kinyitva is a helyén marad, csak felfelé lóg');
 
   head.handlers.click();
   assert.equal(bar.dataset.state, 'collapsed', 'újabb kattintásra összecsukódik');
-  assert.equal(doc.documentElement.style.values['--ks-msgbar-height'], '46px');
 
   api.clear();
   assert.equal(bar.hidden, true, 'kiürítés után a sáv eltűnik');
   assert.equal(doc.documentElement.style.values['--ks-msgbar-height'], '0px');
 });
 
-test('A dashboard sticky elemei az üzenetsáv magasságát követik', () => {
+test('A dashboard alsó sávja a szervernaplót is mutatja', () => {
+  const doc = fakeDocument('dashboard');
+  const api = createBrowserApi({document: doc, sessionStorage: null});
+  const bar = collect(doc.body, node => node.className === 'ks-msgbar')[0];
+  assert.equal(bar.hidden, true);
+
+  api.appendLog([
+    {id:1,time:Date.now(),level:'error',text:'Kérés hiba: teszt'},
+    {id:2,time:Date.now(),level:'info',text:'Kocka dashboard listening on 3000'}
+  ]);
+  assert.equal(bar.hidden, false, 'naplóbejegyzés is megjeleníti a sávot');
+
+  const logTab = collect(bar, node =>
+    node.className === 'ks-msgbar-tab' && node.dataset && node.dataset.tab === 'log')[0];
+  assert.ok(logTab, 'van Napló fül');
+  logTab.handlers.click();
+  assert.equal(bar.dataset.tab, 'log');
+  assert.ok(collect(bar, node => String(node.textContent || '').includes('listening')).length,
+    'a napló szövege látszik');
+  const logRows = collect(bar, node => String(node.className || '').includes('ks-msg-item-log'));
+  assert.equal(logRows.length, 2, 'minden naplóbejegyzés egy sor');
+
+  // Ugyanazokat az id-ket nem tesszük be még egyszer.
+  api.appendLog([
+    {id:1,time:Date.now(),level:'error',text:'Kérés hiba: teszt'},
+    {id:2,time:Date.now(),level:'info',text:'Kocka dashboard listening on 3000'}
+  ]);
+  assert.equal(
+    collect(bar, node => String(node.className || '').includes('ks-msg-item-log')).length, 2,
+    'a napló nem duplikálódik');
+
+  api.clear();
+  assert.equal(bar.hidden, true, 'a napló is törölhető');
+});
+
+test('A dashboard felső sticky elemeit nem bántja a sáv', () => {
   const css = read('public/ks-design.css');
-  assert.match(css,
-    /\.project-select-sticky\{position:sticky;top:var\(--ks-msgbar-height,0px\)/,
-    'a projektválasztó a sáv alatt ragad');
-  assert.match(css,
-    /\.timeline-body\{position:sticky;top:calc\(var\(--ks-msgbar-height,0px\) \+ 56px\)/,
-    'az idővonal a projektválasztó alatt ragad');
+  assert.match(css, /\.project-select-sticky\{position:sticky;top:0;/,
+    'a projektválasztó változatlanul a lap tetején ragad');
+  assert.match(css, /\.timeline-body\{position:sticky;top:56px;/,
+    'az idővonal változatlanul a projektválasztó alatt ragad');
+  const module = read('public/message-center.js');
+  assert.match(module, /\.foot-nav\{bottom:var\(--ks-msgbar-height,0px\)\}/,
+    'csak az alsó navigáció kerül a sáv fölé');
 });
 
 test('A három felület az üzenetközpontra dolgozik', () => {
