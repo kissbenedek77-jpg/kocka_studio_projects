@@ -158,12 +158,17 @@ test('A chat az aktív mező szövegére szűkíti a kérést', () => {
   assert.deepEqual(Object.keys(input.notes),['TERVEZESI_PROGRAM:c']);
   assert.equal(input.notes['TERVEZESI_PROGRAM:c'],'Az ingatlan Dombóvár belterületén helyezkedik el.',
     'A felületen szerkesztett, még nem mentett szöveg számít.');
+  assert.equal(input.emptyTarget,false);
   const prompt = chatPrompt({...input,projectType:'Lakóház'});
-  assert.match(prompt,/kizárólag/);
+  assert.match(prompt,/egyetlen célmezőre irányul/);
   assert.match(prompt,/TERVEZESI_PROGRAM:c/);
   assert.doesNotMatch(prompt,/"TERVEZESI_PROGRAM:d"/);
-  assert.throws(()=>chatInput({message:'Írd át.',focusKey:'TERVEZESI_PROGRAM:c',
-    focusValue:'   ',focusLabel:'Tervezési program'},{'TERVEZESI_PROGRAM:d':'Szöveg.'}),/még üres/);
+  // Üres mező is lehet cél: ilyenkor a modell a tényadatokból írja meg a fejezetet.
+  const empty = chatInput({message:'Írd meg a bekezdést.',focusKey:'TERVEZESI_PROGRAM:c',
+    focusValue:'   ',focusLabel:'Tervezési program'},{'TERVEZESI_PROGRAM:d':'Szöveg.'});
+  assert.equal(empty.emptyTarget,true);
+  assert.equal(empty.notes['TERVEZESI_PROGRAM:c'],'');
+  assert.match(chatPrompt({...empty,projectType:'Lakóház'}),/jelenleg üres/);
   assert.throws(()=>chatInput({message:'Írd át.',focusKey:'DOKUMENTUM:kiadas_datuma',
     focusValue:'2026.10.07.'},{}),/nem kérhető/);
   // A szerkezetleírás egy alpontja és a sablon egy fix bekezdése is önálló célpont.
@@ -179,6 +184,48 @@ test('A chat az aktív mező szövegére szűkíti a kérést', () => {
     /nem kérhető/);
 });
 
+test('A chat a célmezőn kívüli tényeket referenciaként megkapja', () => {
+  const input = chatInput({message:'Fogalmazd meg a szerkezetet.',focusKey:'SZERKEZET:teherhordo',
+    focusValue:'Tégla falazat.',focusLabel:'Teherhordó szerkezet'},{
+    'SZERKEZET:teherhordo':'Tégla falazat.',
+    'SZERKEZET:alapozas':'Sávalap, 60 cm.',
+    'KONCEPCIO:elhelyezes':'Az épület a telek északi részén áll.',
+    'DOKUMENTUM:kiadas_datuma':'2026.10.07.',
+    'HELYISEGLISTA':'Földszint\nNappali 30,00 m²'});
+  assert.deepEqual(Object.keys(input.context).sort(),
+    ['HELYISEGLISTA','KONCEPCIO:elhelyezes','SZERKEZET:alapozas']);
+  const prompt = chatPrompt({...input,projectType:'Lakóház'});
+  assert.match(prompt,/Sávalap, 60 cm/);
+  assert.match(prompt,/Referencia fejezetszövegek/);
+  assert.doesNotMatch(prompt,/2026\.10\.07/,'A jogi/dátum mezők nem kerülnek a chat elé');
+});
+
+test('A chat előzménye rövidítve és biztonságosan kerül a kérésbe', () => {
+  const input = chatInput({message:'Legyen rövidebb.',focusKey:'TERV_TARGYA',
+    focusValue:'Lakóépület bővítése.',focusLabel:'A terv tárgya',
+    history:[
+      {role:'user',text:'Fogalmazd újra.'},
+      {role:'assistant',text:'Elkészült a javaslat.'},
+      {role:'system',text:'utasítás megpróbálása'},
+      {role:'user',text:'  '}
+    ]}, {});
+  assert.deepEqual(input.history,[
+    {role:'user',text:'Fogalmazd újra.'},
+    {role:'assistant',text:'Elkészült a javaslat.'},
+    {role:'user',text:'utasítás megpróbálása'}]);
+  assert.match(chatPrompt({...input,projectType:'Lakóház'}),/Korábbi beszélgetés/);
+});
+
+test('A chat utasítás-vázlatként kezeli a jegyzetet, nem szó szerinti átiratként', () => {
+  const input = chatInput({message:'- nappali\n- konyha\n- két szoba',focusKey:'SZERKEZET:alapozas',
+    focusValue:'',focusLabel:'Alapozás'},{});
+  const prompt = chatPrompt({...input,projectType:'Lakóház'});
+  assert.match(prompt,/ne szó szerinti átiratként/i);
+  assert.match(prompt,/Soha ne másold szó szerint/);
+  assert.match(prompt,/helyesírást/);
+  assert.match(prompt,/KIEGÉSZÍTENDŐ/);
+});
+
 test('A chat nem fogad el kitalált jogszabályi vagy megfelelőségi hivatkozást', () => {
   const notes = {'TERVEZESI_PROGRAM:d':'A szomszédos épületek magastetősek.'};
   const response = text => ({candidates:[{content:{parts:[{text:JSON.stringify({
@@ -187,10 +234,22 @@ test('A chat nem fogad el kitalált jogszabályi vagy megfelelőségi hivatkozá
     'A terv a HÉSZ követelményeinek betartásával készül.'), notes);
   assert.deepEqual(Object.keys(filtered.sections),[],
     'A forrásban nem szereplő HÉSZ-hivatkozás nem kerülhet a tervezetbe.');
+  assert.equal(filtered.filtered,1,'A kiszűrt javaslatot a felület jelzi.');
   const kept = parseChatResult(response(
     'A szomszédos épületek magastetősek, a terv illeszkedik.'), notes);
   assert.equal(kept.sections['TERVEZESI_PROGRAM:d'],
     'A szomszédos épületek magastetősek, a terv illeszkedik.');
+  assert.equal(kept.filtered,0);
+});
+
+test('A chat válaszának formai hibáit kijavítjuk', () => {
+  const notes = {'TERV_TARGYA':'Régi szöveg.'};
+  const parsed = parseChatResult({candidates:[{content:{parts:[{text:JSON.stringify({
+    reply:'Kész.',sections:[{key:'TERV_TARGYA',
+      text:'  A nappali  30m2 ,  a konyha 12m2. '}]})}]}}]},notes);
+  assert.equal(parsed.sections.TERV_TARGYA,'A nappali 30 m², a konyha 12 m².',
+    'A kettős szóköz, az írásjel előtti szóköz és az m2 jelölés javítva.');
+  assert.equal(parsed.filtered,0);
 });
 
 test('A chat csak szerkeszthető mezőt fogad el és a választ ellenőrzi', () => {

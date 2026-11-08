@@ -1010,15 +1010,19 @@ function googleClient(config, refreshToken = '', authOverride = null) {
     // adataival kitöltött sablonszöveg) számít a chat kiinduló szövegének.
     const current = Object.fromEntries(fields.fields.map(field =>
       [field.key,field.value || field.default || '']));
-    const {message,notes} = chatInput(input,current);
+    const helpByKey = new Map(fields.fields.map(field => [field.key,field.help]));
+    const chat = chatInput(input,current);
     const {data} = await project(uid);
     const model = modelName(process.env.GEMINI_TECHNICAL_MODEL || process.env.GEMINI_AUDIO_MODEL);
     let answer;
     try {
       answer = await generateGeminiContent({apiKey,model,setting:'GEMINI_TECHNICAL_MODEL',
         timeoutMs:60000,
-        payload:{contents:[{parts:[{text:chatPrompt({message,notes,
-          projectType:data.projektTipus})}]}],generationConfig:{temperature:0.3,maxOutputTokens:8192,
+        payload:{contents:[{parts:[{text:chatPrompt({message:chat.message,notes:chat.notes,
+          context:chat.context,focusKey:chat.focusKey,focusLabel:chat.focusLabel,
+          focusHelp:chat.focusHelp || helpByKey.get(chat.focusKey) || '',
+          history:chat.history,projectType:data.projektTipus,emptyTarget:chat.emptyTarget})}]}],
+          generationConfig:{temperature:0.45,maxOutputTokens:8192,
           responseMimeType:'application/json',responseSchema:{type:'OBJECT',properties:{
             reply:{type:'STRING'},sections:{type:'ARRAY',items:{type:'OBJECT',properties:{
               key:{type:'STRING'},text:{type:'STRING'}},required:['key','text']}}
@@ -1029,8 +1033,9 @@ function googleClient(config, refreshToken = '', authOverride = null) {
       if (!error.status) throw new Error('A chat szolgáltatása nem érhető el.');
       throw new Error('A chat nem készült el: '+error.message);
     }
-    const result = parseChatResult(answer.data,notes);
-    return {reply:result.reply,sections:result.sections,model:answer.model};
+    const result = parseChatResult(answer.data,chat.notes);
+    return {reply:result.reply,sections:result.sections,filtered:result.filtered,
+      model:answer.model};
   }
 
   // MARK: A teljes műszaki leírás automatikus előállítása

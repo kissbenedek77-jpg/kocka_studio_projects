@@ -50,6 +50,7 @@ class Node {
     if (type === 'keydown') this.keydownHandler = handler;
     if (type === 'input') this.inputHandler = handler;
     if (type === 'focusin') this.focusinHandler = handler;
+    if (type === 'change') this.changeHandler = handler;
   }
   removeEventListener(){}
   replaceWith(other){
@@ -98,7 +99,7 @@ function createContext(payload, calls) {
   const ids = new Map();
   for (const id of ['status','form','draft','draftPreview','autoDraft','projectUid',
     'dashboardLink','sheetLink','chat','chatSend','chatMessage','chatLog','groups',
-    'chatTarget','chatToggle','chatBody','draftRows','applyDraft'])
+    'chatTarget','chatToggle','chatBody','draftRows','applyDraft','chatTargetSelect','chatQuick'])
     ids.set(id,new Node(id === 'form' ? 'form' : 'div'));
   // A valódi oldalon a mezők a formon belül vannak; a teszthez is így kötjük be.
   ids.get('form').append(ids.get('groups'));
@@ -173,35 +174,25 @@ test('A chat a képernyőn látható első mezőre vonatkozik',async () => {
   assert.match(first.className,/active-input/,'Az első látható beviteli mező aktív jelölést kap.');
   assert.doesNotMatch(second.className,/active-input/);
 
-  // Görgetés után a második mező kerül a képernyő tetejére: az lesz aktív.
+  // A célpont stabil: a görgetés nem váltogatja, mert az kiszámíthatatlan lenne.
   first.rect = {top:-320,height:60,bottom:-260,width:600};
   second.rect = {top:120,height:60,bottom:180,width:600};
   window.scrollHandler();
-  assert.doesNotMatch(first.className,/active-input/,'A kigörgetett mező már nem aktív.');
-  assert.match(second.className,/active-input/,'A látható első mező lesz aktív.');
+  assert.match(first.className,/active-input/,'A görgetés nem váltogatja a célmezőt.');
+  assert.doesNotMatch(second.className,/active-input/);
+
+  // Kattintással (fókusszal) viszont átkerül a célpont a másik mezőre.
+  ids.get('form').focusinHandler({target:second});
+  assert.match(second.className,/active-input/,'A kiválasztott mező lesz a célpont.');
+  assert.doesNotMatch(first.className,/active-input/);
   assert.match(ids.get('chatTarget').textContent,/Tervezési program c\)/,
     'A chat a kijelölt beviteli mezőt nevezi meg.');
 
-  // A felső térköz (24 px) fölött kilógó mező még nem aktív, a következő igen.
-  first.rect = {top:-20,height:40,bottom:20,width:600};
-  second.rect = {top:40,height:60,bottom:100,width:600};
-  window.scrollHandler();
-  assert.match(second.className,/active-input/,
-    'A felső térköz alatt látszó mező aktiválódik.');
-
-  // Kattintás után a mező „rögzül”: addig marad az AI célpontja, amíg teljesen
-  // ki nem kerül a viewportból.
-  ids.get('form').focusinHandler({target:second});
+  // Kigörgetés után is a kiválasztott mező marad a cél.
   first.rect = {top:200,height:40,bottom:240,width:600};
-  second.rect = {top:400,height:60,bottom:460,width:600};
-  window.scrollHandler();
-  assert.match(second.className,/active-input/,
-    'A kiválasztott mező görgetéskor is megtartja az AI-fókuszt, amíg látszik.');
   second.rect = {top:950,height:60,bottom:1010,width:600};
-  first.rect = {top:100,height:40,bottom:140,width:600};
   window.scrollHandler();
-  assert.match(first.className,/active-input/,
-    'A teljesen kigörgetett mező után a látható első mező lesz aktív.');
+  assert.match(second.className,/active-input/,'A görgetés nem veszi el a célpontot.');
   ids.get('form').focusinHandler({target:second});
 
   // A mező még nincs mentve: a felület a sablon alapértékét mutatja helyőrzőként,
@@ -216,6 +207,47 @@ test('A chat a képernyőn látható első mezőre vonatkozik',async () => {
   assert.equal(chat.args[1].focusKey,'TERVEZESI_PROGRAM:c');
   assert.equal(chat.args[1].focusValue,'A környéken kialakult építészeti arculat nincs.');
   assert.equal(chat.args[1].focusLabel,'Tervezési program c) pontjának végleges szövege');
+  assert.equal(chat.args[1].focusHelp,'Tervezési program c) pontjának végleges szövege');
+  assert.ok(Array.isArray(chat.args[1].history),'A chat a beszélgetés előzményét is elküldi.');
+});
+
+test('A chat célmezője listából is kiválasztható',async () => {
+  const calls = [];
+  const payload = {
+    sheetUrl:'https://docs.google.com/spreadsheets/d/x/edit',aiConfigured:true,
+    outline:[
+      {type:'heading',level:'chapter',number:1,text:'Adatok',readonly:true},
+      {type:'fields',keys:['TERV_TARGYA'],context:'',readonly:false},
+      {type:'heading',level:'chapter',number:2,text:'Tervezési program',readonly:true},
+      {type:'field',key:'TERVEZESI_PROGRAM:c',range:true,readonly:false}
+    ],
+    blocks:[],
+    fields:[
+      {key:'TERV_TARGYA',help:'A terv tárgya',value:'Lakóépület felújítása.',manual:false},
+      {key:'TERVEZESI_PROGRAM:c',help:'Tervezési program c) pontjának végleges szövege',
+        value:'Az ingatlan Dombóvár belterületén helyezkedik el.',manual:false}
+    ],
+    chatKeys:['TERV_TARGYA','TERVEZESI_PROGRAM:c'],
+    valueRows:[],placeholderValues:{},editablePlaceholders:[],missingFields:[]
+  };
+  const {ids} = createContext(payload,calls);
+  await new Promise(resolve => setTimeout(resolve,20));
+  const select = ids.get('chatTargetSelect');
+  assert.ok(select.children.length > 1,'A célmező-lista feltöltődik a szerkeszthető mezőkkel.');
+  const values = [];
+  const walk = node => {
+    for (const child of node.children || []) {
+      if (!child || typeof child !== 'object') continue;
+      if (child.value) values.push(child.value);
+      walk(child);
+    }
+  };
+  walk(select);
+  assert.ok(values.includes('TERVEZESI_PROGRAM:c'),'A lista tartalmazza a program pontját.');
+  select.value = 'TERVEZESI_PROGRAM:c';
+  select.changeHandler();
+  assert.match(ids.get('chatTarget').textContent,/Tervezési program c\)/,
+    'A listából választott mező lesz a chat célpontja.');
 });
 
 test('Az AI-javaslat a mezőnél jelenik meg, beillesztés után visszaállítható',async () => {
