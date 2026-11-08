@@ -261,7 +261,16 @@
     }
     document.getElementById('projectUid').textContent=uid;
     document.getElementById('dashboardLink').href='/dashboard?project='+encodeURIComponent(uid)+'&step=5';
-    function message(text,kind=''){status.className=kind?'notice '+kind:'';status.textContent=text}
+    function message(text,kind='',options={}){
+      if(window.KsMessages){
+        // A folyamatjelző (típus nélküli) üzenet új futtatást jelez: a korábbi,
+        // már nem érvényes üzenetek ilyenkor automatikusan eltűnnek.
+        if(!kind&&text)window.KsMessages.beginRun();
+        return window.KsMessages.notice(text,kind,
+          {key:options.key===undefined?'technical-status':options.key,links:options.links});
+      }
+      status.className=kind?'notice '+kind:'';status.textContent=text;
+    }
     async function rpc(name,...args){const response=await fetch('/api/rpc',{method:'POST',credentials:'same-origin',
       headers:{'Content-Type':'application/json','X-Kocka-RPC':'1'},body:JSON.stringify({name,args})});
       const body=await response.json();if(response.status===401){location.replace('/auth/login?return='+encodeURIComponent(location.pathname+location.search)+'&reason=expired');throw new Error('A munkamenet lejárt. Átirányítás a belépéshez…')}if(!response.ok)throw new Error(body.error||'A kérés nem sikerült.');return body.result}
@@ -869,7 +878,9 @@
         if(result.url&&tab)tab.location.replace(result.url);
         else if(tab)tab.close();
         await load();
-        message(result.message+(result.url?' A dokumentum új lapon megnyílt.':'')+' Az elkészült szövegeket itt szerkesztheted, majd mentsd.','success')
+        message(result.message+(result.url?' A dokumentum új lapon megnyílt.':'')+' Az elkészült szövegeket itt szerkesztheted, majd mentsd.','success');
+        if(Array.isArray(result.warnings))
+          result.warnings.forEach(warning=>message(warning,'warning',{key:null}));
       }catch(error){if(tab)tab.close();message(error.message||String(error),'error')}
       finally{
         autoDraftButton.textContent=originalLabel;

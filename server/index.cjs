@@ -90,6 +90,7 @@ const frontendAssets = new Map([
   ['/assets/fontawesome/css/all.min.css', ['text/css; charset=utf-8',path.join(__dirname,'..','node_modules','@fortawesome','fontawesome-free','css','all.min.css')]],
   ['/assets/ks-design.css', ['text/css; charset=utf-8',path.join(__dirname,'..','public','ks-design.css')]],
   ['/assets/ks-shell.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','ks-shell.js')]],
+  ['/assets/message-center.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','message-center.js')]],
   ['/assets/marketing-auto.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','marketing-auto.js')]],
   ['/assets/pwa-register.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','pwa-register.js')]],
   ['/manifest.webmanifest', ['application/manifest+json; charset=utf-8',path.join(__dirname,'..','public','manifest.webmanifest')]],
@@ -121,6 +122,8 @@ function nodePage(html,page) {
     .replace('<body>','<body class="ks-app ks-page-'+page+'" data-runtime="node" data-ks-page="'+page+'">')
     .replace('</body>','<script src="/assets/bootstrap.bundle.min.js"></script>\n<script src="/assets/ks-shell.js"></script>\n</body>');
   if(['login','dashboard','marketing','technical'].includes(page))result=result
+    .replace('</head>',(['dashboard','marketing','technical'].includes(page)
+      ?'<script src="/assets/message-center.js"></script>\n':'')+'</head>')
     .replace('</head>','<link rel="manifest" href="/manifest.webmanifest?v=3">\n'
       +'<link rel="icon" href="/assets/kocka-icon.svg?v=4" type="image/svg+xml">\n'
       +'<link rel="apple-touch-icon" href="/assets/kocka-icon-180.png?v=3">\n'

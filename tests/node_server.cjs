@@ -50,6 +50,10 @@ test('Node szerver: health elérhető, dashboard belépést kér, RPC nem nyilv�
     const shell = await fetch(base + '/assets/ks-shell.js');
     assert.equal(shell.status, 200);
     assert.match(await shell.text(), /getOrCreateInstance/);
+    const messageCenter = await fetch(base + '/assets/message-center.js');
+    assert.equal(messageCenter.status, 200);
+    assert.match(messageCenter.headers.get('content-type'), /application\/javascript/);
+    assert.match(await messageCenter.text(), /KsMessages/);
     const manifestResponse=await fetch(base+'/manifest.webmanifest');
     assert.equal(manifestResponse.status,200);
     assert.match(manifestResponse.headers.get('content-type'),/application\/manifest\+json/);
