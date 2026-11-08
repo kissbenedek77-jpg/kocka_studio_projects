@@ -7,3 +7,8 @@ node_modules/
 keys
 *.log
 coverage/
+
+# Helyi tesztnaplók – ne kerüljenek verziókövetésbe
+/test_*.txt
+/testlog.txt
+/testout.txt
