@@ -40,6 +40,13 @@ class FakeElement {
   append(...nodes) { for (const node of nodes) this.children.push(node); }
   appendChild(node) { this.children.push(node); return node; }
   replaceChildren(...nodes) { this.children = nodes.slice(); }
+  insertBefore(node, reference) {
+    const index = reference ? this.children.indexOf(reference) : -1;
+    if (index < 0) this.children.push(node);
+    else this.children.splice(index, 0, node);
+    return node;
+  }
+  get firstChild() { return this.children[0] || null; }
   addEventListener(type, handler) {
     if (!this.handlers) this.handlers = {};
     this.handlers[String(type)] = handler;
@@ -48,16 +55,22 @@ class FakeElement {
   querySelector() { return null; }
 }
 
-function fakeDocument() {
+function fakeDocument(page) {
   const head = new FakeElement('head');
   const body = new FakeElement('body');
+  if (page) body.dataset.ksPage = page;
+  const main = new FakeElement('main');
+  body.append(main);
+  const documentElement = {style: {values: {}, setProperty(name, value) { this.values[name] = value; }}};
   return {
     readyState: 'complete',
     head,
     body,
+    documentElement,
     createElement: tag => new FakeElement(tag),
     createDocumentFragment: () => new FakeElement('#fragment'),
-    addEventListener() {}
+    addEventListener() {},
+    querySelector(selector) { return selector === 'main.shell' ? main : null; }
   };
 }
 
@@ -195,6 +208,48 @@ test('Új hiba esetén a panel magától kinyílik, figyelmeztetésnél nem', ()
   assert.equal(panel.hidden, true, 'a figyelmeztetés nem nyitja ki a panelt');
   api.notice('Hiba történt.', 'error');
   assert.equal(panel.hidden, false, 'az új hiba kinyitja a panelt');
+});
+
+test('A dashboardon felső sáv jelenik meg a jobb széli fül helyett', () => {
+  const doc = fakeDocument('dashboard');
+  const api = createBrowserApi({document: doc, sessionStorage: null});
+  const bar = collect(doc.body, node => node.className === 'ks-msgbar')[0];
+  const launcher = collect(doc.body, node => node.className === 'ks-msg-launcher');
+  assert.ok(bar, 'a felső üzenetsáv elkészül');
+  assert.equal(launcher.length, 0, 'a jobb széli fül megszűnik a dashboardon');
+  assert.equal(bar.hidden, true, 'üzenet nélkül a sáv rejtett');
+  assert.equal(doc.documentElement.style.values['--ks-msgbar-height'], '0px',
+    'üzenet nélkül nincs sticky eltolás');
+
+  api.notice('Hiba történt.', 'error');
+  assert.equal(bar.hidden, false, 'aktív állapotban a sáv látszik');
+  assert.equal(bar.dataset.state, 'collapsed', 'alapból összecsukott');
+  assert.equal(doc.documentElement.style.values['--ks-msgbar-height'], '46px',
+    'összecsukva helyet foglal, így letolja a többi sticky elemet');
+
+  const head = collect(bar, node => node.className === 'ks-msgbar-head')[0];
+  head.handlers.click();
+  assert.equal(bar.dataset.state, 'open', 'kattintásra kinyílik');
+  assert.equal(doc.documentElement.style.values['--ks-msgbar-height'], '0px',
+    'kinyitva a tartalom fölé lóg, nem tolja le a sticky elemeket');
+
+  head.handlers.click();
+  assert.equal(bar.dataset.state, 'collapsed', 'újabb kattintásra összecsukódik');
+  assert.equal(doc.documentElement.style.values['--ks-msgbar-height'], '46px');
+
+  api.clear();
+  assert.equal(bar.hidden, true, 'kiürítés után a sáv eltűnik');
+  assert.equal(doc.documentElement.style.values['--ks-msgbar-height'], '0px');
+});
+
+test('A dashboard sticky elemei az üzenetsáv magasságát követik', () => {
+  const css = read('public/ks-design.css');
+  assert.match(css,
+    /\.project-select-sticky\{position:sticky;top:var\(--ks-msgbar-height,0px\)/,
+    'a projektválasztó a sáv alatt ragad');
+  assert.match(css,
+    /\.timeline-body\{position:sticky;top:calc\(var\(--ks-msgbar-height,0px\) \+ 56px\)/,
+    'az idővonal a projektválasztó alatt ragad');
 });
 
 test('A három felület az üzenetközpontra dolgozik', () => {

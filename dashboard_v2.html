@@ -198,7 +198,7 @@
     }
     function busyState(value,message='Dolgozom…'){
       if(value&&window.KsMessages)window.KsMessages.beginRun();
-      busy=value;$('busyOverlay').hidden=!value;$('busyText').textContent=message;document.querySelectorAll('button:not(.ks-msg-launcher):not(.ks-msg-btn):not(.ks-msg-remove)').forEach(button=>{button.disabled=value});if(!value&&project)render()}
+      busy=value;$('busyOverlay').hidden=!value;$('busyText').textContent=message;document.querySelectorAll('button:not(.ks-msg-launcher):not(.ks-msg-btn):not(.ks-msg-remove):not(.ks-msgbar-head):not(.ks-msgbar-clear)').forEach(button=>{button.disabled=value});if(!value&&project)render()}
     function element(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node}
     function actionIcon(text){const label=String(text||'').trim();
       if(label==='✓')return 'check';if(label==='▶')return 'play';
