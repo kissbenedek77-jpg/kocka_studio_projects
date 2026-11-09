@@ -276,6 +276,27 @@ test('A dashboard alsó sávja a szervernaplót is mutatja', () => {
   assert.equal(bar.hidden, true, 'a napló is törölhető');
 });
 
+test('A dashboard alsó sávja a középső oszlop pozíciójához igazodik', () => {
+  const doc = fakeDocument('dashboard');
+  const workspace = new FakeElement('div');
+  workspace.getBoundingClientRect = () => ({left: 242, top: 0, width: 700, height: 100, right: 942, bottom: 100});
+  doc.querySelector = selector => selector === '.workspace-main' ? workspace : null;
+  const api = createBrowserApi({document: doc, sessionStorage: null});
+  const bar = collect(doc.body, node => node.className === 'ks-msgbar')[0];
+  api.notice('Valami történt.', 'info');
+  assert.equal(bar.style.left, '242px', 'a bal szél a munkaterület bal széléhez igazodik');
+  assert.equal(bar.style.width, '700px', 'a szélesség a munkaterület szélessége');
+  assert.equal(bar.style.transform, 'none', 'nincs középre igazítás');
+
+  // Ha nincs munkaterület (nincs kiválasztott projekt), a CSS középre igazító
+  // tartaléka érvényes.
+  workspace.getBoundingClientRect = () => ({left: 0, top: 0, width: 0, height: 0});
+  api.notice('Újabb üzenet.', 'info');
+  assert.equal(bar.style.left, '');
+  assert.equal(bar.style.width, '');
+  assert.equal(bar.style.transform, '');
+});
+
 test('A dashboard felső sticky elemeit nem bántja a sáv', () => {
   const css = read('public/ks-design.css');
   assert.match(css, /\.project-select-sticky\{position:sticky;top:0;/,

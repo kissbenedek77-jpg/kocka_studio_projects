@@ -496,18 +496,35 @@
       if (rootStyle && rootStyle.setProperty) rootStyle.setProperty('--ks-msgbar-height', value);
     }
 
-    // A sáv a munkaterület (belső oszlop) szélességét veszi fel. A CSS ad egy
-    // tartalék szélességet, a mérés pedig pontosan a középső oszlophoz igazít.
-    function syncWidth() {
+    // A sáv a munkaterület (belső oszlop) pozíciójához igazodik: a bal széle és
+    // a szélessége is az oszlopéval egyezik. Ha nincs munkaterület (például még
+    // nincs kiválasztott projekt), a CSS középre igazító tartaléka érvényes.
+    function syncPosition() {
       const main = doc.querySelector && doc.querySelector('.workspace-main');
       const rect = main && main.getBoundingClientRect ? main.getBoundingClientRect() : null;
       const width = rect ? Number(rect.width) || 0 : 0;
-      if (bar.style) bar.style.width = width > 0 ? Math.round(width) + 'px' : '';
+      if (!bar.style) return;
+      if (width > 0) {
+        const viewport = Number(root.innerWidth) || 0;
+        let left = Math.max(8, Math.round(rect.left));
+        let clamped = Math.round(width);
+        if (viewport > 0) {
+          clamped = Math.min(clamped, viewport - 16);
+          left = Math.min(left, Math.max(8, viewport - clamped - 8));
+        }
+        bar.style.left = left + 'px';
+        bar.style.width = clamped + 'px';
+        bar.style.transform = 'none';
+      } else {
+        bar.style.left = '';
+        bar.style.width = '';
+        bar.style.transform = '';
+      }
     }
     if (root.addEventListener !== undefined)
-      root.addEventListener('resize', syncWidth);
+      root.addEventListener('resize', syncPosition);
     if (typeof root.ResizeObserver === 'function' && doc.body)
-      new root.ResizeObserver(syncWidth).observe(doc.body);
+      new root.ResizeObserver(syncPosition).observe(doc.body);
 
     function activeTab() {
       return bar.dataset.tab === 'log' ? 'log' : 'messages';
@@ -524,7 +541,7 @@
     }
 
     function apply() {
-      syncWidth();
+      syncPosition();
       const counts = store.counts();
       const logs = logItems.length;
       const active = counts.total > 0 || logs > 0;
