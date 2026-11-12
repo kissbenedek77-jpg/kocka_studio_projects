@@ -42,6 +42,7 @@
 - AI és marketing: `GEMINI_API_KEY` (+ `GEMINI_TECHNICAL_MODEL`, `GEMINI_MARKETING_MODEL`), `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_AI_TOKEN`, `MARKETING_FOLDER_ID`, `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_ACCESS_TOKEN`, `INSTAGRAM_BUSINESS_ACCOUNT_ID`.
 - Egyéb: `SHEET_ID`, `TEMPLATE_ROOT_FOLDER_ID`, `SYSTEM_FOLDER_ID`, `PROJECT_DATA_TEMPLATE_ID` (van alapértékük), `CLIENT_SUBMISSION_EMAIL=1`, `LEGACY_PUBLIC_ORIGIN`.
 - Weboldal-kezelő: `SITE_DATA_DIR` (Railway Volume, pl. `/data/website`), `WEB_PUBLIC_BASE` (a nyilvános oldal címe), `WEB_PROJECT_DIR` (a weboldal projekt mappája a publikáláshoz).
+- Weboldal-deploy a publikálás után: `RAILWAY_TOKEN` (projekt token) vagy `RAILWAY_API_TOKEN` (fiók token), `RAILWAY_SERVICE_ID`, `RAILWAY_ENVIRONMENT_ID`, opcionálisan `RAILWAY_PROJECT_ID`, `RAILWAY_API_URL`.
 - A teljes lista a `.env.example`-ben van. A `SESSION_SECRET` cseréje érvényteleníti a korábban küldött letöltési linkeket.
 
 ## Belépés

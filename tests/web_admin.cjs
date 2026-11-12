@@ -55,6 +55,28 @@ test('A szerkesztő publikál a weboldal projektjébe', () => {
   assert.match(publisher,/projects\.js/);
 });
 
+test('Publikálás után Railway deploy indul, és kézzel is indítható', () => {
+  assert.match(html,/id="railwayButton"/);
+  assert.match(html,/Railway frissítés/);
+  assert.match(html,/'webRailwayDeploy'/);
+  assert.match(html,/Railway deploy: nincs beállítva/);
+  assert.match(html,/result\.deploy\.triggered/);
+  const server = fs.readFileSync(path.join(root,'server','index.cjs'),'utf8');
+  assert.match(server,/require\('\.\/railway\.cjs'\)/);
+  assert.match(server,/publishWebsite\(\)/,'a webPublish deployt is indít');
+  assert.match(server,/webRailwayDeploy/);
+  assert.match(server,/RAILWAY_SERVICE_ID/);
+  assert.match(server,/RAILWAY_ENVIRONMENT_ID/);
+  const railway = fs.readFileSync(path.join(root,'server','railway.cjs'),'utf8');
+  assert.match(railway,/serviceInstanceRedeploy/);
+  assert.match(railway,/Project-Access-Token/);
+  assert.match(railway,/Authorization/);
+  assert.match(railway,/environmentTriggersDeploy/);
+  // A token nem kerülhet a válaszba vagy a hibaüzenetbe.
+  assert.doesNotMatch(railway,/token\s*:\s*token/);
+  assert.match(railway,/configured: missing\.length === 0/);
+});
+
 test('A szerver kiszolgálja és védi az oldalt', () => {
   const server = fs.readFileSync(path.join(root,'server','index.cjs'),'utf8');
   assert.match(server,/url\.pathname === '\/site'/);

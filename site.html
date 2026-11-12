@@ -16,6 +16,8 @@
     <p class="text-secondary mb-4">A nyilvános honlap szövegei és projektfotói. A feltöltött képekhez automatikusan készül nagy változat és thumbnail. A szövegeknél az AI segít megfogalmazni; a javaslatot felülírhatod vagy a meglévő szöveghez fűzheted.</p>
     <div id="publishBar" class="alert alert-light border d-flex flex-wrap align-items-center gap-3 mb-3" hidden>
       <span id="publishInfo" class="small text-secondary flex-grow-1"></span>
+      <span id="deployInfo" class="small text-secondary"></span>
+      <button id="railwayButton" class="btn btn-outline-dark btn-sm" type="button" hidden>Railway frissítés</button>
       <button id="publishButton" class="btn btn-dark btn-sm" type="button">Publikálás a weboldalba</button>
     </div>
     <div id="status" role="status" aria-live="polite"></div>
@@ -38,7 +40,7 @@
     const app=document.getElementById('app');
     const nav=document.getElementById('nav');
     const panel=document.getElementById('panel');
-    let content=null,projectFields=[],view='pages',publish=null;
+    let content=null,projectFields=[],view='pages',publish=null,deploy=null;
 
     function el(tag,cls,text){const node=document.createElement(tag);if(cls)node.className=cls;
       if(text!==undefined)node.textContent=text;return node}
@@ -68,6 +70,7 @@
       content=next.content||next;
       projectFields=next.projectFields||projectFields;
       publish=next.publish||publish;
+      deploy=next.deploy||deploy;
       renderNav();
       renderView();
       renderPublish();
@@ -75,10 +78,14 @@
 
     // A publikálás a weboldal projektjébe írja a TXT-ket, a projects.js-t és a
     // feltöltött képeket. A célmappa a szerveren beállított WEB_PROJECT_DIR.
+    // Publikálás után a szerver Railway deployt is indíthat; ennek állapotát itt
+    // jelezzük, és kézzel is újraindítható.
     function renderPublish(){
       const bar=document.getElementById('publishBar');
       const info=document.getElementById('publishInfo');
       const button=document.getElementById('publishButton');
+      const deployInfo=document.getElementById('deployInfo');
+      const railway=document.getElementById('railwayButton');
       if(!bar||!info||!button)return;
       if(!publish){bar.hidden=true;return}
       bar.hidden=false;
@@ -90,6 +97,15 @@
           (publish.path?' ('+publish.path+')':'')+'. Állítsd be a WEB_PROJECT_DIR változót.';
         button.disabled=true;
       }
+      if(!deployInfo||!railway)return;
+      if(deploy&&deploy.configured){
+        deployInfo.textContent='Railway deploy: beállítva';
+        railway.hidden=false;railway.disabled=false;
+      }else{
+        deployInfo.textContent='Railway deploy: nincs beállítva'+
+          (deploy&&deploy.missing&&deploy.missing.length?' ('+deploy.missing.join(', ')+')':'');
+        railway.hidden=true;
+      }
     }
 
     async function doPublish(){
@@ -98,8 +114,33 @@
       button.disabled=true;status('Publikálás…');
       try{
         const result=await rpc('webPublish');
-        status('Publikálva: '+result.files.length+' fájl, '+result.images+' feltöltött kép. '+
-          'A weboldal deploy után jeleníti meg.','success');
+        if(result.deploy)deploy={...deploy,...result.deploy};
+        renderPublish();
+        const parts=['Publikálva: '+result.files.length+' fájl, '+result.images+' feltöltött kép.'];
+        let kind='success';
+        if(result.deploy){
+          if(result.deploy.triggered)parts.push('A Railway deploy elindult.');
+          else if(result.deploy.configured){
+            kind='warning';
+            parts.push('A Railway deploy nem indult el: '+(result.deploy.error||'ismeretlen hiba')+
+              '. A publikált fájlok megvannak, a deployt a Railway felületen vagy a „Railway frissítés” gombbal lehet újraindítani.');
+          }else parts.push('A Railway deploy nincs beállítva.');
+        }
+        if(result.deploy&&result.deploy.triggered)parts.push('A weboldal a deploy után jeleníti meg.');
+        status(parts.join(' '),kind);
+      }catch(error){status(error.message||String(error),'error')}
+      finally{button.disabled=false}
+    }
+
+    async function doRailwayDeploy(){
+      const button=document.getElementById('railwayButton');
+      if(!button||!deploy||!deploy.configured)return;
+      if(!confirm('Elindítod a weboldal Railway deployját? A publikált tartalom a telepítés után jelenik meg.'))return;
+      button.disabled=true;status('Railway deploy indítása…');
+      try{
+        const result=await rpc('webRailwayDeploy');
+        deploy={...deploy,...result};renderPublish();
+        status('A Railway deploy elindult. A weboldal a telepítés után frissül.','success');
       }catch(error){status(error.message||String(error),'error')}
       finally{button.disabled=false}
     }
@@ -381,6 +422,7 @@
       onStatus:(text,kind)=>status(text,kind)});
     chat.setRootHidden(false);
     document.getElementById('publishButton').addEventListener('click',doPublish);
+    document.getElementById('railwayButton').addEventListener('click',doRailwayDeploy);
     load();
   </script>
 </body>

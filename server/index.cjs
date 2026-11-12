@@ -26,6 +26,7 @@ const {modelStatus,validateImageInput,generateMarketingImage} = require('./marke
 const {marketingStore} = require('./marketing_store.cjs');
 const {webStore} = require('./web_store.cjs');
 const {webPublisher} = require('./web_publish.cjs');
+const {railwayDeployer} = require('./railway.cjs');
 const {generateText:generateWebText} = require('./web_ai.cjs');
 const {PUBLIC_BASE,PROJECT_FIELDS,exportPageTxt,exportProjectsJs} = require('./web_content.cjs');
 const {discoverTopics,validateTopic,due,nextRun,pickTopic,generatePostText,postSvg,POST_STYLES} = require('./marketing_posts.cjs');
@@ -78,6 +79,34 @@ const siteStore = webStore({dataDir: process.env.SITE_DATA_DIR || ''});
 const sitePublisher = webPublisher({store:siteStore,
   projectDir:process.env.WEB_PROJECT_DIR ||
     path.join(__dirname,'..','..','kocka_studio_uj_honlap')});
+// A weboldal szolgáltatásának Railway deployja. Fiók/workspace tokennél
+// Authorization, projekt tokennél Project-Access-Token fejlécet használunk.
+const siteDeployer = railwayDeployer({
+  token: process.env.RAILWAY_API_TOKEN || process.env.RAILWAY_TOKEN || '',
+  tokenType: process.env.RAILWAY_API_TOKEN ? 'account' : 'project',
+  serviceId: process.env.RAILWAY_SERVICE_ID || '',
+  environmentId: process.env.RAILWAY_ENVIRONMENT_ID || '',
+  projectId: process.env.RAILWAY_PROJECT_ID || '',
+  endpoint: process.env.RAILWAY_API_URL || ''
+});
+// Publikálás után a weboldal deployja is elindul, ha be van állítva. A deploy
+// hibája nem buktatja el a publikálást: a fájlok már kiíródtak, ezért csak
+// figyelmeztetésként kerül a válaszba.
+async function publishWebsite() {
+  const published = await sitePublisher.publish();
+  const state = siteDeployer.status();
+  if (!state.configured) return {...published, deploy:{...state, triggered:false}};
+  try {
+    const result = await siteDeployer.deploy();
+    logBuffer.record('info','Weboldal publikálva (' + published.files.length +
+      ' fájl, ' + published.images + ' kép); Railway deploy elindítva: ' + result.via + '.');
+    return {...published, deploy:{...state, triggered:true, via:result.via}};
+  } catch (error) {
+    logBuffer.record('warning','Weboldal publikálva, de a Railway deploy nem indult el: ' +
+      (error.message || String(error)));
+    return {...published, deploy:{...state, triggered:false, error:error.message || String(error)}};
+  }
+}
 const owner = config.ownerEmail;
 const dashboardHtml = fs.readFileSync(path.join(__dirname, '..', 'dashboard_v2.html'), 'utf8');
 const formHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
@@ -352,7 +381,7 @@ async function rpc(name, args, session) {
   if (name === 'dashboardLogs') return logBuffer.read(Number(args[0]) || 0, Number(args[1]) || 100);
   // MARK: Weboldal-kezelő (a nyilvános honlap tartalma és fotói)
   if (name === 'webGetContent') return {content: await siteStore.load(), projectFields: PROJECT_FIELDS,
-    publish: await sitePublisher.status()};
+    publish: await sitePublisher.status(), deploy: siteDeployer.status()};
   if (name === 'webSaveField')
     return siteStore.saveField(String(args[0] || ''),String(args[1] || ''),args[2]);
   if (name === 'webSaveProject')
@@ -385,7 +414,16 @@ async function rpc(name, args, session) {
     files['shared/js/projects.js'] = exportProjectsJs(content.projects);
     return {files};
   }
-  if (name === 'webPublish') return sitePublisher.publish();
+  if (name === 'webPublish') return publishWebsite();
+  if (name === 'webRailwayDeploy') {
+    const state = siteDeployer.status();
+    if (!state.configured)
+      throw Object.assign(new Error('A Railway deploy nincs beállítva. Hiányzó változó: ' +
+        state.missing.join(', ') + '.'),{status:503});
+    const result = await siteDeployer.deploy();
+    logBuffer.record('info','Railway deploy elindítva kézzel: ' + result.via + '.');
+    return {...state, triggered:true, via:result.via};
+  }
   if (name === 'dashboardListClientSubmissions') return google.listClientSubmissions();
   if (name === 'dashboardMarkClientSubmissionRead') return google.markClientSubmissionRead(uid);
   if (name === 'getDashboardProject') return google.dashboardProject(uid);
