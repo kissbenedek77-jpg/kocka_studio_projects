@@ -31,7 +31,7 @@ test('A téma a régi osztályokat is a közös arculatra képezi', () => {
 test('A téma minden oldalra betöltődik, a Bootstrap után', () => {
   const server = read('server/index.cjs');
   assert.match(server,/'\/assets\/theme\/ks-theme\.css'/);
-  assert.match(server,/<\/style>\\n  <link rel="stylesheet" href="\/assets\/theme\/ks-theme\.css">/);
+  assert.match(server,/href="\/assets\/theme\/ks-theme\.css">\\n<\/head>/);
   assert.match(server,/bootstrap\.min\.css[\s\S]*theme\/ks-theme\.css/);
   assert.doesNotMatch(server,/ks-design\.css/,'a külön stíluslap megszűnt');
   assert.equal(fs.existsSync(path.join(root,'public','ks-design.css')),false);

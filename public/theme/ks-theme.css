@@ -523,3 +523,6 @@ header a:hover, .top a:hover, .market-top a:hover { color: #fff; }
 hr { border-color: var(--ks-line); opacity: 1; }
 ::selection { background: rgba(168, 137, 82, .25); }
 
+
+/* A weboldal-kezelő tartalma alatt hely az AI-sávnak (Bootstrap container). */
+body[data-ks-page=site] main{padding-bottom:calc(80px + var(--chat-height,0px))}

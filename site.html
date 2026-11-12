@@ -5,96 +5,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="no-referrer">
   <title>Weboldal · Kocka Stúdió</title>
-  <style>
-    :root{font-family:Arial,sans-serif;color:#26312e;background:#eeeee9;--ink:#26312e;--muted:#627069;--line:#d7dad4;--gold:#a88952}
-    *{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;min-height:100dvh}
-    button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{cursor:default;opacity:.48}
-    .top{background:#3e3e3e;color:#fff;padding:16px max(20px,calc((100vw - 1600px)/2));display:flex;align-items:center;justify-content:space-between;gap:16px}
-    .top img{width:min(190px,44vw);max-height:56px;object-fit:contain;object-position:left center}
-    .top nav{display:flex;gap:16px;font-size:13px}.top a{color:#e8e8e8;text-decoration:none}.top a:hover{text-decoration:underline}
-    .shell{max-width:1600px;margin:auto;padding:24px 20px calc(80px + var(--chat-height,0px))}
-    h1{font-size:clamp(24px,3vw,34px);font-weight:400;letter-spacing:-.03em;margin:0 0 6px}
-    .lead{color:var(--muted);line-height:1.55;margin:0 0 18px;max-width:900px}
-    #status{min-height:0}
-    .notice{margin:0 0 14px;padding:11px 14px;border-left:4px solid var(--gold);background:#fffaf0;font-size:14px;line-height:1.45}
-    .notice.error{border-color:#a6372f;background:#fff2f0;color:#7d241e}
-    .notice.success{border-color:#4f8562;background:#eef8f0;color:#245335}
-    .layout{display:grid;grid-template-columns:minmax(180px,230px) minmax(0,1fr);gap:18px;align-items:start}
-    .nav{background:#fff;border:1px solid var(--line);padding:8px;position:sticky;top:0}
-    .nav button{display:block;width:100%;text-align:left;padding:10px;border:0;border-left:3px solid transparent;background:transparent;color:var(--muted);font-size:14px}
-    .nav button:hover{background:#f7f8f4}
-    .nav button.active{border-left-color:var(--gold);background:#f5f2eb;color:var(--ink);font-weight:700}
-    .nav .nav-sep{height:1px;background:var(--line);margin:8px 4px}
-    .panel{background:#fff;border:1px solid var(--line);padding:clamp(18px,2.4vw,32px);min-width:0}
-    .panel h2{font-size:20px;font-weight:400;margin:26px 0 10px;padding-top:16px;border-top:1px solid var(--line)}
-    .panel h2:first-child{margin-top:0;padding-top:0;border-top:0}
-    .field{margin:12px 0}
-    .field>label{display:block;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
-    .field textarea,.field input{width:100%;min-height:42px;border:1px solid #bbc3bb;border-radius:3px;padding:9px 10px;background:#fff;color:var(--ink)}
-    .field textarea{min-height:84px;resize:vertical;line-height:1.5}
-    .field textarea.tall{min-height:140px}
-    .field:focus-within>label{color:#245335}
-    .field-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px}
-    .field-state{font-size:12px;color:var(--muted);flex:1 1 auto;min-width:0}
-    .button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;border:1px solid var(--ink);border-radius:3px;background:var(--ink);color:#fff;padding:7px 13px;font-size:13px;font-weight:700;text-decoration:none}
-    .button.secondary{background:#fff;color:var(--ink)}
-    .button.small{min-height:32px;padding:4px 9px;font-size:12px}
-    .button.danger{background:#8c332e;border-color:#8c332e}
-    .ai-box{margin-top:10px;border:1px solid #8ec6d2;background:#f1f9fa;border-radius:6px;padding:10px}
-    .ai-box textarea{width:100%;min-height:64px;border:1px solid #9fb3bb;border-radius:4px;padding:7px 9px;font-size:13px;resize:vertical}
-    .ai-box .ai-suggestion{background:#fff;border-color:#b7d7de}
-    .ai-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
-    .ai-checks{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:#24506b}
-    .ai-checks label{display:inline-flex;align-items:center;gap:5px}
-    .ai-reply{font-size:13px;color:#24506b;margin:8px 0 0;white-space:pre-wrap}
-    .project-list{display:grid;gap:6px}
-    .project-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;border:1px solid var(--line);background:#fafbf9;padding:8px 10px}
-    .project-row strong{display:block;font-size:14px;overflow-wrap:anywhere}
-    .project-row small{color:var(--muted);font-size:12px}
-    .project-actions{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
-    .project-actions .button{min-width:34px;padding:3px 7px;min-height:30px}
-    .images{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:10px 0}
-    .image-card{border:1px solid var(--line);background:#fafbf9;padding:6px;display:grid;gap:6px}
-    .image-card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#e9ece7}
-    .image-card .name{font-size:11px;color:var(--muted);overflow-wrap:anywhere;min-height:2.4em}
-    .image-card .row{display:flex;gap:4px;flex-wrap:wrap}
-    .image-card .button{min-width:30px;padding:2px 6px;min-height:28px;font-size:12px}
-    .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 4px}
-    .muted{color:var(--muted);font-size:13px}
-    .publish-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--line);padding:10px 12px;margin:0 0 16px}
-    .publish-bar .muted{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
-    @media(max-width:820px){.layout{grid-template-columns:1fr}.nav{position:static;display:flex;flex-wrap:wrap;gap:4px}.nav button{width:auto;border-left:0;border-bottom:3px solid transparent;padding:8px 10px}.nav button.active{border-bottom-color:var(--gold)}.nav .nav-sep{display:none}}
-  </style>
 </head>
 <body>
-  <header class="top">
-    <img src="/assets/brand/logo2.png" alt="Kocka Stúdió">
-    <nav class="ks-app-menu" aria-label="Főmenü">
-      <a href="/dashboard">Dashboard</a>
-      <a href="/marketing">Marketing</a>
-      <a href="/site" aria-current="page">Weboldal</a>
-      <a href="/auth/logout">Kijelentkezés</a>
-    </nav>
-  </header>
-  <main class="shell">
-    <h1>Weboldal tartalma</h1>
-    <p class="lead">A nyilvános honlap szövegei és projektfotói. A feltöltött képekhez automatikusan készül nagy változat és thumbnail. A szövegeknél az AI segít megfogalmazni; a javaslatot felülírhatod vagy a meglévő szöveghez fűzheted.</p>
-    <div id="publishBar" class="publish-bar" hidden>
-      <span id="publishInfo" class="muted"></span>
-      <button id="publishButton" class="button small" type="button">Publikálás a weboldalba</button>
+  <nav class="navbar navbar-dark bg-dark">
+    <div class="container-fluid gap-2">
+      <a class="navbar-brand d-flex align-items-center" href="/site">
+        <img src="/assets/brand/logo2.png" alt="Kocka Stúdió" height="42">
+      </a>
+      <nav class="ks-app-menu" aria-label="Főmenü">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/marketing">Marketing</a>
+        <a href="/site" aria-current="page">Weboldal</a>
+        <a href="/auth/logout">Kijelentkezés</a>
+      </nav>
+    </div>
+  </nav>
+  <main class="container py-4">
+    <h1 class="h3 fw-normal mb-2">Weboldal tartalma</h1>
+    <p class="text-secondary mb-4">A nyilvános honlap szövegei és projektfotói. A feltöltött képekhez automatikusan készül nagy változat és thumbnail. A szövegeknél az AI segít megfogalmazni; a javaslatot felülírhatod vagy a meglévő szöveghez fűzheted.</p>
+    <div id="publishBar" class="alert alert-light border d-flex flex-wrap align-items-center gap-3 mb-3" hidden>
+      <span id="publishInfo" class="small text-secondary flex-grow-1"></span>
+      <button id="publishButton" class="btn btn-dark btn-sm" type="button">Publikálás a weboldalba</button>
     </div>
     <div id="status" role="status" aria-live="polite"></div>
     <div id="app" hidden>
-      <div class="layout">
-        <nav class="nav" id="nav" aria-label="Oldalak"></nav>
-        <section class="panel" id="panel"></section>
+      <div class="row g-4">
+        <nav class="col-12 col-lg-3" aria-label="Oldalak">
+          <div class="list-group" id="nav"></div>
+        </nav>
+        <section class="col-12 col-lg-9">
+          <div class="card">
+            <div class="card-body" id="panel"></div>
+          </div>
+        </section>
       </div>
     </div>
   </main>
   <section id="chat" hidden aria-label="AI-segítség"></section>
   <script>
     'use strict';
-    const statusNode=document.getElementById('status');
     const app=document.getElementById('app');
     const nav=document.getElementById('nav');
     const panel=document.getElementById('panel');
@@ -102,7 +51,12 @@
 
     function el(tag,cls,text){const node=document.createElement(tag);if(cls)node.className=cls;
       if(text!==undefined)node.textContent=text;return node}
-    const notify=Notify.create({key:'site-status',fallbackId:'status'});
+    const notify=Notify.create({key:'site-status',fallbackId:'status',
+      onFallback:(node,text,kind)=>{
+        node.className='alert '+(kind==='error'?'alert-danger':kind==='success'?'alert-success':
+          kind==='warning'?'alert-warning':'alert-secondary');
+        node.textContent=text||'';node.hidden=!text;
+      }});
     function status(text,kind){return notify.status(text,kind)}
 
     async function rpc(name,...args){
@@ -171,14 +125,16 @@
     function renderNav(){
       nav.replaceChildren();
       for(const page of content.pages){
-        const button=el('button','',page.title);
+        const button=el('button','list-group-item list-group-item-action',page.title);
+        button.type='button';
         button.dataset.view='page:'+page.id;
         if(view==='page:'+page.id)button.classList.add('active');
         button.addEventListener('click',()=>{view='page:'+page.id;renderNav();renderView()});
         nav.append(button);
       }
-      nav.append(el('div','nav-sep'));
-      const projects=el('button','','Projektek ('+content.projects.length+')');
+      const projects=el('button','list-group-item list-group-item-action',
+        'Projektek ('+content.projects.length+')');
+      projects.type='button';
       projects.dataset.view='projects';
       if(view==='projects'||view.startsWith('project:'))projects.classList.add('active');
       projects.addEventListener('click',()=>{view='projects';renderNav();renderView()});
@@ -195,15 +151,15 @@
     // Egy szövegmező: mentés elhagyáskor, valamint AI-segítség felülírással vagy
     // kiegészítéssel. A javaslat csak beillesztés után kerül a mezőbe.
     function fieldBlock(page,field){
-      const wrap=el('div','field');
-      const label=el('label','',field.label||field.key);
+      const wrap=el('div','mb-3');
+      const label=el('label','form-label',field.label||field.key);
       label.htmlFor='field-'+page.id+'-'+field.key;
-      const input=el('textarea',field.multiline?'tall':'');
+      const input=el('textarea','form-control');
       input.id=label.htmlFor;
       input.value=field.value||'';
       input.rows=field.multiline?4:2;
-      const bar=el('div','field-bar');
-      const state=el('span','field-state','');
+      const bar=el('div','d-flex align-items-center gap-2 mt-1');
+      const state=el('span','form-text flex-grow-1 mb-0','');
       bar.append(state);
 
       let timer=0,saving=false;
@@ -235,11 +191,10 @@
     function renderPage(page){
       panel.replaceChildren();
       chat.clear();
-      const head=el('h2','',page.title);
-      panel.append(head);
-      panel.append(el('p','muted','A módosítás elhagyáskor automatikusan mentődik. Az AI-sáv alulról nyílik: válaszd ki a célmezőt, vagy kattints a mezőbe.'));
+      panel.append(el('h2','h5 mb-2',page.title));
+      panel.append(el('p','text-secondary small mb-3','A módosítás elhagyáskor automatikusan mentődik. Az AI-sáv alulról nyílik: válaszd ki a célmezőt, vagy kattints a mezőbe.'));
       for(const group of page.groups){
-        if(group.title)panel.append(el('h2','',group.title));
+        if(group.title)panel.append(el('h3','h6 text-uppercase text-secondary mt-4 mb-2',group.title));
         for(const field of group.fields)panel.append(fieldBlock(page,field));
       }
     }
@@ -247,10 +202,9 @@
     function renderProjects(){
       panel.replaceChildren();
       chat.clear();
-      const head=el('h2','','Projektek');
-      panel.append(head);
-      const toolbar=el('div','toolbar');
-      const add=el('button','button small','Új projekt');add.type='button';
+      panel.append(el('h2','h5 mb-2','Projektek'));
+      const toolbar=el('div','d-flex flex-wrap gap-2 align-items-center my-2');
+      const add=el('button','btn btn-dark btn-sm','Új projekt');add.type='button';
       add.addEventListener('click',async()=>{
         add.disabled=true;
         try{const result=await rpc('webAddProject',{title:'Új projekt'});
@@ -261,24 +215,24 @@
       });
       toolbar.append(add);
       panel.append(toolbar);
-      panel.append(el('p','muted','A nyilakkal sorrendezhető a nyilvános oldal sorrendje.'));
-      const list=el('div','project-list');
+      panel.append(el('p','text-secondary small','A nyilakkal sorrendezhető a nyilvános oldal sorrendje.'));
+      const list=el('div','list-group');
       content.projects.forEach((project,index)=>{
-        const row=el('div','project-row');
-        const info=el('div','');
-        info.append(el('strong','',project.title||project.id));
-        info.append(el('small','',[project.year,project.location,project.type,
+        const row=el('div','list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2');
+        const info=el('div','me-auto');
+        info.append(el('strong','d-block',project.title||project.id));
+        info.append(el('small','text-secondary',[project.year,project.location,project.type,
           project.images.length+' kép'].filter(Boolean).join(' · ')));
-        const actions=el('div','project-actions');
-        const up=el('button','button secondary small','↑');up.type='button';up.title='Előre';
+        const actions=el('div','d-flex flex-wrap gap-1');
+        const up=el('button','btn btn-outline-secondary btn-sm','↑');up.type='button';up.title='Előre';
         up.disabled=index===0;
         up.addEventListener('click',()=>reorderProjects(index,index-1));
-        const down=el('button','button secondary small','↓');down.type='button';down.title='Hátra';
+        const down=el('button','btn btn-outline-secondary btn-sm','↓');down.type='button';down.title='Hátra';
         down.disabled=index===content.projects.length-1;
         down.addEventListener('click',()=>reorderProjects(index,index+1));
-        const edit=el('button','button small','Szerkesztés');edit.type='button';
+        const edit=el('button','btn btn-dark btn-sm','Szerkesztés');edit.type='button';
         edit.addEventListener('click',()=>{view='project:'+project.id;renderNav();renderView()});
-        const remove=el('button','button danger small','Törlés');remove.type='button';
+        const remove=el('button','btn btn-danger btn-sm','Törlés');remove.type='button';
         remove.addEventListener('click',()=>deleteProject(project));
         actions.append(up,down,edit,remove);
         row.append(info,actions);
@@ -307,19 +261,18 @@
       if(!project){view='projects';return renderProjects()}
       panel.replaceChildren();
       chat.clear();
-      const head=el('h2','',project.title||project.id);
-      panel.append(head);
-      const back=el('button','button secondary small','← Vissza a listához');back.type='button';
+      panel.append(el('h2','h5 mb-2',project.title||project.id));
+      const back=el('button','btn btn-outline-secondary btn-sm mb-3','← Vissza a listához');back.type='button';
       back.addEventListener('click',()=>{view='projects';renderNav();renderView()});
       panel.append(back);
 
       const inputs={};
       for(const [key,label,multiline] of projectFields){
-        const wrap=el('div','field');
-        const lab=el('label','',label);lab.htmlFor='project-'+key;
-        const input=el('textarea',multiline?'tall':'');input.id=lab.htmlFor;
+        const wrap=el('div','mb-3');
+        const lab=el('label','form-label',label);lab.htmlFor='project-'+key;
+        const input=el('textarea','form-control');input.id=lab.htmlFor;
         input.value=project[key]??'';
-        if(!multiline){input.rows=1}
+        input.rows=multiline?3:1;
         inputs[key]=input;
         if(['title','tagline','description','credits'].includes(key))
           chat.register({id:'project/'+project.id+'/'+key,label,
@@ -328,8 +281,8 @@
         wrap.append(lab,input);
         panel.append(wrap);
       }
-      const saveBar=el('div','toolbar');
-      const save=el('button','button small','Projekt adatainak mentése');save.type='button';
+      const saveBar=el('div','d-flex flex-wrap gap-2 my-2');
+      const save=el('button','btn btn-dark btn-sm','Projekt adatainak mentése');save.type='button';
       save.addEventListener('click',async()=>{
         const patch={};for(const [key] of projectFields)patch[key]=inputs[key].value;
         save.disabled=true;
@@ -343,35 +296,42 @@
       saveBar.append(save);
       panel.append(saveBar);
 
-      panel.append(el('h2','','Fotók'));
-      panel.append(el('p','muted','Feltöltéskor a rendszer nagy (1800 px) és thumbnail (520 px) változatot készít. A nyilakkal a galéria sorrendje állítható.'));
-      const upload=el('input');upload.type='file';upload.accept='image/jpeg,image/png,image/webp';
+      panel.append(el('h3','h6 text-uppercase text-secondary mt-4 mb-2','Fotók'));
+      panel.append(el('p','text-secondary small','Feltöltéskor a rendszer nagy (1800 px) és thumbnail (520 px) változatot készít. A nyilakkal a galéria sorrendje állítható.'));
+      const upload=el('input','form-control');upload.type='file';upload.accept='image/jpeg,image/png,image/webp';
       upload.multiple=true;
       upload.setAttribute('aria-label','Fotók feltöltése');
-      const uploadBar=el('div','toolbar');uploadBar.append(upload);
+      const uploadBar=el('div','d-flex flex-wrap gap-2 align-items-center my-2');uploadBar.append(upload);
       panel.append(uploadBar);
       upload.addEventListener('change',()=>uploadFiles(project,upload));
 
-      const images=el('div','images');
+      const images=el('div','row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3');
       project.images.forEach((image,index)=>{
-        const card=el('div','image-card');
-        const img=el('img');img.src=absolute(image.thumb||image.src);img.alt=image.name||'';
+        const col=el('div','col');
+        const card=el('div','card h-100');
+        const ratio=el('div','ratio ratio-4x3');
+        const img=el('img','card-img-top object-fit-cover w-100 h-100');
+        img.src=absolute(image.thumb||image.src);img.alt=image.name||'';
         img.loading='lazy';
-        const name=el('div','name',image.name||'');
-        const row=el('div','row');
-        const up=el('button','button secondary small','↑');up.type='button';up.title='Előre';
+        ratio.append(img);
+        const body=el('div','card-body p-2 d-flex flex-column gap-2');
+        const name=el('div','small text-secondary text-break',image.name||'');
+        const row=el('div','d-flex flex-wrap gap-1');
+        const up=el('button','btn btn-outline-secondary btn-sm','↑');up.type='button';up.title='Előre';
         up.disabled=index===0;
         up.addEventListener('click',()=>reorderImages(project,index,index-1));
-        const down=el('button','button secondary small','↓');down.type='button';down.title='Hátra';
+        const down=el('button','btn btn-outline-secondary btn-sm','↓');down.type='button';down.title='Hátra';
         down.disabled=index===project.images.length-1;
         down.addEventListener('click',()=>reorderImages(project,index,index+1));
-        const remove=el('button','button danger small','Törlés');remove.type='button';
+        const remove=el('button','btn btn-danger btn-sm','Törlés');remove.type='button';
         remove.addEventListener('click',()=>deleteImage(project,image));
         row.append(up,down,remove);
-        card.append(img,name,row);
-        images.append(card);
+        body.append(name,row);
+        card.append(ratio,body);
+        col.append(card);
+        images.append(col);
       });
-      if(!project.images.length)images.append(el('p','muted','Még nincs fotó ehhez a projekthez.'));
+      if(!project.images.length)images.append(el('p','text-secondary small','Még nincs fotó ehhez a projekthez.'));
       panel.append(images);
     }
 

@@ -130,11 +130,11 @@ for (const subset of ['latin','latin-ext'])
 for (const [url,[type,file]] of frontendAssets)
   frontendAssets.set(url,{type,content:fs.readFileSync(file)});
 function nodePage(html,page) {
-  if(page==='inquiry')return html
-    .replace('<style>','<link rel="stylesheet" href="/assets/bootstrap.min.css">\n  <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css">\n  <link rel="stylesheet" href="/assets/theme/ks-theme.css">\n  <style>')
-    .replace('<body>','<body class="ks-app ks-page-inquiry" data-runtime="node" data-ks-page="inquiry">');
-  let result=html.replace('<style>','<link rel="stylesheet" href="/assets/bootstrap.min.css">\n  <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css">\n  <style>')
-    .replace('</style>','</style>\n  <link rel="stylesheet" href="/assets/theme/ks-theme.css">')
+  // A Bootstrap és a Font Awesome a fejléc elejére, a téma a fejléc végére kerül,
+  // így az oldal saját stílusblokkja (ha van) a téma előtt marad.
+  let result=html
+    .replace('<head>','<head>\n  <link rel="stylesheet" href="/assets/bootstrap.min.css">\n  <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css">')
+    .replace('</head>','<link rel="stylesheet" href="/assets/theme/ks-theme.css">\n</head>')
     .replace('<body>','<body class="ks-app ks-page-'+page+'" data-runtime="node" data-ks-page="'+page+'">')
     .replace('</body>','<script src="/assets/bootstrap.bundle.min.js"></script>\n<script src="/assets/ks-shell.js"></script>\n</body>');
   if(['login','dashboard','marketing','technical','site'].includes(page)) {
