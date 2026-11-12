@@ -130,6 +130,8 @@ function createContext(payload, calls) {
     requestAnimationFrame:fn => fn(), setTimeout, clearTimeout, console,
     URLSearchParams, confirm:() => true
   });
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'..','public','notify.js'),'utf8'),context);
+  context.Notify = window.Notify;
   vm.runInContext(fs.readFileSync(path.join(__dirname,'..','public','ai-composer.js'),'utf8'),context);
   context.AiComposer = window.AiComposer;
   vm.runInContext(script,context);

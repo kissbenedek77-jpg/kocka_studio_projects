@@ -106,6 +106,7 @@ const frontendAssets = new Map([
   ['/assets/message-center.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','message-center.js')]],
   ['/assets/app-menu.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','app-menu.js')]],
   ['/assets/ai-composer.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','ai-composer.js')]],
+  ['/assets/notify.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','notify.js')]],
   ['/assets/marketing-auto.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','marketing-auto.js')]],
   ['/assets/pwa-register.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','pwa-register.js')]],
   ['/manifest.webmanifest', ['application/manifest+json; charset=utf-8',path.join(__dirname,'..','public','manifest.webmanifest')]],
@@ -138,7 +139,8 @@ function nodePage(html,page) {
     .replace('</body>','<script src="/assets/bootstrap.bundle.min.js"></script>\n<script src="/assets/ks-shell.js"></script>\n</body>');
   if(['login','dashboard','marketing','technical','site'].includes(page)) {
     const ownerExtras = ['dashboard','marketing','technical','site'].includes(page)
-      ? '<script src="/assets/app-menu.js"></script>\n'
+      ? '<script src="/assets/notify.js"></script>\n'
+        +'<script src="/assets/app-menu.js"></script>\n'
         +'<script src="/assets/message-center.js"></script>\n'
         +(['technical','site'].includes(page) ? '<script src="/assets/ai-composer.js"></script>\n' : '')
       : '';

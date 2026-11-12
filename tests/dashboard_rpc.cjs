@@ -11,7 +11,8 @@ const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 assert.ok(script);
 
 function dashboardContext(extra) {
-  const context = vm.createContext({window:{}, ...extra});
+  const notify = {status(){},detail(){},beginRun(){},clear(){}};
+  const context = vm.createContext({window:{}, Notify:{create:() => notify}, ...extra});
   const rpcSource = script.slice(script.indexOf('    function rpc('), script.indexOf('    function notice('));
   vm.runInContext(rpcSource, context);
   return context;

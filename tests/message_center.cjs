@@ -308,12 +308,12 @@ test('A dashboard felső sticky elemeit nem bántja a sáv', () => {
     'csak az alsó navigáció kerül a sáv fölé');
 });
 
-test('A három felület az üzenetközpontra dolgozik', () => {
-  for (const file of ['dashboard_v2.html', 'technical.html', 'public/marketing.html'])
-    assert.match(read(file), /KsMessages\.notice\(/, file + ': a notice a központba ír');
-  assert.match(read('dashboard_v2.html'), /KsMessages\.beginRun\(/,
+test('A három felület a közös értesítéskezelőre dolgozik', () => {
+  for (const file of ['dashboard_v2.html', 'technical.html', 'public/marketing.html', 'site.html'])
+    assert.match(read(file), /Notify\.create\(/, file + ': a közös értesítéskezelő hiányzik');
+  assert.match(read('dashboard_v2.html'), /notify\.beginRun\(/,
     'a dashboard új műveletnél törli a régi üzeneteket');
-  assert.match(read('technical.html'), /KsMessages\.beginRun\(/,
+  assert.match(read('technical.html'), /notify\.beginRun\(/,
     'a műszaki oldal új futtatásnál törli a régi üzeneteket');
 });
 

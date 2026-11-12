@@ -216,15 +216,13 @@
     }
     document.getElementById('projectUid').textContent=uid;
     document.getElementById('dashboardLink').href='/dashboard?project='+encodeURIComponent(uid)+'&step=5';
+    const notify=Notify.create({key:'technical-status',fallbackId:'status'});
     function message(text,kind='',options={}){
-      if(window.KsMessages){
-        // A folyamatjelző (típus nélküli) üzenet új futtatást jelez: a korábbi,
-        // már nem érvényes üzenetek ilyenkor automatikusan eltűnnek.
-        if(!kind&&text)window.KsMessages.beginRun();
-        return window.KsMessages.notice(text,kind,
-          {key:options.key===undefined?'technical-status':options.key,links:options.links});
-      }
-      status.className=kind?'notice '+kind:'';status.textContent=text;
+      // A folyamatjelző (típus nélküli) üzenet új futtatást jelez: a korábbi,
+      // már nem érvényes üzenetek ilyenkor automatikusan eltűnnek.
+      if(!kind&&text)notify.beginRun();
+      if(options.key===null)return notify.detail(text,kind);
+      return notify.status(text,kind,options);
     }
     async function rpc(name,...args){const response=await fetch('/api/rpc',{method:'POST',credentials:'same-origin',
       headers:{'Content-Type':'application/json','X-Kocka-RPC':'1'},body:JSON.stringify({name,args})});

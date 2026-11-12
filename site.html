@@ -102,8 +102,8 @@
 
     function el(tag,cls,text){const node=document.createElement(tag);if(cls)node.className=cls;
       if(text!==undefined)node.textContent=text;return node}
-    function status(text,kind){statusNode.replaceChildren();
-      if(!text)return;const box=el('div','notice'+(kind?' '+kind:''),text);statusNode.append(box)}
+    const notify=Notify.create({key:'site-status',fallbackId:'status'});
+    function status(text,kind){return notify.status(text,kind)}
 
     async function rpc(name,...args){
       const response=await fetch('/api/rpc',{method:'POST',credentials:'same-origin',

@@ -159,10 +159,11 @@
         return body.result;
       });
     }
+    const notify=Notify.create({key:'dashboard-status',fallbackId:'notice',
+      onFallback:(box,text,kind)=>{box.hidden=!text;box.className='notice '+kind;box.textContent=text||''}});
     function notice(message,type='',options={}){
-      if(window.KsMessages)return window.KsMessages.notice(message,type,
-        {key:options.key===undefined?'dashboard-status':options.key,links:options.links,sticky:options.sticky});
-      const box=$('notice');box.hidden=!message;box.className='notice '+type;box.textContent=message||'';
+      if(options.key===null)return notify.detail(message,type);
+      return notify.status(message,type,options);
     }
     function closeLocalLogin(){
       const modal=$('localLoginBackdrop');if(modal.hidden)return;modal.hidden=true;
@@ -197,7 +198,7 @@
       }catch(failure){error.textContent=failure.message||String(failure);error.hidden=false}finally{action.disabled=false}
     }
     function busyState(value,message='Dolgozom…'){
-      if(value&&window.KsMessages)window.KsMessages.beginRun();
+      if(value)notify.beginRun();
       busy=value;$('busyOverlay').hidden=!value;$('busyText').textContent=message;document.querySelectorAll('button:not(.ks-msg-launcher):not(.ks-msg-btn):not(.ks-msg-remove):not(.ks-msgbar-head):not(.ks-msgbar-clear):not(.ks-msgbar-tab):not(.ks-app-menu-toggle)').forEach(button=>{button.disabled=value});if(!value&&project)render()}
     function element(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=text;return node}
     function actionIcon(text){const label=String(text||'').trim();

@@ -324,8 +324,9 @@
     }
     window.addEventListener('beforeunload',event=>{if(autoBuilding||remoteReady&&hasUnsaved()){
       event.preventDefault();event.returnValue='';}});
-    function notice(text,error=false){if(window.KsMessages)return window.KsMessages.notice(text,error?'error':'info',{key:'marketing-status'});
-      const item=$('marketNotice');item.textContent=text;item.classList.toggle('error',error);item.hidden=false}
+    const notify=Notify.create({key:'marketing-status',fallbackId:'marketNotice',
+      onFallback:(item,text,kind)=>{item.textContent=text;item.classList.toggle('error',kind==='error');item.hidden=false}});
+    function notice(text,error=false){return notify.status(text,error?'error':'info')}
     const current=()=>state.campaigns.find(item=>item.id===state.selected)||state.campaigns[0];
     const money=value=>new Intl.NumberFormat('hu-HU').format(value||0)+' Ft';
     const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node};
