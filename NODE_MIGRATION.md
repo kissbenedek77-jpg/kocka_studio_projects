@@ -138,3 +138,15 @@ Az Instagram-közzététel a már Facebookon megjelent bejegyzésnél külön, m
 A `server/quota.cjs` egy folyamaton belül percenként 45 Sheets-olvasást, 45 Sheets-írást, 240 Docs-olvasást és 45 Docs-írást enged. A Drive-keret 30 000 egység/perc és 100 000 egység/24 óra; túllépéskor a szerver 429-et ad a Google-hívás előtt. Ez az alkalmazás helyi korlátja, nem számlázási garancia. A tényleges Cloud-kvótákat és használatot a Google Cloud Console-ban kell ellenőrizni.
 
 Források: [Sheets API](https://developers.google.com/workspace/sheets/api/limits), [Docs API](https://developers.google.com/workspace/docs/api/limits), [Drive API](https://developers.google.com/workspace/drive/api/guides/limits).
+
+## Weboldal-kezelő (/site)
+
+A nyilvános honlap szövegeit és projektfotóit kezelő modul a marketing mintájára épül. A tartalom a Railway szolgáltatás fájlrendszerén él (`SITE_DATA_DIR`, alapérték: `data/website`); a mappa tartós, ha a szolgáltatáshoz Volume van kötve. Első induláskor a `data/website/seed.json` másolódik be, amely a másik projekt (`kocka_studio_uj_honlap/shared`) szövegeiből és projektlistájából készült (`node scripts/build_web_seed.cjs`).
+
+- `server/web_content.cjs`: az oldalak csoportokba rendezett mezői, a projektek és a TXT/projects.js export.
+- `server/web_store.cjs`: JSON-tároló, projekt- és képsorrend, feltöltés. Minden feltöltött képhez 1800 px-es nagy változat és 520 px-es thumbnail készül (sharp), és a projekt mappájába kerül.
+- `server/web_ai.cjs`: mezőnkénti AI-fogalmazás; a felület „Felülírás” vagy „Kiegészítés” választással illeszti be. Tényadatot nem találhat ki.
+- `server/index.cjs`: `/site` (tulajdonosi), valamint a `webGetContent`, `webSaveField`, `webSaveProject`, `webAddProject`, `webDeleteProject`, `webReorderProjects`, `webUploadImage`, `webDeleteImage`, `webReorderImages`, `webAiText`, `webExport` RPC-k. Nyilvános: `GET /api/web/content` (CORS-engedéllyel) és `GET /media/web/...`.
+- `site.html`: a szerkesztőfelület. A szövegmezők elhagyáskor automatikusan mentődnek.
+
+A nyilvános weboldal a `GET /api/web/content` végpontról kaphatja a szövegeket és a képek abszolút URL-jeit. Az export (`webExport`) visszaadja a régi `shared/data/*.txt` és `shared/js/projects.js` fájlokat, ha a statikus oldalhoz kell visszatölteni. A feltöltött képek a `/media/web/...` útvonalon érhetők el. Az `SITE_DATA_DIR` Volume nélkül deploykor elveszik; éles használat előtt Volume-ot kell kötni a szolgáltatáshoz.

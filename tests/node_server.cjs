@@ -4,15 +4,19 @@ const assert = require('node:assert/strict');
 const {spawn} = require('node:child_process');
 const http = require('node:http');
 const path = require('node:path');
+const fs = require('node:fs');
+const os = require('node:os');
 const crypto = require('node:crypto');
 const {createDownloadToken,readDownloadToken}=require('../server/email_download.cjs');
 
 test('Node szerver: health elérhető, dashboard belépést kér, RPC nem nyilvános', async () => {
+  const siteDataDir = fs.mkdtempSync(path.join(require('node:os').tmpdir(),'kocka-web-server-'));
   const child = spawn(process.execPath, [path.join(__dirname, '..', 'server', 'index.cjs')], {
     env: {...process.env, PORT:'0', BASE_URL:'http://127.0.0.1:3000',
       LEGACY_PUBLIC_ORIGIN:'https://old.example.test', GOOGLE_CLIENT_ID:'test-client',
       GOOGLE_CLIENT_SECRET:'test-secret', OWNER_EMAIL:'owner@example.com', SESSION_SECRET:'x'.repeat(48),
-      GEMINI_API_KEY:'',CLOUDFLARE_ACCOUNT_ID:'',CLOUDFLARE_AI_TOKEN:''},
+      GEMINI_API_KEY:'',CLOUDFLARE_ACCOUNT_ID:'',CLOUDFLARE_AI_TOKEN:'',
+      SITE_DATA_DIR:siteDataDir},
     stdio:['ignore','pipe','pipe']
   });
   try {
@@ -159,6 +163,22 @@ test('Node szerver: health elérhető, dashboard belépést kér, RPC nem nyilv�
       headers:{Origin:'http://127.0.0.1:3000','x-kocka-rpc':'1','Content-Type':'application/json'},
       body:JSON.stringify({name:'dashboardLogs',args:[0,10]})});
     assert.equal(logsWithoutAuth.status,401,'a napló csak bejelentkezve érhető el');
+    // Weboldal-kezelő: a szerkesztő belépést kér, a tartalom nyilvános.
+    const sitePage = await fetch(base+'/site',{redirect:'manual'});
+    assert.equal(sitePage.status,302);
+    assert.match(sitePage.headers.get('location'),/\/auth\/login\?return=%2Fsite/);
+    const webContent = await fetch(base+'/api/web/content');
+    assert.equal(webContent.status,200);
+    assert.match(webContent.headers.get('content-type'),/application\/json/);
+    assert.equal(webContent.headers.get('access-control-allow-origin'),'*');
+    const webJson = await webContent.json();
+    assert.ok(Array.isArray(webJson.projects) && webJson.projects.length >= 50,
+      'a projektlista a seedből betöltődik');
+    assert.ok(webJson.pages.some(page => page.id === 'rolunk'),'az oldalak is elérhetők');
+    const webImage = webJson.projects.find(project => project.images.length);
+    assert.match(webImage.images[0].src,/^https?:\/\//,'a képek abszolút URL-lel jönnek');
+    const missingMedia = await fetch(base+'/media/web/nincs-ilyen.jpg');
+    assert.equal(missingMedia.status,404);
     const oldDashboardLink = await fetch(base + '/?view=dashboard&project=ABCD-1234', {redirect:'manual'});
     assert.equal(oldDashboardLink.headers.get('location'), '/dashboard?project=ABCD-1234');
     const home=await fetch(base+'/',{redirect:'manual'});

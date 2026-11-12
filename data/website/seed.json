@@ -1,0 +1,3657 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-12T15:58:15.960Z",
+  "pages": [
+    {
+      "id": "home",
+      "title": "Főoldal",
+      "file": "index",
+      "groups": [
+        {
+          "title": "Fejléc és bevezető",
+          "fields": [
+            {
+              "key": "hero",
+              "label": "Hero cím",
+              "multiline": false,
+              "value": ""
+            },
+            {
+              "key": "home_intro",
+              "label": "Bemutatkozás (főoldal)",
+              "multiline": true,
+              "value": "A KOCKA STÚDIÓ CSALÁDI HÁZAKAT, NYARALÓKAT, SZÁLLODÁKAT ÉS KÖZÖSSÉGI TEREKET TERVEZ KAPOSVÁRRÓL, AZ ORSZÁG EGÉSZ TERÜLETÉN. HELYBŐL SZÜLETŐ TERVEK, KORTÁRS FORMAVILÁG, VISSZAFOGOTT ANYAGHASZNÁLAT ÉS TÖBB MINT HÚSZ ÉV TAPASZTALAT."
+            }
+          ]
+        },
+        {
+          "title": "Általános",
+          "fields": [
+            {
+              "key": "cta",
+              "label": "Cta",
+              "multiline": false,
+              "value": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rolunk",
+      "title": "Rólunk",
+      "file": "rolunk",
+      "groups": [
+        {
+          "title": "Fejléc és bevezető",
+          "fields": [
+            {
+              "key": "hero",
+              "label": "Hero cím",
+              "multiline": false,
+              "value": "RÓLUNK"
+            },
+            {
+              "key": "intro",
+              "label": "Bevezető",
+              "multiline": true,
+              "value": "A KOCKA STÚDIÓ ÉPÍTÉSZETI ÉS BELSŐÉPÍTÉSZETI MŰHELY KAPOSVÁRON. 2002 ÓTA TERVEZÜNK CSALÁDI HÁZAKAT, NYARALÓKAT, SZÁLLODÁKAT, BORÁSZATI ÉS KÖZÖSSÉGI ÉPÜLETEKET AZ ORSZÁG EGÉSZ TERÜLETÉN. HISZÜNK ABBAN, HOGY MINDEN HÁZ A HELYÉBŐL SZÜLETIK: A TÁJ, A FÉNY, AZ UTCAKÉP ÉS A MEGBÍZÓ ÉLETMÓDJA EGYÜTT FORMÁLJA AZ ÉPÜLETET. EZÉRT MINDEN PROJEKTET A TELEKVÁLASZTÁSTÓL A KULCSOK ÁTADÁSÁIG KÍSÉRÜNK. A TERVEZÉS NÁLUNK NEM STÍLUSGYAKORLAT, HANEM HELYZETELEMZÉS ÉS PONTOS VÁLASZOK SOROZATA. KORTÁRS FORMAVILÁG, TERMÉSZETES ANYAGOK, PONTOS ARÁNYOK ÉS CSENDES RÉSZLETEK. CSAPATUNK ÉPÍTÉSZEKBŐL, BELSŐÉPÍTÉSZEKBŐL ÉS TERVEZŐKBŐL ÁLL, AKIK A VÁZTERVTŐL A KIVITELEZÉSIG UGYANAZT A MINŐSÉGET KÉPVISELIK."
+            }
+          ]
+        },
+        {
+          "title": "Értékek",
+          "fields": [
+            {
+              "key": "values_intro",
+              "label": "Értékek bevezető",
+              "multiline": true,
+              "value": "EZ A NÉHÁNY SZÓ VEZÉRLI A GONDOLKODÁSUNKAT, A TERVEZÉSI FOLYAMATOT ÉS A MINDENNAPI MUNKÁNKAT."
+            },
+            {
+              "key": "value_1",
+              "label": "Érték 1",
+              "multiline": false,
+              "value": "BIZALOM"
+            },
+            {
+              "key": "value_2",
+              "label": "Érték 2",
+              "multiline": false,
+              "value": "KREATÍV"
+            },
+            {
+              "key": "value_3",
+              "label": "Érték 3",
+              "multiline": false,
+              "value": "STRATÉGIA"
+            },
+            {
+              "key": "value_4",
+              "label": "Érték 4",
+              "multiline": false,
+              "value": "INNOVÁCIÓ"
+            },
+            {
+              "key": "value_5",
+              "label": "Érték 5",
+              "multiline": false,
+              "value": "TAPASZTALAT"
+            },
+            {
+              "key": "value_6",
+              "label": "Érték 6",
+              "multiline": false,
+              "value": "MINŐSÉG"
+            },
+            {
+              "key": "value_7",
+              "label": "Érték 7",
+              "multiline": false,
+              "value": "EGYSZERŰ"
+            },
+            {
+              "key": "value_8",
+              "label": "Érték 8",
+              "multiline": false,
+              "value": "HITELES"
+            },
+            {
+              "key": "value_9",
+              "label": "Érték 9",
+              "multiline": false,
+              "value": "NÖVEKEDÉS"
+            },
+            {
+              "key": "value_10",
+              "label": "Érték 10",
+              "multiline": false,
+              "value": "TELJESÍTMÉNY"
+            }
+          ]
+        },
+        {
+          "title": "Szakterületek",
+          "fields": [
+            {
+              "key": "team_intro",
+              "label": "Szakterületek bevezető",
+              "multiline": true,
+              "value": "AZ ÉPÍTÉSZETTŐL A BELSŐÉPÍTÉSZETIG – NÉZZE MEG, HOGYAN DOLGOZUNK."
+            },
+            {
+              "key": "team_1",
+              "label": "Szakterület 1",
+              "multiline": false,
+              "value": "ÉPÍTÉSZETI TERVEZÉS"
+            },
+            {
+              "key": "team_1_role",
+              "label": "Szakterület 1 – szerep",
+              "multiline": false,
+              "value": "VÁZLATTERV / ENGEDÉLYEZÉS"
+            },
+            {
+              "key": "team_2",
+              "label": "Szakterület 2",
+              "multiline": false,
+              "value": "BELSŐÉPÍTÉSZET"
+            },
+            {
+              "key": "team_2_role",
+              "label": "Szakterület 2 – szerep",
+              "multiline": false,
+              "value": "TÉR / ANYAG / BÚTOR"
+            },
+            {
+              "key": "team_3",
+              "label": "Szakterület 3",
+              "multiline": false,
+              "value": "KIVITELEZÉSI TERVEK"
+            },
+            {
+              "key": "team_3_role",
+              "label": "Szakterület 3 – szerep",
+              "multiline": false,
+              "value": "RÉSZLETRAJZOK"
+            },
+            {
+              "key": "team_4",
+              "label": "Szakterület 4",
+              "multiline": false,
+              "value": "MŰVEZETÉS"
+            },
+            {
+              "key": "team_4_role",
+              "label": "Szakterület 4 – szerep",
+              "multiline": false,
+              "value": "HELYSZÍNI FELÜGYELET"
+            },
+            {
+              "key": "team_5",
+              "label": "Szakterület 5",
+              "multiline": false,
+              "value": "FELÚJÍTÁS"
+            },
+            {
+              "key": "team_5_role",
+              "label": "Szakterület 5 – szerep",
+              "multiline": false,
+              "value": "ÉRTÉKMEGŐRZÉS"
+            },
+            {
+              "key": "team_6",
+              "label": "Szakterület 6",
+              "multiline": false,
+              "value": "TANÁCSADÁS"
+            },
+            {
+              "key": "team_6_role",
+              "label": "Szakterület 6 – szerep",
+              "multiline": false,
+              "value": "TELEKVÁLASZTÁS"
+            },
+            {
+              "key": "team_7",
+              "label": "Szakterület 7",
+              "multiline": false,
+              "value": "LÁTVÁNYTERVEK"
+            },
+            {
+              "key": "team_7_role",
+              "label": "Szakterület 7 – szerep",
+              "multiline": false,
+              "value": "3D / ANYAGPRÓBÁK"
+            },
+            {
+              "key": "team_8",
+              "label": "Szakterület 8",
+              "multiline": false,
+              "value": "ÁTADÁS"
+            },
+            {
+              "key": "team_8_role",
+              "label": "Szakterület 8 – szerep",
+              "multiline": false,
+              "value": "KULCSOK / HASZNÁLAT"
+            }
+          ]
+        },
+        {
+          "title": "Megbízók",
+          "fields": [
+            {
+              "key": "clients_intro",
+              "label": "Megbízók bevezető",
+              "multiline": true,
+              "value": "MAGÁNÉPÍTTETŐKKEL, FEJLESZTŐKKEL, SZÁLLODÁKKAL ÉS INTÉZMÉNYEKKEL DOLGOZUNK. A KIS CSALÁDI HÁZAKTÓL A NAGYOBB KÖZÖSSÉGI PROJEKTEKIG."
+            },
+            {
+              "key": "client_1",
+              "label": "Megbízó 1",
+              "multiline": false,
+              "value": "MAGÁNÉPÍTTETŐK"
+            },
+            {
+              "key": "client_1_desc",
+              "label": "Megbízó 1 – leírás",
+              "multiline": true,
+              "value": "CSALÁDI HÁZAK TERVEZÉSE A TELEKVÁLASZTÁSTÓL AZ ÁTADÁSIG."
+            },
+            {
+              "key": "client_2",
+              "label": "Megbízó 2",
+              "multiline": false,
+              "value": "NYARALÓK"
+            },
+            {
+              "key": "client_2_desc",
+              "label": "Megbízó 2 – leírás",
+              "multiline": true,
+              "value": "BALATONI ÉS VIDÉKI NYARALÓK, VENDÉGHÁZAK, APARTMANOK."
+            },
+            {
+              "key": "client_3",
+              "label": "Megbízó 3",
+              "multiline": false,
+              "value": "SZÁLLODÁK"
+            },
+            {
+              "key": "client_3_desc",
+              "label": "Megbízó 3 – leírás",
+              "multiline": true,
+              "value": "BOUTIQUE HOTELEK, BORÁSZATOK ÉS VENDÉGLÁTÓHELYEK."
+            },
+            {
+              "key": "client_4",
+              "label": "Megbízó 4",
+              "multiline": false,
+              "value": "KÖZÖSSÉGI ÉPÜLETEK"
+            },
+            {
+              "key": "client_4_desc",
+              "label": "Megbízó 4 – leírás",
+              "multiline": true,
+              "value": "KÁPOLNÁK, INTÉZMÉNYEK, KULTURÁLIS ÉS IPARI ÉPÜLETEK."
+            },
+            {
+              "key": "client_5",
+              "label": "Megbízó 5",
+              "multiline": false,
+              "value": "FELÚJÍTÁSOK"
+            },
+            {
+              "key": "client_5_desc",
+              "label": "Megbízó 5 – leírás",
+              "multiline": true,
+              "value": "TÖRTÉNETI ÉPÜLETEK KORTÁRS FOLYTATÁSA, ÉRTÉKMEGŐRZÉSSEL."
+            },
+            {
+              "key": "client_6",
+              "label": "Megbízó 6",
+              "multiline": false,
+              "value": "FEJLESZTŐK"
+            },
+            {
+              "key": "client_6_desc",
+              "label": "Megbízó 6 – leírás",
+              "multiline": true,
+              "value": "TÁRSASHÁZAK, IKERHÁZAK ÉS TELEPÍTÉSI KONCEPCIÓK."
+            },
+            {
+              "key": "client_7",
+              "label": "Megbízó 7",
+              "multiline": false,
+              "value": "BORÁSZATOK"
+            },
+            {
+              "key": "client_7_desc",
+              "label": "Megbízó 7 – leírás",
+              "multiline": true,
+              "value": "BORÁSZATI ÉPÜLETEK, DEGUSTÁCIÓS TEREK, PANZIÓK."
+            },
+            {
+              "key": "client_8",
+              "label": "Megbízó 8",
+              "multiline": false,
+              "value": "INTÉZMÉNYEK"
+            },
+            {
+              "key": "client_8_desc",
+              "label": "Megbízó 8 – leírás",
+              "multiline": true,
+              "value": "KÖZÖSSÉGI, OKTATÁSI ÉS EGÉSZSÉGÜGYI TERVEZÉSI FELADATOK."
+            }
+          ]
+        },
+        {
+          "title": "Idézet",
+          "fields": [
+            {
+              "key": "testimonial",
+              "label": "Idézet",
+              "multiline": true,
+              "value": "„MINDEN HÁZ A HELYÉBŐL SZÜLETIK. A TÁJ, A FÉNY, AZ UTCAKÉP ÉS A MEGBÍZÓ ÉLETMÓDJA EGYÜTT FORMÁLJA AZ ÉPÜLETET. EZ A HITVALLÁSUNK 2002 ÓTA.”"
+            },
+            {
+              "key": "testimonial_author",
+              "label": "Idézet szerzője",
+              "multiline": false,
+              "value": "KOCKA STÚDIÓ"
+            },
+            {
+              "key": "testimonial_role",
+              "label": "Idézet szerepe",
+              "multiline": false,
+              "value": "KAPOSVÁR"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "szolgaltatasok",
+      "title": "Szolgáltatások",
+      "file": "szolgaltatasok",
+      "groups": [
+        {
+          "title": "Fejléc és bevezető",
+          "fields": [
+            {
+              "key": "hero",
+              "label": "Hero cím",
+              "multiline": false,
+              "value": "SZOLGÁLTATÁSOK"
+            },
+            {
+              "key": "intro",
+              "label": "Bevezető",
+              "multiline": true,
+              "value": "A TELJES FOLYAMAT, EGY KÉZBEN. A TELEKVÁLASZTÁSTÓL A KULCSOK ÁTADÁSÁIG."
+            }
+          ]
+        },
+        {
+          "title": "Szolgáltatások",
+          "fields": [
+            {
+              "key": "service_1",
+              "label": "Szolgáltatás 1",
+              "multiline": false,
+              "value": "ÉPÍTÉSZETI TERVEZÉS"
+            },
+            {
+              "key": "service_2",
+              "label": "Szolgáltatás 2",
+              "multiline": false,
+              "value": "BELSŐÉPÍTÉSZET"
+            },
+            {
+              "key": "service_3",
+              "label": "Szolgáltatás 3",
+              "multiline": false,
+              "value": "ENGEDÉLYEZÉS"
+            },
+            {
+              "key": "service_4",
+              "label": "Szolgáltatás 4",
+              "multiline": false,
+              "value": "KIVITELEZÉSI TERVEK"
+            },
+            {
+              "key": "service_5",
+              "label": "Szolgáltatás 5",
+              "multiline": false,
+              "value": "MŰVEZETÉS"
+            },
+            {
+              "key": "service_6",
+              "label": "Szolgáltatás 6",
+              "multiline": false,
+              "value": "FELÚJÍTÁS"
+            },
+            {
+              "key": "service_7",
+              "label": "Szolgáltatás 7",
+              "multiline": false,
+              "value": "TANÁCSADÁS"
+            },
+            {
+              "key": "service_8",
+              "label": "Szolgáltatás 8",
+              "multiline": false,
+              "value": "LÁTVÁNYTERVEK"
+            }
+          ]
+        },
+        {
+          "title": "Fókuszterületek",
+          "fields": [
+            {
+              "key": "focus_intro",
+              "label": "Fókuszterületek bevezető",
+              "multiline": true,
+              "value": "MINDEN PROJEKT A HELYZET MEGÉRTÉSÉVEL KEZDŐDIK: TELEK, TÁJ, FÉNY, UTCAKÉP ÉS A MEGBÍZÓ IGÉNYEI. EBBŐL SZÜLETIK A PROGRAM, AZ ANYAGHASZNÁLAT ÉS A HÁZ ARÁNYRENDSZERE."
+            },
+            {
+              "key": "focus_1",
+              "label": "Fókuszterület 1",
+              "multiline": false,
+              "value": "CSALÁDI HÁZAK"
+            },
+            {
+              "key": "focus_2",
+              "label": "Fókuszterület 2",
+              "multiline": false,
+              "value": "NYARALÓK"
+            },
+            {
+              "key": "focus_3",
+              "label": "Fókuszterület 3",
+              "multiline": false,
+              "value": "SZÁLLODÁK"
+            },
+            {
+              "key": "focus_4",
+              "label": "Fókuszterület 4",
+              "multiline": false,
+              "value": "KÖZÖSSÉGI ÉPÜLETEK"
+            },
+            {
+              "key": "focus_5",
+              "label": "Fókuszterület 5",
+              "multiline": false,
+              "value": "FELÚJÍTÁSOK"
+            }
+          ]
+        },
+        {
+          "title": "Megközelítés",
+          "fields": [
+            {
+              "key": "approach",
+              "label": "Megközelítés",
+              "multiline": true,
+              "value": "EGYSZERŰ ÉS SZÁNDÉKOS. MINDEN PROJEKT STRATÉGIÁVAL KEZDŐDIK, VILÁGOS CÉLOKKAL ÉS ŐSZINTE BESZÉLGETÉSEKKEL. A VÉGEREDMÉNY: ÉLES, GYORS ÉS NÖVEKEDÉSRE KÉSZ MUNKA."
+            },
+            {
+              "key": "approach_1",
+              "label": "Megközelítés pont 1",
+              "multiline": false,
+              "value": "STRATÉGIA A STÍLUS ELŐTT"
+            },
+            {
+              "key": "approach_2",
+              "label": "Megközelítés pont 2",
+              "multiline": false,
+              "value": "FUNKCIÓVAL TERVEZETT FORMÁK"
+            },
+            {
+              "key": "approach_3",
+              "label": "Megközelítés pont 3",
+              "multiline": false,
+              "value": "TERVEZÉS ÉS KIVITELEZÉS EGYÜTT"
+            },
+            {
+              "key": "approach_4",
+              "label": "Megközelítés pont 4",
+              "multiline": false,
+              "value": "KEVESEBB ZAJ, TÖBB FÓKUSZ"
+            },
+            {
+              "key": "approach_5",
+              "label": "Megközelítés pont 5",
+              "multiline": false,
+              "value": "HOSSZÚ TÁVRA ÉPÜLVE"
+            }
+          ]
+        },
+        {
+          "title": "Folyamat",
+          "fields": [
+            {
+              "key": "process_intro",
+              "label": "Folyamat bevezető",
+              "multiline": true,
+              "value": "A TERVEZÉS NÉGY SZAKASZBAN HALAD A HELYZETFELMÉRÉSTŐL A KULCSOK ÁTADÁSÁIG."
+            },
+            {
+              "key": "process_1_title",
+              "label": "Folyamat 1 – cím",
+              "multiline": false,
+              "value": "FELTÁRÁS ÉS STRATÉGIA"
+            },
+            {
+              "key": "process_1_desc",
+              "label": "Folyamat 1 – leírás",
+              "multiline": true,
+              "value": "A HELYZET MEGÉRTÉSE UTÁN FELÉPÍTJÜK A PROGRAMOT: TEREPVISZONYOK, FUNKCIÓK, ANYAGOK ÉS KÖLTSÉGKERET. EBBŐL SZÜLETIK AZ ELSŐ VÁZLAT."
+            },
+            {
+              "key": "process_2_title",
+              "label": "Folyamat 2 – cím",
+              "multiline": false,
+              "value": "TERVEZÉS ÉS ENGEDÉLYEZÉS"
+            },
+            {
+              "key": "process_2_desc",
+              "label": "Folyamat 2 – leírás",
+              "multiline": true,
+              "value": "A VÁZLATOT ENGEDÉLYEZÉSI ÉS KIVITELEZÉSI TERVEKKÉ FEJLESZTJÜK. A RÉSZLETEK, A SZERKEZETEK ÉS AZ ANYAGOK PONTOSAN ILLESZKEDNEK A HÁZHOZ."
+            },
+            {
+              "key": "process_3_title",
+              "label": "Folyamat 3 – cím",
+              "multiline": false,
+              "value": "KIVITELEZÉS ÉS MŰVEZETÉS"
+            },
+            {
+              "key": "process_3_desc",
+              "label": "Folyamat 3 – leírás",
+              "multiline": true,
+              "value": "A KIVITELEZÉS ALATT HELYSZÍNI FELÜGYELETET VÁLLALUNK. A TERVEZŐI SZÁNDÉK ÉS A MEGVALÓSULÁS KÖZÖTT NEM MARADHAT RÉS."
+            },
+            {
+              "key": "process_4_title",
+              "label": "Folyamat 4 – cím",
+              "multiline": false,
+              "value": "ÁTADÁS ÉS UTÓKÖVETÉS"
+            },
+            {
+              "key": "process_4_desc",
+              "label": "Folyamat 4 – leírás",
+              "multiline": true,
+              "value": "ÁTADJUK A KULCSOKAT, ÉS A HASZNÁLATBA VÉTEL UTÁN IS ELÉRHETŐK VAGYUNK. A HÁZ NEM A TERVEZÉSSEL, HANEM A HASZNÁLATTAL VÁLIK TELJESSÉ."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "id": "2002-falloskut-kapolna",
+      "title": "Római katolikus kápolna",
+      "type": "Közösségi épület",
+      "location": "Fallóskút",
+      "year": "2002",
+      "tagline": "",
+      "description": "Római katolikus kápolna a Bükk-hegységben, Szabó Márton vezető tervező irányításával. A hagyományos formavilágot kortárs anyaghasználattal és visszafogott részletekkel folytató szakrális épület.",
+      "credits": "Vezető tervező: Szabó Márton",
+      "category": "kozossegi",
+      "early": true,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2002-falloskut-kapolna/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2002-falloskut-kapolna/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2002-falloskut-kapolna/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2002-falloskut-kapolna/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2005-soroksar-mnb-logisztikai-kozpont",
+      "title": "MNB Logisztikai Központ",
+      "type": "Ipari, logisztikai",
+      "location": "Soroksár",
+      "year": "2005",
+      "tagline": "",
+      "description": "A Magyar Nemzeti Bank logisztikai központja Soroksáron. Szabó Márton vezető tervező irányításával vettünk részt a nagyléptékű ipari épületegyüttes tervezésében.",
+      "credits": "Vezető tervező: Szabó Márton",
+      "category": "kozossegi",
+      "early": true,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2005-soroksar-mnb-logisztikai-kozpont/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2005-soroksar-mnb-logisztikai-kozpont/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2005-soroksar-mnb-logisztikai-kozpont/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2005-soroksar-mnb-logisztikai-kozpont/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2005-soroksar-mnb-logisztikai-kozpont/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2005-soroksar-mnb-logisztikai-kozpont/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2005-soroksar-mnb-logisztikai-kozpont/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2005-soroksar-mnb-logisztikai-kozpont/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2005-soroksar-mnb-logisztikai-kozpont/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2005-soroksar-mnb-logisztikai-kozpont/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2009-budapest-aldas-utca",
+      "title": "Családi ház felújítása",
+      "type": "Lakóépület",
+      "location": "Budapest II. ker.",
+      "year": "2009",
+      "tagline": "",
+      "description": "Rózsadombi villaépület prémium színvonalú átalakítása: házi wellness, borospince és igényesen megtervezett belső terek.",
+      "credits": "",
+      "category": "lakas",
+      "early": true,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2009-budapest-aldas-utca/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2009-budapest-aldas-utca/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2010-budajeno-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Budajenő",
+      "year": "2010",
+      "tagline": "",
+      "description": "Vidéki, mégis kortárs családi ház Budajenőn. Természetes anyagok, egyszerű geometria és a kert felé nyitott terek.",
+      "credits": "Tervezőtárs: Huszár András",
+      "category": "lakas",
+      "early": true,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2010-budajeno-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2010-budajeno-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2010-budajeno-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2010-budajeno-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2010-budajeno-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2010-budajeno-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2010-hotel-subrosa",
+      "title": "Hotel Subrosa",
+      "type": "Szálloda",
+      "location": "Budapest II. ker.",
+      "year": "2010",
+      "tagline": "",
+      "description": "Az egykori Mágnás-kert étterem épületének átalakítása 22 szobás boutique hotellé, a város és a kert határán.",
+      "credits": "Tervezőtárs: Lődi János",
+      "category": "hotel",
+      "early": true,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2010-hotel-subrosa/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2010-hotel-subrosa/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2010-hotel-subrosa/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2010-hotel-subrosa/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2010-hotel-subrosa/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2010-hotel-subrosa/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2010-hotel-subrosa/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2010-hotel-subrosa/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2010-patikapont",
+      "title": "Patikapont üzletek",
+      "type": "Kereskedelmi, belsőépítészet",
+      "location": "Több helyszín",
+      "year": "2010",
+      "tagline": "",
+      "description": "Formabontó, egységes arculatú patikaüzletek tervezése több helyszínen – belsőépítészettől a teljes vizuális megjelenésig.",
+      "credits": "Tervezőtárs: Huszár András",
+      "category": "egyeb",
+      "early": true,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2010-patikapont/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2010-patikapont/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2010-vac-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Vác",
+      "year": "2010",
+      "tagline": "",
+      "description": "18. századi alapokon készült, a hagyományokat tisztelő, mégis modern családi ház a Duna partján.",
+      "credits": "Tervezőtárs: Lődi János",
+      "category": "lakas",
+      "early": true,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2010-vac-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2010-vac-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2011-orfu-nyaralo",
+      "title": "Nyaraló",
+      "type": "Nyaraló",
+      "location": "Orfű",
+      "year": "2011",
+      "tagline": "",
+      "description": "Kompakt, vidám formavilágú nyaraló a tó közelében – kevés alapterületen sok élmény.",
+      "credits": "Tervezőtárs: Huszár András",
+      "category": "nyaralo",
+      "early": true,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2011-orfu-nyaralo/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2011-orfu-nyaralo/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2011-vagashuta-vendeghaz",
+      "title": "Vendégház",
+      "type": "Vendéglátás, nyaraló",
+      "location": "Vágáshuta",
+      "year": "2011",
+      "tagline": "",
+      "description": "Vendégház a Sátoraljaújhelyi kistérségben, a táj léptékét és a hagyományos anyagokat tiszteletben tartva.",
+      "credits": "Tervezőtárs: Lődi János",
+      "category": "nyaralo",
+      "early": true,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2011-vagashuta-vendeghaz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2011-vagashuta-vendeghaz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2012-balatonoszod-nyaralo",
+      "title": "Nyaraló",
+      "type": "Nyaraló",
+      "location": "Balatonőszöd",
+      "year": "2012",
+      "tagline": "",
+      "description": "Extravagáns nyaraló a Balaton partján. Huszár András koncepcióját különleges igényességgel vittük végig a kiviteli tervezés során.",
+      "credits": "Koncepció: Huszár András",
+      "category": "nyaralo",
+      "early": true,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2012-balatonoszod-nyaralo/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2012-balatonoszod-nyaralo/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2012-budapest-passzivhaz",
+      "title": "Passzívház",
+      "type": "Lakóépület",
+      "location": "Budapest XVII. ker.",
+      "year": "2012",
+      "tagline": "",
+      "description": "Minősített passzívház koncepció- és engedélyezési tervei, Huszár András kollégával. Az energetikai tudatosság a tervezés első pillanatától jelen van.",
+      "credits": "Társtervező: Huszár András",
+      "category": "lakas",
+      "early": true,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2012-budapest-passzivhaz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2012-budapest-passzivhaz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2012-hotel-botrytis",
+      "title": "Hotel Botrytis",
+      "type": "Szálloda",
+      "location": "Mád",
+      "year": "2012",
+      "tagline": "",
+      "description": "Boutique hotel a Tokaji Borvidék méltán híres településén, a hely szellemére és a borvidék ritmusára építve.",
+      "credits": "Tervezőtárs: Lődi János",
+      "category": "hotel",
+      "early": true,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2012-hotel-botrytis/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2012-hotel-botrytis/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2012-hotel-botrytis/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2012-hotel-botrytis/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2012-hotel-botrytis/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2012-hotel-botrytis/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2012-hotel-botrytis/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2012-hotel-botrytis/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2012-hotel-botrytis/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2012-hotel-botrytis/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2012-hotel-botrytis/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2012-hotel-botrytis/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2012-hotel-botrytis/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2012-hotel-botrytis/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2012-hotel-botrytis/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2012-hotel-botrytis/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2013-budapest-harsanylejto",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Budapest III. ker.",
+      "year": "2013",
+      "tagline": "",
+      "description": "Családi ház Budapest III. kerületében. Huszár András koncepcióját színvonalas műszaki tartalommal töltöttük meg.",
+      "credits": "Koncepció: Huszár András",
+      "category": "lakas",
+      "early": true,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2013-budapest-harsanylejto/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2013-budapest-harsanylejto/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2013-kaposvar-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Kaposvár–Kaposfüred",
+      "year": "2013",
+      "tagline": "",
+      "description": "Egyszerű, hagyományos formák – modern és energiatakarékos belső. A vidéki ház nyugalma kortárs komforttal.",
+      "credits": "",
+      "category": "lakas",
+      "early": true,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2013-kaposvar-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2013-kaposvar-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2016-velence-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Velence",
+      "year": "2016",
+      "tagline": "",
+      "description": "Családi ház a velencei hegyoldalba tervezve egy fiatal pár számára. Tágas terekkel és a tájra nyitott homlokzattal.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2016-velence-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2016-velence-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2017-balatonoszod-apartmanhaz",
+      "title": "Apartmanház",
+      "type": "Nyaraló, üdülő",
+      "location": "Balatonőszöd",
+      "year": "2017",
+      "tagline": "",
+      "description": "Kortárs apartmanház a Balaton-part közelében: napfényes teraszok, medence és a vízparti nyaralás nyugalma.",
+      "credits": "",
+      "category": "nyaralo",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2017-balatonoszod-apartmanhaz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2017-balatonoszod-apartmanhaz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2017-balatonoszod-apartmanhaz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2017-balatonoszod-apartmanhaz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2017-balatonoszod-apartmanhaz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2017-balatonoszod-apartmanhaz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2017-balatonoszod-apartmanhaz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2017-balatonoszod-apartmanhaz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2017-fonyodliget-nyaralo",
+      "title": "Nyaraló kültér átalakítása",
+      "type": "Nyaraló",
+      "location": "Fonyódliget",
+      "year": "2017",
+      "tagline": "",
+      "description": "„Ki a természetbe!” – pihentető élettér kialakítása a kertben, fedett terasszal és a szabadtéri használatot segítő részletekkel.",
+      "credits": "",
+      "category": "nyaralo",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2017-fonyodliget-nyaralo/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2017-fonyodliget-nyaralo/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2018-balatonlelle-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Balatonlelle",
+      "year": "2018",
+      "tagline": "",
+      "description": "Földszintes, lapostetős családi ház garázzsal, a Balaton közelségében. Tiszta geometria, nagy üvegfelületek.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2018-balatonlelle-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2018-balatonlelle-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2018-balatonlelle-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2018-balatonlelle-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2018-balatonlelle-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2018-balatonlelle-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2018-bardudvarnok-foldhaz",
+      "title": "Földház",
+      "type": "Lakóépület",
+      "location": "Bárdudvarnok",
+      "year": "2018",
+      "tagline": "",
+      "description": "A domboldalba simuló földház zöldtetővel, természetes kőburkolattal és a tájjal együtt lélegző terekkel.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2018-bardudvarnok-foldhaz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2018-bardudvarnok-foldhaz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2018-bardudvarnok-foldhaz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2018-bardudvarnok-foldhaz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2018-bardudvarnok-foldhaz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2018-bardudvarnok-foldhaz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2018-bardudvarnok-foldhaz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2018-bardudvarnok-foldhaz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2018-kaposvar-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Kaposvár",
+      "year": "2018",
+      "tagline": "",
+      "description": "Magastetős családi ház felújítása és kortárs bővítése – a meglévő karakter megtartásával.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2018-kaposvar-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2018-kaposvar-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2018-kaposvar-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2018-kaposvar-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2019-balatonfenyves-nyaralok",
+      "title": "Nyaralók és medence",
+      "type": "Nyaraló",
+      "location": "Balatonfenyves",
+      "year": "2019",
+      "tagline": "",
+      "description": "Két nyaraló és közös medence egy összefüggő kertben. Nyaralásra tervezett, egyszerűen karbantartható épületek.",
+      "credits": "",
+      "category": "nyaralo",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonfenyves-nyaralok/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonfenyves-nyaralok/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonfenyves-nyaralok/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonfenyves-nyaralok/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonfenyves-nyaralok/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonfenyves-nyaralok/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonfenyves-nyaralok/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonfenyves-nyaralok/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2019-balatonmariafurdo-nyaralo",
+      "title": "Nyaraló bővítése",
+      "type": "Nyaraló",
+      "location": "Balatonmáriafürdő",
+      "year": "2019",
+      "tagline": "",
+      "description": "Meglévő nyaraló bővítése új, kortárs szárnnyal – a régi és az új épület párbeszéde a kertben.",
+      "credits": "",
+      "category": "nyaralo",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonmariafurdo-nyaralo/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonmariafurdo-nyaralo/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonmariafurdo-nyaralo/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonmariafurdo-nyaralo/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonmariafurdo-nyaralo/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonmariafurdo-nyaralo/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonmariafurdo-nyaralo/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonmariafurdo-nyaralo/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonmariafurdo-nyaralo/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonmariafurdo-nyaralo/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonmariafurdo-nyaralo/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-balatonmariafurdo-nyaralo/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2019-kaposvar-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Kaposvár",
+      "year": "2019",
+      "tagline": "",
+      "description": "Kortárs, magastetős családi ház természetes anyagokkal. Világos belső terek, erős kertkapcsolat.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/09.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/thumbs/09.jpg",
+          "name": "09.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/10.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/thumbs/10.jpg",
+          "name": "10.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/11.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/thumbs/11.jpg",
+          "name": "11.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/12.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-csaladi-haz/thumbs/12.jpg",
+          "name": "12.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2019-kaposvar-ikerhaz",
+      "title": "Ikerház",
+      "type": "Lakóépület",
+      "location": "Kaposvár",
+      "year": "2019",
+      "tagline": "",
+      "description": "Kétgenerációs ikerház egyszerű geometriával. Külön bejáratok, mégis közös udvar és harmonikus utcakép.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-ikerhaz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-ikerhaz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-ikerhaz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-ikerhaz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-ikerhaz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-ikerhaz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-ikerhaz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-ikerhaz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-ikerhaz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-ikerhaz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-ikerhaz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-kaposvar-ikerhaz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2019-szentgalosker-csaladi-haz",
+      "title": "Családi ház bővítése",
+      "type": "Lakóépület",
+      "location": "Szentgáloskér",
+      "year": "2019",
+      "tagline": "",
+      "description": "Családi ház bővítése és belső átalakítása a meglévő adottságokra hangolva. Új konyha, nappali és fedett terasz.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-szentgalosker-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-szentgalosker-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-szentgalosker-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-szentgalosker-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-szentgalosker-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-szentgalosker-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-szentgalosker-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-szentgalosker-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-szentgalosker-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-szentgalosker-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-szentgalosker-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-szentgalosker-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2019-szentgalosker-csaladi-haz/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2019-szentgalosker-csaladi-haz/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2020-kaposvar-gazdasagi-epulet",
+      "title": "Gazdasági épületből családi ház",
+      "type": "Lakóépület",
+      "location": "Kaposvár",
+      "year": "2020",
+      "tagline": "",
+      "description": "Gazdasági épület átalakítása családi házzá. A meglévő szerkezet újrahasznosítása, új nyílásokkal és világos belső terekkel.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2020-kaposvar-gazdasagi-epulet/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2020-kaposvar-gazdasagi-epulet/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2020-kaposvar-gazdasagi-epulet/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2020-kaposvar-gazdasagi-epulet/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2020-kaposvar-gazdasagi-epulet/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2020-kaposvar-gazdasagi-epulet/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2020-kaposvar-gazdasagi-epulet/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2020-kaposvar-gazdasagi-epulet/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2020-kaposvar-gazdasagi-epulet/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2020-kaposvar-gazdasagi-epulet/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2020-kaposvar-gazdasagi-epulet/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2020-kaposvar-gazdasagi-epulet/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2020-kaposvar-gazdasagi-epulet/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2020-kaposvar-gazdasagi-epulet/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2020-soly-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Sóly",
+      "year": "2020",
+      "tagline": "",
+      "description": "Falusias léptékű, mégis kortárs családi ház. A hagyományos tornác újraértelmezése, egyszerű anyaghasználat.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2020-soly-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2020-soly-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2020-soly-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2020-soly-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2020-soly-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2020-soly-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2020-soly-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2020-soly-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2021-almamellek-lakoepulet",
+      "title": "Lakóépület átalakítása és bővítése",
+      "type": "Lakóépület",
+      "location": "Almamellék",
+      "year": "2021",
+      "tagline": "",
+      "description": "Lakóépület átalakítása és bővítése: új tetőtér, világos nappali és a kert felé nyitott közösségi terek.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/09.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/thumbs/09.jpg",
+          "name": "09.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/10.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/thumbs/10.jpg",
+          "name": "10.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/11.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/thumbs/11.jpg",
+          "name": "11.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/12.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/thumbs/12.jpg",
+          "name": "12.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/13.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/thumbs/13.jpg",
+          "name": "13.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/14.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/thumbs/14.jpg",
+          "name": "14.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/15.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-almamellek-lakoepulet/thumbs/15.jpg",
+          "name": "15.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2021-budafok-tetoter",
+      "title": "Tetőtér-beépítés",
+      "type": "Lakóépület",
+      "location": "Budafok",
+      "year": "2021",
+      "tagline": "",
+      "description": "Tetőtér-beépítés budafoki családi házban. Új hálószobák, fürdő és kilátással rendelkező dolgozószoba.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-budafok-tetoter/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-budafok-tetoter/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-budafok-tetoter/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-budafok-tetoter/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-budafok-tetoter/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-budafok-tetoter/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-budafok-tetoter/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-budafok-tetoter/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-budafok-tetoter/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-budafok-tetoter/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-budafok-tetoter/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-budafok-tetoter/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-budafok-tetoter/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-budafok-tetoter/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-budafok-tetoter/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-budafok-tetoter/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2021-kaposszerdahely-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Kaposszerdahely",
+      "year": "2021",
+      "tagline": "",
+      "description": "Kortárs családi ház mediterrán hangulatú kerttel, medencével és árnyas teraszokkal. A belső és a kültér egyetlen térré válik.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/09.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/09.jpg",
+          "name": "09.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/10.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/10.jpg",
+          "name": "10.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/11.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/11.jpg",
+          "name": "11.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/12.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/12.jpg",
+          "name": "12.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/13.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/13.jpg",
+          "name": "13.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/14.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/14.jpg",
+          "name": "14.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/15.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/15.jpg",
+          "name": "15.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/16.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/16.jpg",
+          "name": "16.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/17.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/17.jpg",
+          "name": "17.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/18.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/18.jpg",
+          "name": "18.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/19.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/19.jpg",
+          "name": "19.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/20.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/20.jpg",
+          "name": "20.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/21.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/21.jpg",
+          "name": "21.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/22.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/22.jpg",
+          "name": "22.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/23.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/23.jpg",
+          "name": "23.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/24.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/24.jpg",
+          "name": "24.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/25.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposszerdahely-csaladi-haz/thumbs/25.jpg",
+          "name": "25.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2021-kaposvar-csaladi-haz-alakitas",
+      "title": "Családi ház átalakítása",
+      "type": "Lakóépület",
+      "location": "Kaposvár",
+      "year": "2021",
+      "tagline": "",
+      "description": "Családi ház átalakítása és korszerűsítése. Új, világos térkapcsolatok és kortárs anyagok a meglévő házban.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2021-kaposvar-csaladi-haz-alakitas-2",
+      "title": "Családi ház átalakítása",
+      "type": "Lakóépület",
+      "location": "Kaposvár",
+      "year": "2021",
+      "tagline": "",
+      "description": "Meglévő családi ház átfogó átalakítása új udvari szárnnyal, terasszal és megújult homlokzattal.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/09.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/thumbs/09.jpg",
+          "name": "09.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/10.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/thumbs/10.jpg",
+          "name": "10.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/11.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/thumbs/11.jpg",
+          "name": "11.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/12.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/thumbs/12.jpg",
+          "name": "12.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/13.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/thumbs/13.jpg",
+          "name": "13.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/14.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/thumbs/14.jpg",
+          "name": "14.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/15.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-csaladi-haz-alakitas-2/thumbs/15.jpg",
+          "name": "15.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2021-kaposvar-tetoter",
+      "title": "Tetőtér-beépítés",
+      "type": "Lakóépület",
+      "location": "Kaposvár",
+      "year": "2021",
+      "tagline": "",
+      "description": "Tetőtér-beépítés: világos, funkcionális terek a meglévő ház tetőterében, gondosan szervezett alaprajzzal.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/09.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/thumbs/09.jpg",
+          "name": "09.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/10.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/thumbs/10.jpg",
+          "name": "10.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/11.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/thumbs/11.jpg",
+          "name": "11.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/12.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/thumbs/12.jpg",
+          "name": "12.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/13.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposvar-tetoter/thumbs/13.jpg",
+          "name": "13.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2021-kaposujlak-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Kaposújlak",
+      "year": "2021",
+      "tagline": "",
+      "description": "Kortárs családi ház természetes anyagokkal, a kert felé nyitott terekkel és visszafogott utcai homlokzattal.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposujlak-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposujlak-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposujlak-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposujlak-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposujlak-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposujlak-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposujlak-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposujlak-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposujlak-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposujlak-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposujlak-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposujlak-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposujlak-csaladi-haz/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2021-kaposujlak-csaladi-haz/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2022-balatonboglar-nyaralo",
+      "title": "Nyaraló átalakítása",
+      "type": "Nyaraló",
+      "location": "Balatonboglár",
+      "year": "2022",
+      "tagline": "",
+      "description": "Nyaraló átalakítása: új tetőtér, terasz és a kert felé nyitott nappali. A nyaralás könnyedsége a részletekben.",
+      "credits": "",
+      "category": "nyaralo",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/09.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/thumbs/09.jpg",
+          "name": "09.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/10.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-balatonboglar-nyaralo/thumbs/10.jpg",
+          "name": "10.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2022-cserenfa-kereskedelmi-epulet",
+      "title": "Kereskedelmi épület",
+      "type": "Kereskedelmi",
+      "location": "Cserénfa",
+      "year": "2022",
+      "tagline": "",
+      "description": "Kereskedelmi épület üzletekkel és szolgáltató terekkel. Újszerű, fa szerkezetű portál hívja be a látogatót.",
+      "credits": "",
+      "category": "egyeb",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-cserenfa-kereskedelmi-epulet/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-cserenfa-kereskedelmi-epulet/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-cserenfa-kereskedelmi-epulet/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-cserenfa-kereskedelmi-epulet/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-cserenfa-kereskedelmi-epulet/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-cserenfa-kereskedelmi-epulet/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-cserenfa-kereskedelmi-epulet/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-cserenfa-kereskedelmi-epulet/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-cserenfa-kereskedelmi-epulet/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-cserenfa-kereskedelmi-epulet/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-cserenfa-kereskedelmi-epulet/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-cserenfa-kereskedelmi-epulet/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-cserenfa-kereskedelmi-epulet/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-cserenfa-kereskedelmi-epulet/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2022-iregszemcse-csaladi-haz",
+      "title": "Családi ház bővítése",
+      "type": "Lakóépület",
+      "location": "Iregszemcse",
+      "year": "2022",
+      "tagline": "",
+      "description": "Családi ház bővítése kortárs szárnnyal, nagy üvegfelületekkel és a kertbe vezető fedett terasszal.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/09.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/thumbs/09.jpg",
+          "name": "09.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/10.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-iregszemcse-csaladi-haz/thumbs/10.jpg",
+          "name": "10.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2022-kaposvar-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Kaposvár",
+      "year": "2022",
+      "tagline": "",
+      "description": "Városi családi ház belső udvarral, medencével és árnyékos terasszal. Zárt utcai homlokzat, nyitott belső világ.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2022-kaposvar-csaladi-haz-atepites",
+      "title": "Családi ház átépítése",
+      "type": "Lakóépület",
+      "location": "Kaposvár",
+      "year": "2022",
+      "tagline": "",
+      "description": "Meglévő ház átépítése, a homlokzat és a belső terek teljes megújításával. Több fény, jobb térkapcsolatok.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz-atepites/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz-atepites/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz-atepites/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz-atepites/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz-atepites/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz-atepites/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz-atepites/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz-atepites/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz-atepites/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz-atepites/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz-atepites/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-csaladi-haz-atepites/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2022-kaposvar-tetoter",
+      "title": "Tetőtér-beépítés",
+      "type": "Lakóépület",
+      "location": "Kaposvár",
+      "year": "2022",
+      "tagline": "",
+      "description": "Tetőtér-beépítés belső udvaros társasházban. A meglévő tetőtér új lakássá alakítása, kilátással a városra.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/09.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/thumbs/09.jpg",
+          "name": "09.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/10.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/thumbs/10.jpg",
+          "name": "10.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/11.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/thumbs/11.jpg",
+          "name": "11.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/12.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-tetoter/thumbs/12.jpg",
+          "name": "12.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2022-kaposvar-toponar-csaladi-haz",
+      "title": "Családi ház bővítése",
+      "type": "Lakóépület",
+      "location": "Kaposvár–Toponár",
+      "year": "2022",
+      "tagline": "",
+      "description": "Családi ház bővítése fa szerkezettel, a kertbe nyúló terasszal és új közösségi terekkel.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/09.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2022-kaposvar-toponar-csaladi-haz/thumbs/09.jpg",
+          "name": "09.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2023-somogyaszalo-kuria",
+      "title": "Kúria átépítése",
+      "type": "Lakóépület, kúria",
+      "location": "Somogyaszaló",
+      "year": "2023",
+      "tagline": "",
+      "description": "Kúria átépítése: a történeti épület méltó helyreállítása, kortárs kiegészítésekkel és a kert felé nyitott terekkel.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2023-somogyaszalo-kuria/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2023-somogyaszalo-kuria/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2023-somogyaszalo-kuria/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2023-somogyaszalo-kuria/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2023-somogyaszalo-kuria/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2023-somogyaszalo-kuria/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2023-somogyaszalo-kuria/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2023-somogyaszalo-kuria/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2023-somogyaszalo-kuria/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2023-somogyaszalo-kuria/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2023-somogyaszalo-kuria/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2023-somogyaszalo-kuria/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2023-somogyaszalo-kuria/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2023-somogyaszalo-kuria/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2024-bonnya-csaladi-haz",
+      "title": "Családi ház átalakítása",
+      "type": "Lakóépület",
+      "location": "Bonnya",
+      "year": "2024",
+      "tagline": "",
+      "description": "Falusi családi ház átalakítása belső udvarral és fedett terasszal. A régi és az új nyugodt egymás mellett létezése.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/09.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/thumbs/09.jpg",
+          "name": "09.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/10.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/thumbs/10.jpg",
+          "name": "10.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/11.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/thumbs/11.jpg",
+          "name": "11.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/12.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-bonnya-csaladi-haz/thumbs/12.jpg",
+          "name": "12.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2024-kaposvar-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Kaposvár",
+      "year": "2024",
+      "tagline": "",
+      "description": "Kétszintes, kortárs családi ház uszodával, napfényes teraszokkal és a domboldal adottságait kihasználó kertkapcsolattal.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/09.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/thumbs/09.jpg",
+          "name": "09.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/10.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/thumbs/10.jpg",
+          "name": "10.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/11.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/thumbs/11.jpg",
+          "name": "11.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/12.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-csaladi-haz/thumbs/12.jpg",
+          "name": "12.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2024-kaposvar-fodraszuzlet-lakas",
+      "title": "Fodrászüzlet és lakás",
+      "type": "Vegyes (üzlet, lakás)",
+      "location": "Kaposvár",
+      "year": "2024",
+      "tagline": "",
+      "description": "Fodrászüzlet és lakás egy épületben. Egységes, meleg anyaghasználat, jól elkülönülő, mégis összetartozó terek.",
+      "credits": "",
+      "category": "egyeb",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/09.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2024-kaposvar-fodraszuzlet-lakas/thumbs/09.jpg",
+          "name": "09.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2025-andocs-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Andocs",
+      "year": "2025",
+      "tagline": "",
+      "description": "Kortárs családi ház zárt utcai homlokzattal és belső kerttel. A magánszféra és a nyitottság finom egyensúlya.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/09.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/thumbs/09.jpg",
+          "name": "09.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/10.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/thumbs/10.jpg",
+          "name": "10.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/11.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/thumbs/11.jpg",
+          "name": "11.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/12.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/thumbs/12.jpg",
+          "name": "12.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/13.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/thumbs/13.jpg",
+          "name": "13.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/14.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-andocs-csaladi-haz/thumbs/14.jpg",
+          "name": "14.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2025-kaposvar-foldhaz",
+      "title": "Földház",
+      "type": "Lakóépület",
+      "location": "Kaposvár",
+      "year": "2025",
+      "tagline": "",
+      "description": "A tájba simuló földház zöldtetővel és kőburkolattal. Az épület nem elfoglalja, hanem folytatja a domboldalt.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-kaposvar-foldhaz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-kaposvar-foldhaz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-kaposvar-foldhaz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-kaposvar-foldhaz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-kaposvar-foldhaz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-kaposvar-foldhaz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-kaposvar-foldhaz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-kaposvar-foldhaz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-kaposvar-foldhaz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-kaposvar-foldhaz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-kaposvar-foldhaz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-kaposvar-foldhaz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2025-zimany-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Zimány",
+      "year": "2025",
+      "tagline": "",
+      "description": "Földszintes családi ház magastetővel, természetes anyagokkal és nyugodt, vidéki léptékkel.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/09.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2025-zimany-csaladi-haz/thumbs/09.jpg",
+          "name": "09.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2026-balatonfenyves-nyaralo",
+      "title": "Nyaraló átalakítása",
+      "type": "Nyaraló",
+      "location": "Balatonfenyves",
+      "year": "2026",
+      "tagline": "",
+      "description": "Nyaraló átalakítása: új terasz, árnyékoló szerkezet és kortárs belső terek a vízparti pihenéshez.",
+      "credits": "",
+      "category": "nyaralo",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfenyves-nyaralo/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfenyves-nyaralo/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfenyves-nyaralo/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfenyves-nyaralo/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfenyves-nyaralo/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfenyves-nyaralo/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfenyves-nyaralo/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfenyves-nyaralo/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfenyves-nyaralo/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfenyves-nyaralo/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfenyves-nyaralo/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfenyves-nyaralo/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2026-balatonfuzfo-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Balatonfűzfő",
+      "year": "2026",
+      "tagline": "",
+      "description": "Hagyományos léptékű, mégis kortárs családi ház. Fehér homlokzat, magastető és gondozott kert.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfuzfo-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfuzfo-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfuzfo-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfuzfo-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfuzfo-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfuzfo-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfuzfo-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfuzfo-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfuzfo-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfuzfo-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfuzfo-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfuzfo-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfuzfo-csaladi-haz/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfuzfo-csaladi-haz/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfuzfo-csaladi-haz/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balatonfuzfo-csaladi-haz/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2026-balvanyos-csaladi-haz",
+      "title": "Családi ház bővítése",
+      "type": "Lakóépület",
+      "location": "Bálványos",
+      "year": "2026",
+      "tagline": "",
+      "description": "Családi ház bővítése fa szerkezetű szárnnyal és új tetőtérrel. A meglévő ház nyugodt, természetes folytatása.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/09.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/thumbs/09.jpg",
+          "name": "09.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/10.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/thumbs/10.jpg",
+          "name": "10.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/11.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/thumbs/11.jpg",
+          "name": "11.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/12.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/thumbs/12.jpg",
+          "name": "12.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/13.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/thumbs/13.jpg",
+          "name": "13.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/14.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-balvanyos-csaladi-haz/thumbs/14.jpg",
+          "name": "14.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2026-dombovar-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Dombóvár",
+      "year": "2026",
+      "tagline": "",
+      "description": "Földszintes családi ház tornáccal, a vidéki ház hagyományát újraértelmezve. Egyszerű, időtálló anyagok.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-dombovar-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-dombovar-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-dombovar-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-dombovar-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-dombovar-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-dombovar-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-dombovar-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-dombovar-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-dombovar-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-dombovar-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-dombovar-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-dombovar-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2026-gamas-csaladi-haz",
+      "title": "Családi ház bővítése",
+      "type": "Lakóépület",
+      "location": "Gamás",
+      "year": "2026",
+      "tagline": "",
+      "description": "Családi ház bővítése és felújítása, a kert felé nyitott terekkel és megújult homlokzattal.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/09.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gamas-csaladi-haz/thumbs/09.jpg",
+          "name": "09.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2026-gorgeteg-csaladi-haz",
+      "title": "Családi ház bővítése",
+      "type": "Lakóépület",
+      "location": "Görgeteg",
+      "year": "2026",
+      "tagline": "",
+      "description": "Családi ház bővítése természetes anyagokkal, visszafogott formavilággal és erős kertkapcsolattal.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/09.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/thumbs/09.jpg",
+          "name": "09.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/10.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-gorgeteg-csaladi-haz/thumbs/10.jpg",
+          "name": "10.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2026-magyaratad-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Magyaratád",
+      "year": "2026",
+      "tagline": "",
+      "description": "Földszintes családi ház tornáccal és nagy kertkapcsolattal. A hagyományos portát megtartó, kortárs otthon.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-magyaratad-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-magyaratad-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-magyaratad-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-magyaratad-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-magyaratad-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-magyaratad-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-magyaratad-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-magyaratad-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-magyaratad-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-magyaratad-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-magyaratad-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-magyaratad-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-magyaratad-csaladi-haz/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-magyaratad-csaladi-haz/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-magyaratad-csaladi-haz/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-magyaratad-csaladi-haz/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        }
+      ]
+    },
+    {
+      "id": "2026-polany-csaladi-haz",
+      "title": "Családi ház",
+      "type": "Lakóépület",
+      "location": "Polány",
+      "year": "2026",
+      "tagline": "",
+      "description": "Családi ház felújítása és bővítése, a hagyományos portát megtartva, új, világos terekkel.",
+      "credits": "",
+      "category": "lakas",
+      "early": false,
+      "images": [
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-polany-csaladi-haz/01.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-polany-csaladi-haz/thumbs/01.jpg",
+          "name": "01.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-polany-csaladi-haz/02.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-polany-csaladi-haz/thumbs/02.jpg",
+          "name": "02.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-polany-csaladi-haz/03.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-polany-csaladi-haz/thumbs/03.jpg",
+          "name": "03.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-polany-csaladi-haz/04.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-polany-csaladi-haz/thumbs/04.jpg",
+          "name": "04.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-polany-csaladi-haz/05.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-polany-csaladi-haz/thumbs/05.jpg",
+          "name": "05.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-polany-csaladi-haz/06.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-polany-csaladi-haz/thumbs/06.jpg",
+          "name": "06.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-polany-csaladi-haz/07.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-polany-csaladi-haz/thumbs/07.jpg",
+          "name": "07.jpg",
+          "source": "legacy"
+        },
+        {
+          "src": "https://kockastudio.up.railway.app/shared/img/projects/2026-polany-csaladi-haz/08.jpg",
+          "thumb": "https://kockastudio.up.railway.app/shared/img/projects/2026-polany-csaladi-haz/thumbs/08.jpg",
+          "name": "08.jpg",
+          "source": "legacy"
+        }
+      ]
+    }
+  ]
+}

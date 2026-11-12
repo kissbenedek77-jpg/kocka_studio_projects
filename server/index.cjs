@@ -24,6 +24,9 @@ const {validateCreativeInput,generateCreativePlan} = require('./marketing_ai.cjs
 const {validateStrategyInput,generateStrategy} = require('./marketing_strategy.cjs');
 const {modelStatus,validateImageInput,generateMarketingImage} = require('./marketing_image.cjs');
 const {marketingStore} = require('./marketing_store.cjs');
+const {webStore} = require('./web_store.cjs');
+const {generateText:generateWebText} = require('./web_ai.cjs');
+const {PUBLIC_BASE,PROJECT_FIELDS,exportPageTxt,exportProjectsJs} = require('./web_content.cjs');
 const {discoverTopics,validateTopic,due,nextRun,pickTopic,generatePostText,postSvg,POST_STYLES} = require('./marketing_posts.cjs');
 const {facebookStatus,publishFacebookPhoto,deleteFacebookPhoto} = require('./marketing_facebook.cjs');
 const {instagramStatus,publishInstagramImage,deleteInstagramMedia} = require('./marketing_instagram.cjs');
@@ -70,6 +73,7 @@ if (config.localPasswordHash && !validHash(config.localPasswordHash))
   throw new Error('A LOCAL_LOGIN_PASSWORD_HASH formátuma érvénytelen.');
 const loginGoogle = googleClient(config);
 const mail = sentMail(config);
+const siteStore = webStore({dataDir: process.env.SITE_DATA_DIR || ''});
 const owner = config.ownerEmail;
 const dashboardHtml = fs.readFileSync(path.join(__dirname, '..', 'dashboard_v2.html'), 'utf8');
 const formHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
@@ -77,6 +81,7 @@ const technicalHtml = fs.readFileSync(path.join(__dirname, '..', 'technical.html
 const loginHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'login.html'), 'utf8');
 const inquiryHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'inquiry.html'), 'utf8');
 const marketingHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'marketing.html'), 'utf8');
+const siteHtml = fs.readFileSync(path.join(__dirname, '..', 'site.html'), 'utf8');
 const serviceWorkerJs=fs.readFileSync(path.join(__dirname,'..','public','service-worker.js'));
 const marketingAiUsage = new Map();
 const marketingStrategyUsage = new Map();
@@ -125,8 +130,8 @@ function nodePage(html,page) {
     .replace('</style>','</style>\n  <link rel="stylesheet" href="/assets/ks-design.css">')
     .replace('<body>','<body class="ks-app ks-page-'+page+'" data-runtime="node" data-ks-page="'+page+'">')
     .replace('</body>','<script src="/assets/bootstrap.bundle.min.js"></script>\n<script src="/assets/ks-shell.js"></script>\n</body>');
-  if(['login','dashboard','marketing','technical'].includes(page))result=result
-    .replace('</head>',(['dashboard','marketing','technical'].includes(page)
+  if(['login','dashboard','marketing','technical','site'].includes(page))result=result
+    .replace('</head>',(['dashboard','marketing','technical','site'].includes(page)
       ?'<script src="/assets/message-center.js"></script>\n':'')+'</head>')
     .replace('</head>','<link rel="manifest" href="/manifest.webmanifest?v=3">\n'
       +'<link rel="icon" href="/assets/kocka-icon.svg?v=4" type="image/svg+xml">\n'
@@ -331,6 +336,40 @@ async function rpc(name, args, session) {
   // A dashboard alsó sávjában megjelenő szervernapló (Railway deploy log).
   // Csak a bejelentkezett tulajdonos érheti el, mert az RPC végpont védett.
   if (name === 'dashboardLogs') return logBuffer.read(Number(args[0]) || 0, Number(args[1]) || 100);
+  // MARK: Weboldal-kezelő (a nyilvános honlap tartalma és fotói)
+  if (name === 'webGetContent') return {content: await siteStore.load(), projectFields: PROJECT_FIELDS};
+  if (name === 'webSaveField')
+    return siteStore.saveField(String(args[0] || ''),String(args[1] || ''),args[2]);
+  if (name === 'webSaveProject')
+    return siteStore.saveProject(String(args[0] || ''),args[1] || {});
+  if (name === 'webAddProject') return siteStore.addProject(args[0] || {});
+  if (name === 'webDeleteProject') return siteStore.deleteProject(String(args[0] || ''));
+  if (name === 'webReorderProjects') return siteStore.reorderProjects(args[0]);
+  if (name === 'webUploadImage') {
+    const base64 = String(args[3] || '');
+    if (!base64 || !/^[A-Za-z0-9+/]+={0,2}$/.test(base64) || base64.length > 12*1024*1024)
+      throw Object.assign(new Error('Érvénytelen képfeltöltés.'),{status:400});
+    const buffer = Buffer.from(base64,'base64');
+    if (!buffer.length || buffer.toString('base64').replace(/=+$/,'') !== base64.replace(/=+$/,''))
+      throw Object.assign(new Error('A kép adata sérült.'),{status:400});
+    return siteStore.saveImage(String(args[0] || ''),
+      {buffer,mime:String(args[2] || ''),name:String(args[1] || '')});
+  }
+  if (name === 'webDeleteImage')
+    return siteStore.deleteImage(String(args[0] || ''),String(args[1] || ''));
+  if (name === 'webReorderImages')
+    return siteStore.reorderImages(String(args[0] || ''),args[1]);
+  if (name === 'webAiText')
+    return generateWebText(args[0],{apiKey:process.env.GEMINI_API_KEY,
+      model:process.env.GEMINI_MARKETING_MODEL || process.env.GEMINI_TECHNICAL_MODEL});
+  if (name === 'webExport') {
+    const content = await siteStore.load();
+    const files = {};
+    for (const page of content.pages)
+      files['shared/data/'+page.file+'.txt'] = exportPageTxt(page);
+    files['shared/js/projects.js'] = exportProjectsJs(content.projects);
+    return {files};
+  }
   if (name === 'dashboardListClientSubmissions') return google.listClientSubmissions();
   if (name === 'dashboardMarkClientSubmissionRead') return google.markClientSubmissionRead(uid);
   if (name === 'getDashboardProject') return google.dashboardProject(uid);
@@ -578,6 +617,32 @@ const server = http.createServer(async (request, response) => {
         'Cache-Control':'private, max-age=60','X-Content-Type-Options':'nosniff',
         'Referrer-Policy':'no-referrer'});
       return response.end(image.bytes);
+    }
+    if (request.method === 'GET' && url.pathname.startsWith('/media/web/')) {
+      let file;
+      try { file = siteStore.mediaFile(url.pathname.slice('/media/web/'.length)); }
+      catch (_) { return send(response,404,{error:'A kép nem található.'}); }
+      let stat;
+      try { stat = fs.statSync(file); }
+      catch (_) { return send(response,404,{error:'A kép nem található.'}); }
+      response.writeHead(200, {'Content-Type':'image/jpeg','Content-Length':stat.size,
+        'Cache-Control':'public, max-age=86400','X-Content-Type-Options':'nosniff',
+        'Referrer-Policy':'no-referrer'});
+      return fs.createReadStream(file).pipe(response);
+    }
+    if (request.method === 'GET' && url.pathname === '/api/web/content') {
+      const content = await siteStore.load();
+      const absolute = value => String(value || '').startsWith('/')
+        ? config.baseUrl+value : String(value || '');
+      const result = {...content,projects:content.projects.map(project => ({
+        ...project,
+        images:project.images.map(image => ({...image,
+          src:absolute(image.src),thumb:absolute(image.thumb)}))
+      }))};
+      response.writeHead(200, {'Content-Type':'application/json; charset=utf-8',
+        'Cache-Control':'public, max-age=60','Access-Control-Allow-Origin':'*',
+        'X-Content-Type-Options':'nosniff'});
+      return response.end(JSON.stringify(result));
     }
     if (request.method === 'GET' && url.pathname.startsWith('/media/marketing/')) {
       const match=url.pathname.match(/^\/media\/marketing\/([A-Za-z0-9_-]+)$/),grant=match&&unpack(match[1]);
@@ -1094,6 +1159,15 @@ const server = http.createServer(async (request, response) => {
       response.writeHead(200, {'Content-Type':'text/html; charset=utf-8',
         'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
       return response.end(nodePage(technicalHtml,'technical'));
+    }
+    if (request.method === 'GET' && url.pathname === '/site') {
+      if (!authenticated(request)) {
+        const cookies=expiredCookie(request);
+        return redirect(response,loginLocation('/site',Boolean(cookies.length)),cookies);
+      }
+      response.writeHead(200, {'Content-Type':'text/html; charset=utf-8',
+        'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
+      return response.end(nodePage(siteHtml,'site'));
     }
     if (request.method === 'POST' && url.pathname === '/api/rpc') {
       if (!authenticated(request)) return send(response, 401, {error:'A munkamenet lejárt. Jelentkezz be újra.'},

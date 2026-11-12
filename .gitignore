@@ -12,3 +12,7 @@ coverage/
 /test_*.txt
 /testlog.txt
 /testout.txt
+
+# Weboldal-kezelő futásidejű állapota (a seed.json marad verziókövetve)
+/data/website/content.json
+/data/website/media/
