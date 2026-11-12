@@ -42,3 +42,15 @@ test('A futásidejű modulok a téma tokenjeit használják', () => {
     assert.match(read(file),/var\(--ks-(dark|ink|gold|line|muted)/,
       file+': nem hivatkozik a téma tokenjeire');
 });
+
+test('Az AI-sáv a main oszlop pozíciójához és szélességéhez igazodik', () => {
+  const js = read('public/ai-composer.js');
+  assert.match(js,/cfg\.alignTo\s*\|\|\s*'main'/,'az alapértelmezett igazítási cél a main');
+  assert.match(js,/getBoundingClientRect/);
+  assert.match(js,/host\.style\.left\s*=/);
+  assert.match(js,/host\.style\.width\s*=/);
+  assert.match(js,/new root\.ResizeObserver\(syncPosition\)\.observe\(column\)/,
+    'a main méretváltozását is követni kell');
+  assert.match(js,/addEventListener\('scroll',\s*schedule/);
+  assert.match(js,/addEventListener\('resize'/);
+});
