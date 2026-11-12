@@ -30,3 +30,16 @@ test('A közös menü stílusa a megosztott CSS-ben van', () => {
   assert.match(css,/\.ks-app-menu\{/);
   assert.match(css,/\.ks-app-menu a\[aria-current=page\]/);
 });
+
+test('Mobilon hamburger gomb nyitja a menüt', () => {
+  const js = read('public/app-menu.js');
+  assert.match(js,/ks-app-menu-toggle/);
+  assert.match(js,/aria-expanded/);
+  assert.match(js,/classList\.toggle\('open'/);
+  const css = read('public/ks-design.css');
+  assert.match(css,/@media\(max-width:700px\)\{[\s\S]*?\.ks-app-menu-toggle\{display:inline-flex\}/);
+  assert.match(css,/\.ks-app-menu\.open \.ks-app-menu-panel\{display:flex\}/);
+  const server = read('server/index.cjs');
+  assert.match(server,/'\/assets\/app-menu\.js'/);
+  assert.match(server,/<script src="\/assets\/app-menu\.js"><\/script>/);
+});

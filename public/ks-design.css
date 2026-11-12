@@ -86,12 +86,32 @@ body:not([data-runtime=node]) .ks-owner-logout{display:none}
 .marketing-nav:hover{color:var(--ks-primary)}
 body:not([data-runtime=node]) .marketing-nav{display:none}
 /* Közös felső menü a tulajdonosi oldalakon (dashboard, marketing, weboldal, műszaki leírás). */
-.ks-app-menu{display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:13px;font-weight:500;line-height:1.4}
+.ks-app-menu{position:relative;display:flex;align-items:center;justify-content:flex-end;font-size:13px;font-weight:500;line-height:1.4}
+.ks-app-menu-panel{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .ks-app-menu a{color:inherit;text-decoration:none;display:inline-flex;align-items:center;min-height:24px;padding:2px 0}
 .ks-app-menu a:hover{text-decoration:underline;text-underline-offset:3px}
 .ks-app-menu a[aria-current=page]{font-weight:700;text-decoration:underline;text-underline-offset:4px}
 .ks-app-menu .ks-menu-sep{opacity:.45}
-@media(max-width:600px){.ks-app-menu{gap:10px 14px;font-size:12px}}
+.ks-app-menu-toggle{display:none;align-items:center;justify-content:center;width:40px;height:36px;padding:0;border:1px solid rgba(255,255,255,.35);border-radius:6px;background:transparent;color:inherit;cursor:pointer}
+.ks-app-menu-toggle span{display:block;width:18px;height:2px;margin:2px auto;border-radius:1px;background:currentColor}
+.ks-app-menu-toggle:focus-visible{outline:2px solid #b79a69;outline-offset:2px}
+@media(max-width:700px){
+  .ks-app-menu-toggle{display:inline-flex}
+  .ks-app-menu-panel{display:none;position:absolute;right:0;top:calc(100% + 10px);z-index:60;
+    flex-direction:column;align-items:stretch;gap:2px;min-width:220px;padding:6px;
+    background:#fff;color:#26312e;border:1px solid #d7dad4;border-radius:9px;
+    box-shadow:0 14px 34px rgba(16,27,22,.24)}
+  .ks-app-menu.open .ks-app-menu-panel{display:flex}
+  .ks-app-menu .ks-app-menu-panel a,
+  .ks-app-menu .ks-app-menu-panel .owner-action,
+  .ks-app-menu .ks-app-menu-panel .ks-owner-logout{color:#26312e;padding:10px 12px;border-radius:5px;
+    font-size:14px;text-decoration:none;white-space:nowrap}
+  .ks-app-menu .ks-app-menu-panel a:hover,
+  .ks-app-menu .ks-app-menu-panel .owner-action:hover{background:#f2f4ef;text-decoration:none}
+  .ks-app-menu .ks-app-menu-panel a[aria-current=page]{background:#f5f2eb;font-weight:700}
+  .ks-app-menu .ks-app-menu-panel .demo-pill{align-self:flex-start;margin:4px 6px 6px;border-color:#4f8562;color:#245335}
+  .ks-app-menu .ks-app-menu-panel .owner-divider{display:none}
+}
 body[data-ks-page=dashboard] .brand-kicker{color:var(--ks-surface-muted)}
 body[data-ks-page=dashboard] .shell{padding-top:var(--ks-space-8)}
 body[data-ks-page=dashboard] .intro h1{color:var(--ks-heading);font-weight:300;letter-spacing:-.02em}

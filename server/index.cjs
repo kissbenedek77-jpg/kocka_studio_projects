@@ -104,6 +104,7 @@ const frontendAssets = new Map([
   ['/assets/ks-design.css', ['text/css; charset=utf-8',path.join(__dirname,'..','public','ks-design.css')]],
   ['/assets/ks-shell.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','ks-shell.js')]],
   ['/assets/message-center.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','message-center.js')]],
+  ['/assets/app-menu.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','app-menu.js')]],
   ['/assets/marketing-auto.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','marketing-auto.js')]],
   ['/assets/pwa-register.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','pwa-register.js')]],
   ['/manifest.webmanifest', ['application/manifest+json; charset=utf-8',path.join(__dirname,'..','public','manifest.webmanifest')]],
@@ -136,7 +137,7 @@ function nodePage(html,page) {
     .replace('</body>','<script src="/assets/bootstrap.bundle.min.js"></script>\n<script src="/assets/ks-shell.js"></script>\n</body>');
   if(['login','dashboard','marketing','technical','site'].includes(page))result=result
     .replace('</head>',(['dashboard','marketing','technical','site'].includes(page)
-      ?'<script src="/assets/message-center.js"></script>\n':'')+'</head>')
+      ?'<script src="/assets/app-menu.js"></script>\n<script src="/assets/message-center.js"></script>\n':'')+'</head>')
     .replace('</head>','<link rel="manifest" href="/manifest.webmanifest?v=3">\n'
       +'<link rel="icon" href="/assets/kocka-icon.svg?v=4" type="image/svg+xml">\n'
       +'<link rel="apple-touch-icon" href="/assets/kocka-icon-180.png?v=3">\n'
