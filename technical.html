@@ -9,6 +9,7 @@
     html{scroll-padding-top:1.5rem;scroll-padding-bottom:calc(var(--chat-height,0px) + 1rem)}
     *{box-sizing:border-box}body{margin:0}header{background:#163746;color:white;padding:1.25rem max(1rem,calc((100vw - 1060px)/2))}
     header h1{font-size:1.45rem;margin:.25rem 0}header p{margin:.25rem 0;color:#d3e1e5}
+    header .header-row{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap}
     main{max-width:1060px;margin:auto;padding:1.1rem;padding-bottom:calc(var(--chat-height,0px) + 1.6rem);min-width:0}a{color:#146081;overflow-wrap:anywhere}header a{color:white}header strong{overflow-wrap:anywhere}
     .links{display:flex;gap:1rem;flex-wrap:wrap;margin:.8rem 0 1.4rem}.notice{background:#e9f3f3;border-left:4px solid #287b82;padding:1rem;margin-bottom:1rem}
     .error{background:#fff0ed;border-left-color:#bb4b41}.success{background:#e8f4e9;border-left-color:#43844c}
@@ -129,7 +130,7 @@
   </style>
 </head>
 <body>
-  <header><h1>Műszaki leírás szerkesztése</h1><p>Projekt: <strong id="projectUid"></strong></p></header>
+  <header><div class="header-row"><div><h1>Műszaki leírás szerkesztése</h1><p>Projekt: <strong id="projectUid"></strong></p></div><nav class="ks-app-menu" aria-label="Főmenü"><a href="/dashboard">Dashboard</a><a href="/marketing">Marketing</a><a href="/site">Weboldal</a><a href="/auth/logout">Kijelentkezés</a></nav></div></header>
   <main>
     <div class="links"><a id="dashboardLink" href="/dashboard">Vissza a dashboardra</a><a id="sheetLink" hidden>Tervezési adatlap megnyitása</a></div>
     <p class="notice">A műszaki leírás a dokumentum sorrendjében jelenik meg. A szürke „Automatikus” részek a projekt adataiból töltődnek, a „Tényszerű adat” jelzésű fejezetek csak olvashatók, a többi szöveg itt közvetlenül szerkeszthető. A mentés a DRAFT dokumentumot is frissíti. Az „AI-val kitöltés projektadatból” gomb a rendelkezésre álló tényadatokból megírja a fejezeteket; a hiányzó adat helyén [KIEGÉSZÍTENDŐ: …] jelölés marad.</p>
