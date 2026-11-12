@@ -164,11 +164,7 @@
     const status=document.getElementById('status'),form=document.getElementById('form');
     const draftButton=document.getElementById('draft');
     const autoDraftButton=document.getElementById('autoDraft');let aiReady=false;
-    const chatNode=document.getElementById('chat'),chatToggle=document.getElementById('chatToggle'),
-      chatTarget=document.getElementById('chatTarget'),
-      chatTargetSelect=document.getElementById('chatTargetSelect'),
-      chatQuick=document.getElementById('chatQuick');
-    let chatKeys=new Set(),activeQueued=false;
+    let chatKeys=new Set(),chat=null;
     const draftable=key=>key==='EPITES_JELLEGE'||/^SZERKEZET:/.test(key)||
       ['GEPESZET:szellozes','GEPESZET:energiaellatas','KORNYEZET:kitermelt_asvanyi_nyersanyag','VILLAMOS:teljesitmeny'].includes(key);
     function openFirstDraftField(){
@@ -192,121 +188,31 @@
     }
     // A chat célpontjai: azonosító -> {id,input,label,apply}. Egy fejezetnek több
     // beviteli mezője is lehet (például a szerkezetleírás alpontjai), ezért a
-    // célpont nem a fejezet kulcsa, hanem az adott mezőé.
+    // célpont nem a fejezet kulcsa, hanem az adott mezőé. A sávot a közös
+    // AiComposer modul rajzolja és kezeli.
     const chatTargets=new Map();
-    let activeTarget=null,pinnedTarget=null;
     function registerChatTarget(id,target){
       if(!id||!target||!target.input)return;
-      target.input.dataset.chatTarget=id;
       chatTargets.set(id,{id,input:target.input,label:String(target.label||id),apply:target.apply});
+      if(chat)chat.register({id,label:String(target.label||id),
+        group:groupFor(String(id).split('#')[0]),input:target.input,apply:target.apply});
     }
     function clearChatTargets(prefix){
       for(const id of [...chatTargets.keys()])
-        if(!prefix||id===prefix||id.startsWith(prefix+'#'))chatTargets.delete(id);
+        if(!prefix||id===prefix||id.startsWith(prefix+'#')||id.startsWith(prefix+'/'))
+          chatTargets.delete(id);
+      if(chat)chat.unregister(prefix||'');
     }
-    function chatTargetInputs(){return [...chatTargets.values()].map(target=>target.input)}
-    function chatHeight(){
-      if(!chatNode||chatNode.hidden)return 0;
-      const rect=chatNode.getBoundingClientRect?chatNode.getBoundingClientRect():null;
-      return Math.round((rect&&rect.height)||chatNode.offsetHeight||0);
+    function setChatHeight(){if(chat)chat.refreshSelection()}
+    function scheduleActiveField(){if(chat)chat.refreshSelection()}
+    function activeTargetId(){return chat?chat.activeId():''}
+    function activeTargetInput(){
+      const target=chat&&chat.getTarget(chat.activeId());
+      return target?target.input:null;
     }
-    function setChatHeight(){
-      const root=document.documentElement;
-      if(root&&root.style&&root.style.setProperty)
-        root.style.setProperty('--chat-height',chatHeight()+'px');
-    }
-    function activeTargetInput(){return activeTarget?activeTarget.input:null}
-    function activeTargetId(){return activeTarget?activeTarget.id:''}
     function activeTargetLabel(){
-      return activeTarget?String(activeTarget.label||activeTarget.id).replace(/\s+/g,' ').trim():'';
-    }
-    function updateChatTarget(){
-      const id=activeTargetId();
-      if(chatTarget)
-        chatTarget.textContent=id?'Mező: „'+activeTargetLabel()+'”':'Nincs célmező – válassz a listából';
-      if(chatTargetSelect){
-        if(id&&chatTargetSelect.value!==id)chatTargetSelect.value=id;
-        chatTargetSelect.disabled=chatTargets.size===0;
-      }
-    }
-    // A célmező-választó a chat minden lehetséges mezőjét fejezet szerint
-    // csoportosítva listázza. Így nem kell találgatni, melyik mezőre dolgozik az
-    // AI: a felhasználó kifejezetten kiválaszthatja.
-    function refreshChatTargetOptions(){
-      if(!chatTargetSelect)return;
-      const previous=activeTargetId();
-      const groups=new Map();
-      for(const target of chatTargets.values()){
-        const name=groupFor(String(target.id).split('#')[0]);
-        if(!groups.has(name))groups.set(name,[]);
-        groups.get(name).push(target);
-      }
-      chatTargetSelect.replaceChildren();
-      const placeholder=document.createElement('option');
-      placeholder.value='';placeholder.textContent='Válassz célmezőt…';
-      chatTargetSelect.append(placeholder);
-      for(const [name,items] of groups){
-        const group=document.createElement('optgroup');group.label=name;
-        for(const item of items){
-          const option=document.createElement('option');
-          option.value=item.id;
-          option.textContent=item.label.length>80?item.label.slice(0,80)+'…':item.label;
-          group.append(option);
-        }
-        chatTargetSelect.append(group);
-      }
-      chatTargetSelect.disabled=chatTargets.size===0;
-      chatTargetSelect.value=previous||'';
-    }
-    function focusChatTarget(target){
-      if(!target)return;
-      pinnedTarget=target;setActiveTarget(target);
-      const input=target.input;
-      let node=input.parentNode;
-      while(node&&node!==form){if(node.tagName==='DETAILS'){node.open=true;break}node=node.parentNode}
-      if(input.scrollIntoView)input.scrollIntoView({behavior:'smooth',block:'center'});
-      if(input.focus)input.focus();
-    }
-    function setActiveTarget(target){
-      if(activeTarget===target)return;
-      toggleClass(activeTarget&&activeTarget.input,'active-input',false);
-      activeTarget=target;
-      toggleClass(activeTarget&&activeTarget.input,'active-input',true);
-      updateChatTarget();
-    }
-    function refreshActiveField(){
-      const nodes=chatTargetInputs();
-      if(!nodes.length){setActiveTarget(null);return}
-      // A célpont stabil: az a mező, amelyikbe a felhasználó utoljára kattintott,
-      // vagy amelyiket a célmező-választóban kijelölt. A görgetés nem váltogatja
-      // a célmezőt, mert az kiszámíthatatlan lenne.
-      if(activeTarget)return;
-      // Első betöltéskor a nézet tetején látható első mező lesz a célpont.
-      // A nézet tetején egy kis térköz van: az a mező aktiválódik, amelyik e
-      // vonal alatt látszik először. Így a felső szélén kilógó mező nem veszi
-      // el a jelölést a következő mezőtől.
-      const topGap=24;
-      const limit=(window.innerHeight||0)-chatHeight()-8;
-      let chosen=null,measured=false;
-      for(const node of nodes){
-        const rect=node.getBoundingClientRect?node.getBoundingClientRect():null;
-        if(!rect)continue;
-        const height=Number(rect.height)||0;
-        if(height||Number(rect.width))measured=true;
-        if(height<=0)continue;        // zárt accordion rejtett mezője
-        if(rect.bottom<=topGap)continue; // a felső térköz fölött van
-        if(rect.top>=limit)continue;   // a látható terület alatt van
-        chosen=node;break;
-      }
-      // Ha a böngésző még nem mért elrendezést (minden méret nulla), az első
-      // mezőt jelöljük, hogy a chat célpontja mindig egyértelmű legyen.
-      if(!chosen&&!measured)chosen=nodes[0];
-      setActiveTarget(chosen?chatTargets.get(chosen.dataset.chatTarget):null);
-    }
-    function scheduleActiveField(){
-      if(activeQueued)return;
-      activeQueued=true;
-      requestAnimationFrame(()=>{activeQueued=false;refreshActiveField()});
+      const target=chat&&chat.getTarget(chat.activeId());
+      return target?String(target.label||target.id).replace(/\s+/g,' ').trim():'';
     }
     document.getElementById('projectUid').textContent=uid;
     document.getElementById('dashboardLink').href='/dashboard?project='+encodeURIComponent(uid)+'&step=5';
@@ -639,7 +545,7 @@
     function renderOutline(data){
       const root=document.getElementById('groups');root.replaceChildren();
       fieldInputs.clear();blockInputs.clear();fieldRefresh.clear();markerButtons.clear();
-      chatTargets.clear();activeTarget=null;pinnedTarget=null;aiBlocks.clear();fieldResets.clear();
+      chatTargets.clear();if(chat)chat.clear();aiBlocks.clear();fieldResets.clear();
       placeholderValues=data.placeholderValues||{};
       editablePlaceholders=new Set(data.editablePlaceholders||[]);
       const fields=new Map((data.fields||[]).map(field=>[field.key,field]));
@@ -715,9 +621,9 @@
       requestAnimationFrame(()=>{
         fieldInputs.forEach(({input})=>autoSize(input));
         blockInputs.forEach(({input})=>autoSize(input));
-        refreshChatTargetOptions();
+        if(chat)chat.refresh();
         setChatHeight();
-        refreshActiveField();
+        scheduleActiveField();
       });
     }
     // Az AI-javaslat a mezőnél, helyben jelenik meg: nem ugrik el a lap, és a
@@ -844,8 +750,8 @@
             'Az AI-val kitöltés projektadatból a teljes DRAFT-ot elkészíti; ez 1–2 percig is eltarthat.'
           : 'Az AI-szövegtervezethez előbb írj tényjegyzetet a Szerkezetek, Gépészet, Villamos vagy Környezet mezőkbe. '+
             'Az AI-val kitöltés projektadatból a projekt tényadataiból a teljes DRAFT-ot elkészíti.';
-        form.hidden=false;chatNode.hidden=!aiReady;
-        setChatHeight();refreshActiveField();
+        form.hidden=false;if(chat)chat.setRootHidden(!aiReady);
+        setChatHeight();scheduleActiveField();
         message('A dokumentum szövegei betöltve.','success')
       }catch(error){message(error.message||String(error),'error')}}
     draftButton.addEventListener('click',async()=>{
@@ -864,98 +770,33 @@
       }catch(error){message(error.message||String(error),'error')}
       finally{draftButton.disabled=false}
     });
-    const chatSend=document.getElementById('chatSend'),
-      chatMessage=document.getElementById('chatMessage'),chatLog=document.getElementById('chatLog');
-    function logChat(text,me){const line=document.createElement('p');if(me)line.className='me';
-      line.textContent=text;chatLog.append(line)}
-    // A beszélgetés rövid előzménye: a „legyen rövidebb”, „egészítsd ki” típusú
-    // folytatások így értelmezhetők. A szerver csak az utolsó néhány kört kapja.
-    const chatHistory=[];
-    // A chat a képernyő alján marad; összecsukható, hogy hosszú szövegnél se
-    // takarja a szerkesztett mezőt. A magasságát a lap a --chat-height változóban
-    // követi, ezért a mentősáv és a tartalom is fölötte marad.
-    if(chatToggle)chatToggle.addEventListener('click',()=>{
-      const collapsed=hasClass(chatNode,'collapsed');
-      toggleClass(chatNode,'collapsed',!collapsed);
-      chatToggle.textContent=collapsed?'–':'+';
-      chatToggle.setAttribute('aria-expanded',String(collapsed));
-      chatToggle.setAttribute('aria-label',collapsed?'Összecsukás':'Kinyitás');
-      chatToggle.title=collapsed?'Összecsukás':'Kinyitás';
-      setChatHeight();scheduleActiveField();
-    });
-    // A célmező kifejezett kiválasztása: a lista a szerkeszthető mezőket fejezet
-    // szerint csoportosítja, a választás a mezőhöz görget és fókuszál.
-    if(chatTargetSelect)chatTargetSelect.addEventListener('change',()=>{
-      const target=chatTargets.get(chatTargetSelect.value);
-      if(!target){pinnedTarget=null;setActiveTarget(null);return}
-      focusChatTarget(target);
-    });
-    // Gyorsparancsok: a kérés a beviteli mezőbe kerül, a felhasználó még
-    // kiegészítheti, mielőtt elküldi.
-    const quickPrompts=[
-      ['Fogalmazd újra','Fogalmazd újra szakmailag igényesen, a tartalmat megtartva.'],
-      ['Rövidítsd','Rövidítsd a szöveget a lényeg megtartásával.'],
-      ['Javítsd a hibákat','Javítsd a helyesírási, nyelvtani és szakmai pontatlanságokat; a tényadatokat ne változtasd.'],
-      ['Egészítsd ki','Egészítsd ki a fejezetet a rendelkezésre álló tényadatokkal; a hiányzó adat helyére hiányjelölés kerüljön.'],
-      ['Hivatalosabb','Fogalmazd hivatalosabb, tárgyilagos mérnöki stílusban.']
-    ];
-    if(chatQuick)for(const [label,prompt] of quickPrompts){
-      const chip=document.createElement('button');
-      chip.type='button';chip.className='secondary';chip.textContent=label;
-      chip.addEventListener('click',()=>{
-        chatMessage.value=prompt;chatMessage.focus();
-        chatMessage.selectionStart=chatMessage.selectionEnd=chatMessage.value.length;
-      });
-      chatQuick.append(chip);
-    }
-    window.addEventListener('scroll',scheduleActiveField,{passive:true});
-    window.addEventListener('resize',()=>{setChatHeight();scheduleActiveField()});
-    // Kattintásra az a beviteli mező lesz a célpont, amelyikbe a szerkesztő ír.
-    form.addEventListener('focusin',event=>{
-      const target=event&&event.target;
-      if(!target)return;
-      for(const item of chatTargets.values())
-        if(item.input===target){pinnedTarget=item;setActiveTarget(item);return}
-    });
-    if(typeof ResizeObserver==='function'&&chatNode)
-      new ResizeObserver(()=>setChatHeight()).observe(chatNode);
-    chatSend.addEventListener('click',async()=>{
-      const text=chatMessage.value.trim();
-      if(!text){message('Írj be egy mondatot az AI-nak.','error');return}
-      if(!aiReady){message('Az AI nincs beállítva, ezért a chat nem használható.','error');return}
-      const focusKey=activeTargetId();
-      if(!focusKey){message('Válassz célmezőt a chat feletti listából, vagy kattints a szerkeszteni kívánt mezőbe.','error');return}
-      const focusInput=activeTargetInput();
-      // A látható szöveg a kiindulás: ha a mező még üres, de a felület a sablon
-      // alapértékét mutatja (helyőrző), akkor azt alakítja át. Ha nincs sem
-      // érték, sem alapérték, a modell a tényadatokból írja meg a fejezetet.
-      const focusValue=focusInput?String(focusInput.value||focusInput.placeholder||''):'';
-      const focusLabel=activeTargetLabel();
-      const history=chatHistory.slice(-6);
-      chatHistory.push({role:'user',text});
-      logChat(text,true);chatMessage.value='';chatSend.disabled=true;message('Az AI fogalmaz…');
-      try{
-        const result=await rpc('dashboardTechnicalChat',uid,{message:text,focusKey,focusValue,
-          focusLabel,focusHelp:focusLabel,history});
-        chatHistory.push({role:'assistant',text:result.reply||'Javaslat készült.'});
-        if(chatHistory.length>12)chatHistory.splice(0,chatHistory.length-12);
-        logChat(result.reply||'A javaslat elkészült.');
+    // A közös AI-sáv (ai-composer.js): alul rögzített, célmező-választós chat.
+    // A javaslatot a meglévő inlineDraft jeleníti meg a mezőnél.
+    chat=AiComposer.create({root:document.getElementById('chat'),
+      pageLabel:'Műszaki leírás',
+      placeholder:'Írd le, mit szeretnél: pl. „fogalmazd meg a település és az övezet bekezdését”',
+      quickPrompts:[
+        ['Fogalmazd újra','Fogalmazd újra szakmailag igényesen, a tartalmat megtartva.'],
+        ['Rövidítsd','Rövidítsd a szöveget a lényeg megtartásával.'],
+        ['Javítsd a hibákat','Javítsd a helyesírási, nyelvtani és szakmai pontatlanságokat; a tényadatokat ne változtasd.'],
+        ['Egészítsd ki','Egészítsd ki a fejezetet a rendelkezésre álló tényadatokkal; a hiányzó adat helyére hiányjelölés kerüljön.'],
+        ['Hivatalosabb','Fogalmazd hivatalosabb, tárgyilagos mérnöki stílusban.']
+      ],
+      request:async ({instruction,current,label,history})=>{
+        if(!aiReady)throw new Error('Az AI nincs beállítva, ezért a chat nem használható.');
+        const key=chat.activeId();
+        const result=await rpc('dashboardTechnicalChat',uid,{message:instruction,
+          focusKey:key,focusValue:current,focusLabel:label,focusHelp:label,history});
         const sections=result.sections||{};
-        if(Object.keys(sections).length){
-          if(showDraft(sections))
-            message('Az AI javaslata a célmezőnél jelenik meg. Ellenőrizd, majd illeszd be és mentsd.','success');
-        }else if(result.filtered){
-          message('Az AI javaslatát a tartalmi ellenőrzés nem engedte be (kitalált jogszabályi hivatkozás, '+
-            'hiányjelölés vagy hibás célmező). Pontosítsd a kérést.','warning');
-        }else{
-          message('Az AI válaszolt, de nem módosított szöveget. Ha szöveget is szeretnél, pontosítsd a kérést.','info');
-        }
-      }catch(error){message(error.message||String(error),'error')}
-      finally{chatSend.disabled=false}
-    });
-    chatMessage.addEventListener('keydown',event=>{
-      if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();chatSend.click()}
-    });
+        const keys=Object.keys(sections);
+        if(keys.length&&!sections[key])showDraft(sections);
+        return {reply:result.reply,text:sections[key]||'',handled:keys.length>0,
+          filtered:result.filtered};
+      },
+      showSuggestion:({target,text})=>{inlineDraft(text,target)},
+      onStatus:(text,kind)=>message(text,kind)});
+    chat.setRootHidden(true);
+
     autoDraftButton.addEventListener('click',async()=>{
       if(!confirm('A rendszer a projekt tényszerű adataiból megírja a fejezetszövegeket, elmenti a műszaki adatlapra, majd létrehozza vagy frissíti a DRAFT dokumentumot. A hiányzó adat helyén [KIEGÉSZÍTENDŐ: …] jelölés marad. Folytatod?'))return;
       const tab=window.open('about:blank','_blank');

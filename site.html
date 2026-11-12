@@ -12,7 +12,7 @@
     .top{background:#3e3e3e;color:#fff;padding:16px max(20px,calc((100vw - 1600px)/2));display:flex;align-items:center;justify-content:space-between;gap:16px}
     .top img{width:min(190px,44vw);max-height:56px;object-fit:contain;object-position:left center}
     .top nav{display:flex;gap:16px;font-size:13px}.top a{color:#e8e8e8;text-decoration:none}.top a:hover{text-decoration:underline}
-    .shell{max-width:1600px;margin:auto;padding:24px 20px 80px}
+    .shell{max-width:1600px;margin:auto;padding:24px 20px calc(80px + var(--chat-height,0px))}
     h1{font-size:clamp(24px,3vw,34px);font-weight:400;letter-spacing:-.03em;margin:0 0 6px}
     .lead{color:var(--muted);line-height:1.55;margin:0 0 18px;max-width:900px}
     #status{min-height:0}
@@ -91,6 +91,7 @@
       </div>
     </div>
   </main>
+  <section id="chat" hidden aria-label="AI-segítség"></section>
   <script>
     'use strict';
     const statusNode=document.getElementById('status');
@@ -203,9 +204,7 @@
       input.rows=field.multiline?4:2;
       const bar=el('div','field-bar');
       const state=el('span','field-state','');
-      const aiButton=el('button','button secondary small','AI');
-      aiButton.type='button';
-      bar.append(state,aiButton);
+      bar.append(state);
 
       let timer=0,saving=false;
       async function save(){
@@ -225,84 +224,20 @@
         clearTimeout(timer);timer=setTimeout(save,900)});
       input.addEventListener('blur',()=>{clearTimeout(timer);save()});
 
-      const ai=aiBox(page,field,()=>input.value,(value)=>{
-        input.value=value;clearTimeout(timer);save();
-      });
-      ai.hidden=true;
-      aiButton.addEventListener('click',()=>{ai.hidden=!ai.hidden;if(!ai.hidden)
-        ai.querySelector('textarea').focus()});
+      chat.register({id:'page/'+page.id+'/'+field.key,label:field.label||field.key,
+        group:page.title,input,
+        apply:value=>{input.value=value;clearTimeout(timer);save();}});
 
-      wrap.append(label,input,bar,ai);
+      wrap.append(label,input,bar);
       return wrap;
-    }
-
-    function aiBox(page,field,getCurrent,applyValue){
-      const box=el('div','ai-box');
-      const instruction=el('textarea','');
-      instruction.placeholder='Mit fogalmazzon meg az AI? Például: „Legyen rövidebb és hivatalosabb.”';
-      instruction.setAttribute('aria-label','AI utasítás');
-      const actions=el('div','ai-actions');
-      const send=el('button','button small','Küldés');send.type='button';
-      const checks=el('div','ai-checks');
-      const overwriteLabel=el('label','');
-      const overwrite=el('input');overwrite.type='checkbox';overwrite.checked=true;
-      overwriteLabel.append(overwrite,document.createTextNode(' Felülírás'));
-      const appendLabel=el('label','');
-      const append=el('input');append.type='checkbox';
-      appendLabel.append(append,document.createTextNode(' Kiegészítés'));
-      checks.append(overwriteLabel,appendLabel);
-      actions.append(send);
-      const reply=el('p','ai-reply','');
-      const suggestion=el('textarea','ai-suggestion');
-      suggestion.placeholder='Az AI javaslata itt jelenik meg.';
-      suggestion.setAttribute('aria-label','AI javaslat');
-      const applyRow=el('div','ai-actions');
-      const apply=el('button','button small','Beillesztés');apply.type='button';
-      const cancel=el('button','button secondary small','Mégse');cancel.type='button';
-      applyRow.append(apply,cancel);
-      suggestion.hidden=true;applyRow.hidden=true;
-      box.append(instruction,actions,checks,reply,suggestion,applyRow);
-
-      const history=[];
-      overwrite.addEventListener('change',()=>{if(overwrite.checked)append.checked=false});
-      append.addEventListener('change',()=>{if(append.checked)overwrite.checked=false});
-      cancel.addEventListener('click',()=>{box.hidden=true;suggestion.hidden=true;
-        applyRow.hidden=true;reply.textContent=''});
-
-      send.addEventListener('click',async()=>{
-        const text=instruction.value.trim();
-        if(!text){reply.textContent='Írd le, mit fogalmazzon meg az AI.';return}
-        send.disabled=true;reply.textContent='Az AI fogalmaz…';
-        try{
-          const result=await rpc('webAiText',{instruction:text,current:getCurrent(),
-            label:field.label||field.key,page:page.title,history});
-          history.push({role:'user',text});
-          history.push({role:'assistant',text:result.reply||'Javaslat készült.'});
-          reply.textContent=result.reply||'Az AI elkészítette a javaslatot.';
-          suggestion.value=result.text;
-          suggestion.hidden=false;applyRow.hidden=false;
-          if(!append.checked&&!overwrite.checked)overwrite.checked=true;
-        }catch(error){reply.textContent=error.message||String(error)}
-        finally{send.disabled=false}
-      });
-
-      apply.addEventListener('click',()=>{
-        const value=suggestion.value.trim();
-        if(!value){reply.textContent='A javaslat üres.';return}
-        const current=String(getCurrent()||'').trim();
-        const next=append.checked&&current?current+'\n\n'+value:value;
-        applyValue(next);
-        suggestion.hidden=true;applyRow.hidden=true;
-        reply.textContent='Beillesztve. Ellenőrizd, majd kattints a mezőn kívülre a mentéshez.';
-      });
-      return box;
     }
 
     function renderPage(page){
       panel.replaceChildren();
+      chat.clear();
       const head=el('h2','',page.title);
       panel.append(head);
-      panel.append(el('p','muted','A módosítás elhagyáskor automatikusan mentődik. Az AI javaslatát a „Beillesztés” viszi a mezőbe.'));
+      panel.append(el('p','muted','A módosítás elhagyáskor automatikusan mentődik. Az AI-sáv alulról nyílik: válaszd ki a célmezőt, vagy kattints a mezőbe.'));
       for(const group of page.groups){
         if(group.title)panel.append(el('h2','',group.title));
         for(const field of group.fields)panel.append(fieldBlock(page,field));
@@ -311,6 +246,7 @@
 
     function renderProjects(){
       panel.replaceChildren();
+      chat.clear();
       const head=el('h2','','Projektek');
       panel.append(head);
       const toolbar=el('div','toolbar');
@@ -370,6 +306,7 @@
     function renderProject(project){
       if(!project){view='projects';return renderProjects()}
       panel.replaceChildren();
+      chat.clear();
       const head=el('h2','',project.title||project.id);
       panel.append(head);
       const back=el('button','button secondary small','← Vissza a listához');back.type='button';
@@ -384,6 +321,10 @@
         input.value=project[key]??'';
         if(!multiline){input.rows=1}
         inputs[key]=input;
+        if(['title','tagline','description','credits'].includes(key))
+          chat.register({id:'project/'+project.id+'/'+key,label,
+            group:'Projekt: '+(project.title||project.id),input,
+            apply:value=>{input.value=value;}});
         wrap.append(lab,input);
         panel.append(wrap);
       }
@@ -483,6 +424,11 @@
       }catch(error){status(error.message||String(error),'error')}
     }
 
+    const chat=AiComposer.create({root:document.getElementById('chat'),pageLabel:'Weboldal',
+      request:ctx=>rpc('webAiText',{instruction:ctx.instruction,current:ctx.current,
+        label:ctx.label,page:ctx.page,history:ctx.history}),
+      onStatus:(text,kind)=>status(text,kind)});
+    chat.setRootHidden(false);
     document.getElementById('publishButton').addEventListener('click',doPublish);
     load();
   </script>

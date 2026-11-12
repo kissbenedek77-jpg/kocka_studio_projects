@@ -105,6 +105,7 @@ const frontendAssets = new Map([
   ['/assets/ks-shell.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','ks-shell.js')]],
   ['/assets/message-center.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','message-center.js')]],
   ['/assets/app-menu.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','app-menu.js')]],
+  ['/assets/ai-composer.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','ai-composer.js')]],
   ['/assets/marketing-auto.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','marketing-auto.js')]],
   ['/assets/pwa-register.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','pwa-register.js')]],
   ['/manifest.webmanifest', ['application/manifest+json; charset=utf-8',path.join(__dirname,'..','public','manifest.webmanifest')]],
@@ -135,17 +136,23 @@ function nodePage(html,page) {
     .replace('</style>','</style>\n  <link rel="stylesheet" href="/assets/ks-design.css">')
     .replace('<body>','<body class="ks-app ks-page-'+page+'" data-runtime="node" data-ks-page="'+page+'">')
     .replace('</body>','<script src="/assets/bootstrap.bundle.min.js"></script>\n<script src="/assets/ks-shell.js"></script>\n</body>');
-  if(['login','dashboard','marketing','technical','site'].includes(page))result=result
-    .replace('</head>',(['dashboard','marketing','technical','site'].includes(page)
-      ?'<script src="/assets/app-menu.js"></script>\n<script src="/assets/message-center.js"></script>\n':'')+'</head>')
-    .replace('</head>','<link rel="manifest" href="/manifest.webmanifest?v=3">\n'
-      +'<link rel="icon" href="/assets/kocka-icon.svg?v=4" type="image/svg+xml">\n'
-      +'<link rel="apple-touch-icon" href="/assets/kocka-icon-180.png?v=3">\n'
-      +'<meta name="theme-color" content="#3e3e3e">\n'
-      +'<meta name="apple-mobile-web-app-capable" content="yes">\n'
-      +'<meta name="apple-mobile-web-app-status-bar-style" content="default">\n'
-      +'<meta name="apple-mobile-web-app-title" content="Kocka Projektek">\n</head>')
-    .replace('</body>','<script src="/assets/pwa-register.js"></script>\n</body>');
+  if(['login','dashboard','marketing','technical','site'].includes(page)) {
+    const ownerExtras = ['dashboard','marketing','technical','site'].includes(page)
+      ? '<script src="/assets/app-menu.js"></script>\n'
+        +'<script src="/assets/message-center.js"></script>\n'
+        +(['technical','site'].includes(page) ? '<script src="/assets/ai-composer.js"></script>\n' : '')
+      : '';
+    result=result
+      .replace('</head>',ownerExtras+'</head>')
+      .replace('</head>','<link rel="manifest" href="/manifest.webmanifest?v=3">\n'
+        +'<link rel="icon" href="/assets/kocka-icon.svg?v=4" type="image/svg+xml">\n'
+        +'<link rel="apple-touch-icon" href="/assets/kocka-icon-180.png?v=3">\n'
+        +'<meta name="theme-color" content="#3e3e3e">\n'
+        +'<meta name="apple-mobile-web-app-capable" content="yes">\n'
+        +'<meta name="apple-mobile-web-app-status-bar-style" content="default">\n'
+        +'<meta name="apple-mobile-web-app-title" content="Kocka Projektek">\n</head>')
+      .replace('</body>','<script src="/assets/pwa-register.js"></script>\n</body>');
+  }
   return result;
 }
 let publicFormAuth = null;

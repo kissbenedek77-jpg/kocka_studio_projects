@@ -108,10 +108,13 @@ function createContext(payload, calls) {
     createElement:tag => new Node(tag),
     createTextNode:text => ({textContent:String(text)}),
     querySelectorAll:() => [],
+    head:new Node('head'),
+    addEventListener(type,handler){ if (type === 'focusin') this.focusinHandler = handler; },
     documentElement:{style:{values:{},setProperty(name,value){this.values[name] = value}}}
   };
   const window = {
     open:() => null, innerHeight:900,
+    document,
     addEventListener(type,handler){ if (type === 'scroll') this.scrollHandler = handler; }
   };
   const context = vm.createContext({
@@ -127,8 +130,18 @@ function createContext(payload, calls) {
     requestAnimationFrame:fn => fn(), setTimeout, clearTimeout, console,
     URLSearchParams, confirm:() => true
   });
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'..','public','ai-composer.js'),'utf8'),context);
+  context.AiComposer = window.AiComposer;
   vm.runInContext(script,context);
-  return {context,ids,window};
+  // A közös AI-sáv a saját elemeit hozza létre; ezeket az id szerint
+  // regisztráljuk, hogy a tesztek a megszokott módon érhessék el őket.
+  const register = node => {
+    if (!node || typeof node !== 'object') return;
+    if (node.id) ids.set(node.id,node);
+    for (const child of node.children || []) register(child);
+  };
+  register(ids.get('chat'));
+  return {context,ids,window,document};
 }
 
 test('A chat a lap alján rögzítve jelenik meg, a látható mezőt pedig finom szín jelöli',() => {
@@ -157,7 +170,7 @@ test('A chat a képernyőn látható első mezőre vonatkozik',async () => {
     chatKeys:['TERV_TARGYA','TERVEZESI_PROGRAM:c'],
     valueRows:[],placeholderValues:{},editablePlaceholders:[],missingFields:[]
   };
-  const {ids,window} = createContext(payload,calls);
+  const {ids,window,document:documentObj} = createContext(payload,calls);
   await new Promise(resolve => setTimeout(resolve,20));
   const groups = ids.get('groups');
   const all = [];
@@ -182,7 +195,7 @@ test('A chat a képernyőn látható első mezőre vonatkozik',async () => {
   assert.doesNotMatch(second.className,/active-input/);
 
   // Kattintással (fókusszal) viszont átkerül a célpont a másik mezőre.
-  ids.get('form').focusinHandler({target:second});
+  documentObj.focusinHandler({target:second});
   assert.match(second.className,/active-input/,'A kiválasztott mező lesz a célpont.');
   assert.doesNotMatch(first.className,/active-input/);
   assert.match(ids.get('chatTarget').textContent,/Tervezési program c\)/,
@@ -193,7 +206,7 @@ test('A chat a képernyőn látható első mezőre vonatkozik',async () => {
   second.rect = {top:950,height:60,bottom:1010,width:600};
   window.scrollHandler();
   assert.match(second.className,/active-input/,'A görgetés nem veszi el a célpontot.');
-  ids.get('form').focusinHandler({target:second});
+  documentObj.focusinHandler({target:second});
 
   // A mező még nincs mentve: a felület a sablon alapértékét mutatja helyőrzőként,
   // a chatnek ezt a látható szöveget kell átadnia.

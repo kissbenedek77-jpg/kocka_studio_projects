@@ -13,14 +13,18 @@ test('A weboldal-szerkesztő oldal elkészül', () => {
   assert.match(html,/id="panel"/);
 });
 
-test('A szövegmezők AI-segítséget kapnak felülírással és kiegészítéssel', () => {
-  assert.match(html,/Felülírás/);
-  assert.match(html,/Kiegészítés/);
+test('A szövegmezők a közös AI-sávot használják', () => {
+  assert.match(html,/AiComposer\.create/);
+  assert.match(html,/chat\.register/);
   assert.match(html,/'webAiText'/);
-  assert.match(html,/overwrite\.checked/);
-  assert.match(html,/append\.checked/);
-  assert.match(html,/current\+'\\n\\n'\+value/,
-    'kiegészítésnél a meglévő szöveg után fűzi a javaslatot');
+  const composer = fs.readFileSync(path.join(root,'public','ai-composer.js'),'utf8');
+  assert.match(composer,/Felülírás/);
+  assert.match(composer,/Kiegészítés/);
+  assert.match(composer,/overwrite\.checked/);
+  assert.match(composer,/append\.checked/);
+  assert.match(composer,/position:fixed/,'a sáv alul rögzített');
+  const technical = fs.readFileSync(path.join(root,'technical.html'),'utf8');
+  assert.match(technical,/AiComposer\.create/,'a műszaki leírás is a közös modult használja');
 });
 
 test('A fotók feltölthetők, törölhetők és sorrendezhetők', () => {
@@ -60,5 +64,7 @@ test('A szerver kiszolgálja és védi az oldalt', () => {
   assert.match(server,/url\.pathname === '\/api\/web\/content'/);
   assert.match(server,/'\/media\/web\/'/);
   assert.match(server,/'\/assets\/message-center\.js'/);
+  assert.match(server,/'\/assets\/ai-composer\.js'/);
+  assert.match(server,/<script src="\/assets\/ai-composer\.js"><\/script>/);
   assert.match(server,/loginLocation\('\/site'/);
 });
