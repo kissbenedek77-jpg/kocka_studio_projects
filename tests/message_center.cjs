@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -8,8 +8,8 @@ const {createMessageStore, createBrowserApi, normalizeLevel} = require('../publi
 const root = path.join(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 
-// Kis DOM-utánzat az üzenetközpont felületének füsttesztjéhez. Csak azt tudja,
-// amit a message-center.js használ; a valódi böngészőt nem helyettesíti.
+// Kis DOM-utĂˇnzat az ĂĽzenetkĂ¶zpont felĂĽletĂ©nek fĂĽsttesztjĂ©hez. Csak azt tudja,
+// amit a message-center.js hasznĂˇl; a valĂłdi bĂ¶ngĂ©szĹ‘t nem helyettesĂ­ti.
 class FakeElement {
   constructor(tag) {
     this.tagName = String(tag || 'div').toLowerCase();
@@ -81,7 +81,7 @@ function collect(element, predicate, found = []) {
   return found;
 }
 
-test('Az üzenetközpont szintnevei egységesek', () => {
+test('Az ĂĽzenetkĂ¶zpont szintnevei egysĂ©gesek', () => {
   assert.equal(normalizeLevel(''), 'info');
   assert.equal(normalizeLevel('success'), 'success');
   assert.equal(normalizeLevel('warning'), 'warning');
@@ -92,29 +92,29 @@ test('Az üzenetközpont szintnevei egységesek', () => {
   assert.equal(normalizeLevel('ismeretlen'), 'info');
 });
 
-test('A kulcsolt üzenet helyben frissül, nem gyűlik', () => {
+test('A kulcsolt ĂĽzenet helyben frissĂĽl, nem gyĹ±lik', () => {
   const store = createMessageStore();
-  store.notice('Mentés…', '', {key: 'status'});
-  store.notice('Mentés…', '', {key: 'status'});
+  store.notice('MentĂ©sâ€¦', '', {key: 'status'});
+  store.notice('MentĂ©sâ€¦', '', {key: 'status'});
   let items = store.list();
   assert.equal(items.length, 1);
   assert.equal(items[0].count, 2);
-  store.notice('A műszaki leírás mentve.', 'success', {key: 'status'});
+  store.notice('A mĹ±szaki leĂ­rĂˇs mentve.', 'success', {key: 'status'});
   items = store.list();
   assert.equal(items.length, 1);
-  assert.equal(items[0].text, 'A műszaki leírás mentve.');
+  assert.equal(items[0].text, 'A mĹ±szaki leĂ­rĂˇs mentve.');
   assert.equal(items[0].level, 'success');
   assert.equal(items[0].count, 1);
-  // Üres szöveg a kulcsolt üzenet törlése.
+  // Ăśres szĂ¶veg a kulcsolt ĂĽzenet tĂ¶rlĂ©se.
   store.notice('', '', {key: 'status'});
   assert.equal(store.list().length, 0);
 });
 
-test('Az új futtatás eltünteti a régi üzeneteket, a rögzített marad', () => {
+test('Az Ăşj futtatĂˇs eltĂĽnteti a rĂ©gi ĂĽzeneteket, a rĂ¶gzĂ­tett marad', () => {
   const store = createMessageStore();
-  store.notice('Régi hiba', 'error');
-  store.notice('Régi figyelmeztetés', 'warning');
-  store.notice('Google-hozzáférés lejárt', 'error', {key: 'google', sticky: true});
+  store.notice('RĂ©gi hiba', 'error');
+  store.notice('RĂ©gi figyelmeztetĂ©s', 'warning');
+  store.notice('Google-hozzĂˇfĂ©rĂ©s lejĂˇrt', 'error', {key: 'google', sticky: true});
   store.beginRun();
   const items = store.list();
   assert.equal(items.length, 1);
@@ -122,29 +122,29 @@ test('Az új futtatás eltünteti a régi üzeneteket, a rögzített marad', () 
   assert.equal(items[0].sticky, true);
 });
 
-test('A sorok egyenként törölhetők és a lista kiüríthető', () => {
+test('A sorok egyenkĂ©nt tĂ¶rĂ¶lhetĹ‘k Ă©s a lista kiĂĽrĂ­thetĹ‘', () => {
   const store = createMessageStore();
-  const first = store.notice('Első', 'info');
-  store.notice('Második', 'warning');
+  const first = store.notice('ElsĹ‘', 'info');
+  store.notice('MĂˇsodik', 'warning');
   assert.equal(store.list().length, 2);
   assert.equal(store.remove(first.id), true);
   assert.equal(store.list().length, 1);
-  assert.equal(store.list()[0].text, 'Második');
+  assert.equal(store.list()[0].text, 'MĂˇsodik');
   store.clear();
   assert.equal(store.list().length, 0);
   assert.equal(store.remove('nincs-ilyen'), false);
 });
 
-test('A lista legfeljebb a beállított számú üzenetet tartja meg', () => {
+test('A lista legfeljebb a beĂˇllĂ­tott szĂˇmĂş ĂĽzenetet tartja meg', () => {
   const store = createMessageStore({max: 3});
-  for (let index = 0; index < 5; index += 1) store.notice('Üzenet ' + index, 'info');
+  for (let index = 0; index < 5; index += 1) store.notice('Ăśzenet ' + index, 'info');
   const items = store.list();
   assert.equal(items.length, 3);
-  assert.equal(items[0].text, 'Üzenet 2');
-  assert.equal(items[2].text, 'Üzenet 4');
+  assert.equal(items[0].text, 'Ăśzenet 2');
+  assert.equal(items[2].text, 'Ăśzenet 4');
 });
 
-test('Az azonos szövegű, egymást követő üzenet nem duplikálódik', () => {
+test('Az azonos szĂ¶vegĹ±, egymĂˇst kĂ¶vetĹ‘ ĂĽzenet nem duplikĂˇlĂłdik', () => {
   const store = createMessageStore();
   store.notice('Ugyanaz', 'info');
   store.notice('Ugyanaz', 'info');
@@ -153,31 +153,31 @@ test('Az azonos szövegű, egymást követő üzenet nem duplikálódik', () => 
   assert.equal(items[0].count, 2);
 });
 
-test('A felület kirajzolja az üzeneteket, és a törlés frissíti a számlálót', () => {
+test('A felĂĽlet kirajzolja az ĂĽzeneteket, Ă©s a tĂ¶rlĂ©s frissĂ­ti a szĂˇmlĂˇlĂłt', () => {
   const doc = fakeDocument();
   const api = createBrowserApi({document: doc, sessionStorage: null});
   const bar = collect(doc.body, node => node.className === 'ks-msgbar')[0];
-  assert.ok(bar, 'az alsó sáv elkészül');
-  assert.equal(bar.hidden, true, 'üzenet nélkül rejtett');
+  assert.ok(bar, 'az alsĂł sĂˇv elkĂ©szĂĽl');
+  assert.equal(bar.hidden, true, 'ĂĽzenet nĂ©lkĂĽl rejtett');
 
-  api.notice('Valami hiba történt.', 'error');
+  api.notice('Valami hiba tĂ¶rtĂ©nt.', 'error');
   assert.equal(bar.hidden, false);
   const row = collect(bar, node => node.className.indexOf('ks-msg-item') === 0)[0];
-  assert.ok(row, 'az üzenet sora megjelenik');
+  assert.ok(row, 'az ĂĽzenet sora megjelenik');
   assert.match(row.className, /error/);
 
   const removeButton = collect(row, node => node.className === 'ks-msg-remove')[0];
-  assert.ok(removeButton, 'a sor törlőgombot kap');
+  assert.ok(removeButton, 'a sor tĂ¶rlĹ‘gombot kap');
   removeButton.handlers.click();
   assert.equal(api.list().length, 0);
   assert.equal(bar.hidden, true);
 });
 
-test('Az alsó sáv kinyitható és összecsukható', () => {
+test('Az alsĂł sĂˇv kinyithatĂł Ă©s Ă¶sszecsukhatĂł', () => {
   const doc = fakeDocument();
   const api = createBrowserApi({document: doc, sessionStorage: null});
   const bar = collect(doc.body, node => node.className === 'ks-msgbar')[0];
-  api.notice('Egy üzenet.','info');
+  api.notice('Egy ĂĽzenet.','info');
   const head = collect(bar, node => node.className === 'ks-msgbar-head')[0];
   head.handlers.click();
   assert.equal(bar.dataset.state, 'open');
@@ -189,126 +189,126 @@ test('Az alsó sáv kinyitható és összecsukható', () => {
   assert.equal(bar.dataset.state, 'collapsed');
 });
 
-test('Új hiba esetén a sáv láthatóvá válik, piros számlálóval', () => {
+test('Ăšj hiba esetĂ©n a sĂˇv lĂˇthatĂłvĂˇ vĂˇlik, piros szĂˇmlĂˇlĂłval', () => {
   const doc = fakeDocument();
   const api = createBrowserApi({document: doc, sessionStorage: null});
   const bar = collect(doc.body, node => node.className === 'ks-msgbar')[0];
-  api.notice('Csak figyelmeztetés.', 'warning');
-  assert.equal(bar.hidden, false, 'a figyelmeztetés is megjeleníti a sávot');
+  api.notice('Csak figyelmeztetĂ©s.', 'warning');
+  assert.equal(bar.hidden, false, 'a figyelmeztetĂ©s is megjelenĂ­ti a sĂˇvot');
   const count = collect(bar, node => String(node.className || '').startsWith('ks-msgbar-count'))[0];
   assert.match(count.className, /warning/);
-  api.notice('Hiba történt.', 'error');
+  api.notice('Hiba tĂ¶rtĂ©nt.', 'error');
   assert.match(count.className, /error/);
 });
 
-test('A dashboardon alsó sáv jelenik meg a jobb széli fül helyett', () => {
+test('A dashboardon alsĂł sĂˇv jelenik meg a jobb szĂ©li fĂĽl helyett', () => {
   const doc = fakeDocument('dashboard');
   const api = createBrowserApi({document: doc, sessionStorage: null});
   const bar = collect(doc.body, node => node.className === 'ks-msgbar')[0];
   const launcher = collect(doc.body, node => node.className === 'ks-msg-launcher');
-  assert.ok(bar, 'az alsó üzenetsáv elkészül');
-  assert.equal(launcher.length, 0, 'a jobb széli fül megszűnik a dashboardon');
-  assert.equal(bar.hidden, true, 'üzenet nélkül a sáv rejtett');
+  assert.ok(bar, 'az alsĂł ĂĽzenetsĂˇv elkĂ©szĂĽl');
+  assert.equal(launcher.length, 0, 'a jobb szĂ©li fĂĽl megszĹ±nik a dashboardon');
+  assert.equal(bar.hidden, true, 'ĂĽzenet nĂ©lkĂĽl a sĂˇv rejtett');
   assert.equal(doc.documentElement.style.values['--ks-msgbar-height'], '0px',
-    'üzenet nélkül nincs alsó eltolás');
+    'ĂĽzenet nĂ©lkĂĽl nincs alsĂł eltolĂˇs');
 
-  api.notice('Hiba történt.', 'error');
-  assert.equal(bar.hidden, false, 'aktív állapotban a sáv látszik');
-  assert.equal(bar.dataset.state, 'collapsed', 'alapból összecsukott');
+  api.notice('Hiba tĂ¶rtĂ©nt.', 'error');
+  assert.equal(bar.hidden, false, 'aktĂ­v Ăˇllapotban a sĂˇv lĂˇtszik');
+  assert.equal(bar.dataset.state, 'collapsed', 'alapbĂłl Ă¶sszecsukott');
   assert.equal(doc.documentElement.style.values['--ks-msgbar-height'], '46px',
-    'a látható sáv fölé kerül az alsó navigáció');
+    'a lĂˇthatĂł sĂˇv fĂ¶lĂ© kerĂĽl az alsĂł navigĂˇciĂł');
 
   const head = collect(bar, node => node.className === 'ks-msgbar-head')[0];
   head.handlers.click();
-  assert.equal(bar.dataset.state, 'open', 'kattintásra kinyílik');
+  assert.equal(bar.dataset.state, 'open', 'kattintĂˇsra kinyĂ­lik');
   assert.equal(doc.documentElement.style.values['--ks-msgbar-height'], '46px',
-    'kinyitva is a helyén marad, csak felfelé lóg');
+    'kinyitva is a helyĂ©n marad, csak felfelĂ© lĂłg');
 
   head.handlers.click();
-  assert.equal(bar.dataset.state, 'collapsed', 'újabb kattintásra összecsukódik');
+  assert.equal(bar.dataset.state, 'collapsed', 'Ăşjabb kattintĂˇsra Ă¶sszecsukĂłdik');
 
   api.clear();
-  assert.equal(bar.hidden, true, 'kiürítés után a sáv eltűnik');
+  assert.equal(bar.hidden, true, 'kiĂĽrĂ­tĂ©s utĂˇn a sĂˇv eltĹ±nik');
   assert.equal(doc.documentElement.style.values['--ks-msgbar-height'], '0px');
 });
 
-test('A dashboard alsó sávja a szervernaplót is mutatja', () => {
+test('A dashboard alsĂł sĂˇvja a szervernaplĂłt is mutatja', () => {
   const doc = fakeDocument('dashboard');
   const api = createBrowserApi({document: doc, sessionStorage: null});
   const bar = collect(doc.body, node => node.className === 'ks-msgbar')[0];
   assert.equal(bar.hidden, true);
 
   api.appendLog([
-    {id:1,time:Date.now(),level:'error',text:'Kérés hiba: teszt'},
+    {id:1,time:Date.now(),level:'error',text:'KĂ©rĂ©s hiba: teszt'},
     {id:2,time:Date.now(),level:'info',text:'Kocka dashboard listening on 3000'}
   ]);
-  assert.equal(bar.hidden, false, 'naplóbejegyzés is megjeleníti a sávot');
+  assert.equal(bar.hidden, false, 'naplĂłbejegyzĂ©s is megjelenĂ­ti a sĂˇvot');
 
   const logTab = collect(bar, node =>
     node.className === 'ks-msgbar-tab' && node.dataset && node.dataset.tab === 'log')[0];
-  assert.ok(logTab, 'van Napló fül');
+  assert.ok(logTab, 'van NaplĂł fĂĽl');
   logTab.handlers.click();
   assert.equal(bar.dataset.tab, 'log');
   assert.ok(collect(bar, node => String(node.textContent || '').includes('listening')).length,
-    'a napló szövege látszik');
+    'a naplĂł szĂ¶vege lĂˇtszik');
   const logRows = collect(bar, node => String(node.className || '').includes('ks-msg-item-log'));
-  assert.equal(logRows.length, 2, 'minden naplóbejegyzés egy sor');
+  assert.equal(logRows.length, 2, 'minden naplĂłbejegyzĂ©s egy sor');
 
-  // Ugyanazokat az id-ket nem tesszük be még egyszer.
+  // Ugyanazokat az id-ket nem tesszĂĽk be mĂ©g egyszer.
   api.appendLog([
-    {id:1,time:Date.now(),level:'error',text:'Kérés hiba: teszt'},
+    {id:1,time:Date.now(),level:'error',text:'KĂ©rĂ©s hiba: teszt'},
     {id:2,time:Date.now(),level:'info',text:'Kocka dashboard listening on 3000'}
   ]);
   assert.equal(
     collect(bar, node => String(node.className || '').includes('ks-msg-item-log')).length, 2,
-    'a napló nem duplikálódik');
+    'a naplĂł nem duplikĂˇlĂłdik');
 
   api.clear();
-  assert.equal(bar.hidden, true, 'a napló is törölhető');
+  assert.equal(bar.hidden, true, 'a naplĂł is tĂ¶rĂ¶lhetĹ‘');
 });
 
-test('A dashboard alsó sávja a középső oszlop pozíciójához igazodik', () => {
+test('A dashboard alsĂł sĂˇvja a kĂ¶zĂ©psĹ‘ oszlop pozĂ­ciĂłjĂˇhoz igazodik', () => {
   const doc = fakeDocument('dashboard');
   const workspace = new FakeElement('div');
   workspace.getBoundingClientRect = () => ({left: 242, top: 0, width: 700, height: 100, right: 942, bottom: 100});
   doc.querySelector = selector => selector === '.workspace-main' ? workspace : null;
   const api = createBrowserApi({document: doc, sessionStorage: null});
   const bar = collect(doc.body, node => node.className === 'ks-msgbar')[0];
-  api.notice('Valami történt.', 'info');
-  assert.equal(bar.style.left, '242px', 'a bal szél a munkaterület bal széléhez igazodik');
-  assert.equal(bar.style.width, '700px', 'a szélesség a munkaterület szélessége');
-  assert.equal(bar.style.transform, 'none', 'nincs középre igazítás');
+  api.notice('Valami tĂ¶rtĂ©nt.', 'info');
+  assert.equal(bar.style.left, '242px', 'a bal szĂ©l a munkaterĂĽlet bal szĂ©lĂ©hez igazodik');
+  assert.equal(bar.style.width, '700px', 'a szĂ©lessĂ©g a munkaterĂĽlet szĂ©lessĂ©ge');
+  assert.equal(bar.style.transform, 'none', 'nincs kĂ¶zĂ©pre igazĂ­tĂˇs');
 
-  // Ha nincs munkaterület (nincs kiválasztott projekt), a CSS középre igazító
-  // tartaléka érvényes.
+  // Ha nincs munkaterĂĽlet (nincs kivĂˇlasztott projekt), a CSS kĂ¶zĂ©pre igazĂ­tĂł
+  // tartalĂ©ka Ă©rvĂ©nyes.
   workspace.getBoundingClientRect = () => ({left: 0, top: 0, width: 0, height: 0});
-  api.notice('Újabb üzenet.', 'info');
+  api.notice('Ăšjabb ĂĽzenet.', 'info');
   assert.equal(bar.style.left, '');
   assert.equal(bar.style.width, '');
   assert.equal(bar.style.transform, '');
 });
 
-test('A dashboard felső sticky elemeit nem bántja a sáv', () => {
-  const css = read('public/ks-design.css');
+test('A dashboard felsĹ‘ sticky elemeit nem bĂˇntja a sĂˇv', () => {
+  const css = read('public/theme/ks-theme.css');
   assert.match(css, /\.project-select-sticky\{position:sticky;top:0;/,
-    'a projektválasztó változatlanul a lap tetején ragad');
+    'a projektvĂˇlasztĂł vĂˇltozatlanul a lap tetejĂ©n ragad');
   assert.match(css, /\.timeline-body\{position:sticky;top:56px;/,
-    'az idővonal változatlanul a projektválasztó alatt ragad');
+    'az idĹ‘vonal vĂˇltozatlanul a projektvĂˇlasztĂł alatt ragad');
   const module = read('public/message-center.js');
   assert.match(module, /\.foot-nav\{bottom:var\(--ks-msgbar-height,0px\)\}/,
-    'csak az alsó navigáció kerül a sáv fölé');
+    'csak az alsĂł navigĂˇciĂł kerĂĽl a sĂˇv fĂ¶lĂ©');
 });
 
-test('A három felület a közös értesítéskezelőre dolgozik', () => {
+test('A hĂˇrom felĂĽlet a kĂ¶zĂ¶s Ă©rtesĂ­tĂ©skezelĹ‘re dolgozik', () => {
   for (const file of ['dashboard_v2.html', 'technical.html', 'public/marketing.html', 'site.html'])
-    assert.match(read(file), /Notify\.create\(/, file + ': a közös értesítéskezelő hiányzik');
+    assert.match(read(file), /Notify\.create\(/, file + ': a kĂ¶zĂ¶s Ă©rtesĂ­tĂ©skezelĹ‘ hiĂˇnyzik');
   assert.match(read('dashboard_v2.html'), /notify\.beginRun\(/,
-    'a dashboard új műveletnél törli a régi üzeneteket');
+    'a dashboard Ăşj mĹ±veletnĂ©l tĂ¶rli a rĂ©gi ĂĽzeneteket');
   assert.match(read('technical.html'), /notify\.beginRun\(/,
-    'a műszaki oldal új futtatásnál törli a régi üzeneteket');
+    'a mĹ±szaki oldal Ăşj futtatĂˇsnĂˇl tĂ¶rli a rĂ©gi ĂĽzeneteket');
 });
 
-test('A szerver kiszolgálja és betölti az üzenetközpontot', () => {
+test('A szerver kiszolgĂˇlja Ă©s betĂ¶lti az ĂĽzenetkĂ¶zpontot', () => {
   const server = read('server/index.cjs');
   assert.match(server, /'\/assets\/message-center\.js'/);
   assert.match(server, /<script src="\/assets\/message-center\.js"><\/script>/);

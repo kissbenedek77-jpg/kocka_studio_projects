@@ -34,10 +34,14 @@ test('Node szerver: health elérhető, dashboard belépést kér, RPC nem nyilv�
     const health = await fetch(base + '/health');
     assert.equal(health.status, 200);
     assert.deepEqual(await health.json(), {ok:true});
-    const design = await fetch(base + '/assets/ks-design.css');
-    assert.equal(design.status, 200);
-    assert.match(design.headers.get('content-type'), /text\/css/);
-    assert.match(await design.text(), /--ks-primary:#77c59e/);
+    const themeCss = await fetch(base + '/assets/theme/ks-theme.css');
+    assert.equal(themeCss.status, 200);
+    assert.match(themeCss.headers.get('content-type'), /text\/css/);
+    const themeText = await themeCss.text();
+    assert.match(themeText, /--ks-primary:#77c59e/);
+    assert.match(themeText, /--ks-gold/);
+    const removedDesign = await fetch(base + '/assets/ks-design.css');
+    assert.equal(removedDesign.status, 404,'a külön ks-design.css megszűnt');
     const fontAwesomeCss=await fetch(base+'/assets/fontawesome/css/all.min.css');
     assert.equal(fontAwesomeCss.status,200);
     assert.match(fontAwesomeCss.headers.get('content-type'),/text\/css/);

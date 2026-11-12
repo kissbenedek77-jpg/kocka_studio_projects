@@ -1,4 +1,4 @@
-@font-face{font-family:"Source Sans Pro";font-style:normal;font-weight:300;src:url('/assets/fonts/source-sans-pro-latin-300-normal.woff2') format('woff2');font-display:swap}
+﻿@font-face{font-family:"Source Sans Pro";font-style:normal;font-weight:300;src:url('/assets/fonts/source-sans-pro-latin-300-normal.woff2') format('woff2');font-display:swap}
 @font-face{font-family:"Source Sans Pro";font-style:normal;font-weight:400;src:url('/assets/fonts/source-sans-pro-latin-400-normal.woff2') format('woff2');font-display:swap}
 @font-face{font-family:"Source Sans Pro";font-style:normal;font-weight:600;src:url('/assets/fonts/source-sans-pro-latin-600-normal.woff2') format('woff2');font-display:swap}
 @font-face{font-family:"Source Sans Pro";font-style:normal;font-weight:700;src:url('/assets/fonts/source-sans-pro-latin-700-normal.woff2') format('woff2');font-display:swap}
@@ -50,7 +50,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=file]):focus,select:focus
   border-color:var(--ks-primary);outline:2px solid rgb(var(--ks-primary-rgb) / 25%);outline-offset:1px;box-shadow:none}
 input[readonly]{background:var(--ks-surface-secondary)}
 
-/* Node-oldali közös komponensek; a meglévő funkcionális osztályokat is lefedik. */
+/* Node-oldali kĂ¶zĂ¶s komponensek; a meglĂ©vĹ‘ funkcionĂˇlis osztĂˇlyokat is lefedik. */
 .ks-card,.panel,.side-panel,.stat,.timeline,.archive,.empty,section.ks-card{
   background:var(--ks-surface);border:1px solid var(--ks-border);border-radius:var(--ks-radius-md);box-shadow:var(--ks-shadow-sm)}
 .ks-button,.button,.link-button,button[type=submit],.wizard-next,.wizard-back,.new-client-button{
@@ -85,7 +85,7 @@ body:not([data-runtime=node]) .ks-owner-logout{display:none}
 .marketing-nav{color:#e8e8e8;font-size:13px;text-decoration:none;border-bottom:1px solid var(--ks-primary)}
 .marketing-nav:hover{color:var(--ks-primary)}
 body:not([data-runtime=node]) .marketing-nav{display:none}
-/* Közös felső menü a tulajdonosi oldalakon (dashboard, marketing, weboldal, műszaki leírás). */
+/* KĂ¶zĂ¶s felsĹ‘ menĂĽ a tulajdonosi oldalakon (dashboard, marketing, weboldal, mĹ±szaki leĂ­rĂˇs). */
 .ks-app-menu{position:relative;display:flex;align-items:center;justify-content:flex-end;font-size:13px;font-weight:500;line-height:1.4}
 .ks-app-menu-panel{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .ks-app-menu a{color:inherit;text-decoration:none;display:inline-flex;align-items:center;min-height:24px;padding:2px 0}
@@ -151,7 +151,7 @@ body[data-ks-page=dashboard] .email-editor{border-color:var(--ks-border-strong)}
 body[data-ks-page=dashboard] .email-editor:focus{outline-color:var(--ks-primary)}
 .ks-mobile-step-toggle{display:none}
 
-/* Ügyféladatlap */
+/* ĂśgyfĂ©ladatlap */
 body[data-ks-page=form]{--ks-muted:var(--ks-text-muted);--ks-line:var(--ks-border);
   --ks-soft:var(--ks-surface-secondary);--ks-accent:var(--ks-primary);--ks-accent-dark:var(--ks-success);
   padding:var(--ks-space-6) var(--ks-space-3);background:var(--ks-surface-secondary)}
@@ -183,7 +183,7 @@ body[data-embed=true] #pageTitle{font-size:1.4rem;margin-bottom:var(--ks-space-3
 body[data-embed=true] .wizard-nav{position:static!important;width:auto!important;margin:var(--ks-space-4) 0 0!important;
   padding:var(--ks-space-4) 0!important;background:var(--ks-surface)!important}
 
-/* Műszaki adatlap */
+/* MĹ±szaki adatlap */
 body[data-ks-page=technical] header{background:var(--ks-dark)}
 body[data-ks-page=technical] header h1{color:var(--ks-bg);font-weight:300}
 body[data-ks-page=technical] header p{color:var(--ks-surface-muted)}
@@ -259,3 +259,267 @@ body[data-ks-page=dashboard] .timeline-meta{margin:0 0 22px;padding:7px 12px 10p
   body[data-ks-page=dashboard] .project-tools .status-filter{grid-column:1/-1;width:100%;min-width:0}
   body[data-ks-page=dashboard] .project-tools .ks-toolbar-actions{flex-wrap:wrap}
 }
+
+
+/*!
+ * Kocka StĂşdiĂł â€“ egysĂ©ges Bootstrap tĂ©ma
+ * A brand szĂ­nei, tipogrĂˇfiĂˇja Ă©s komponensei egy helyen. A fĂˇjlt a
+ * bootstrap.min.css utĂˇn kell betĂ¶lteni; a meglĂ©vĹ‘ oldalak sajĂˇt vĂˇltozĂłit
+ * (--ink, --muted, --line, --gold, --dark, --mint) is felĂĽlĂ­rja, Ă­gy a rĂ©gi
+ * egyedi osztĂˇlyok is a kĂ¶zĂ¶s arculatot kĂ¶vetik.
+ */
+
+:root {
+  /* Brand tokenek */
+  --ks-dark: #3e3e3e;
+  --ks-ink: #26312e;
+  --ks-muted: #627069;
+  --ks-line: #d7dad4;
+  --ks-gold: #a88952;
+  --ks-gold-dark: #8f7748;
+  --ks-mint: #77c59e;
+  --ks-bg: #eeeee9;
+  --ks-surface: #ffffff;
+  --ks-soft: #f5f7f4;
+  --ks-danger: #a6372f;
+  --ks-success: #4f8562;
+  --ks-warning: #a9782a;
+  --ks-radius: 4px;
+
+  /* A korĂˇbbi oldalak sajĂˇt vĂˇltozĂłi: kĂ¶zĂ¶s Ă©rtĂ©kre ĂˇllĂ­tva. */
+  --ink: var(--ks-ink);
+  --muted: var(--ks-muted);
+  --line: var(--ks-line);
+  --gold: var(--ks-gold);
+  --dark: var(--ks-dark);
+  --mint: var(--ks-mint);
+  --soft: var(--ks-soft);
+
+  /* Bootstrap 5.3 vĂˇltozĂłk */
+  --bs-body-font-family: 'Source Sans Pro', Arial, sans-serif;
+  --bs-body-font-size: 1rem;
+  --bs-body-line-height: 1.5;
+  --bs-body-color: var(--ks-ink);
+  --bs-body-bg: var(--ks-bg);
+  --bs-border-color: var(--ks-line);
+  --bs-border-radius: var(--ks-radius);
+  --bs-border-radius-sm: 3px;
+  --bs-border-radius-lg: 6px;
+  --bs-link-color: var(--ks-ink);
+  --bs-link-hover-color: #111d19;
+  --bs-focus-ring-color: rgba(168, 137, 82, .35);
+  --bs-primary: var(--ks-gold);
+  --bs-primary-rgb: 168, 137, 82;
+  --bs-secondary: var(--ks-muted);
+  --bs-success: var(--ks-success);
+  --bs-danger: var(--ks-danger);
+  --bs-warning: var(--ks-warning);
+  --bs-heading-color: var(--ks-ink);
+  --bs-emphasis-color: var(--ks-ink);
+  --bs-secondary-color: var(--ks-muted);
+}
+
+body {
+  font-family: var(--bs-body-font-family);
+  color: var(--ks-ink);
+  background: var(--ks-bg);
+  line-height: var(--bs-body-line-height);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5 {
+  color: var(--ks-ink);
+  font-weight: 400;
+  letter-spacing: -.02em;
+}
+
+a { color: var(--ks-ink); }
+a:hover { color: #111d19; }
+
+:focus-visible {
+  outline: 2px solid var(--ks-gold);
+  outline-offset: 2px;
+}
+
+/* ---------- Gombok ---------- */
+.btn {
+  --bs-btn-border-radius: var(--ks-radius);
+  --bs-btn-font-weight: 700;
+  --bs-btn-padding-y: .5rem;
+  --bs-btn-padding-x: .95rem;
+  min-height: 42px;
+  font-size: .95rem;
+}
+.btn-primary,
+.btn-dark {
+  --bs-btn-bg: var(--ks-ink);
+  --bs-btn-border-color: var(--ks-ink);
+  --bs-btn-color: #fff;
+  --bs-btn-hover-bg: #111d19;
+  --bs-btn-hover-border-color: #111d19;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-active-bg: #111d19;
+  --bs-btn-active-border-color: #111d19;
+  --bs-btn-disabled-bg: #6b7772;
+  --bs-btn-disabled-border-color: #6b7772;
+}
+.btn-secondary,
+.btn-outline-secondary {
+  --bs-btn-bg: #fff;
+  --bs-btn-border-color: var(--ks-line);
+  --bs-btn-color: var(--ks-ink);
+  --bs-btn-hover-bg: var(--ks-soft);
+  --bs-btn-hover-border-color: #c3cac1;
+  --bs-btn-hover-color: var(--ks-ink);
+  --bs-btn-active-bg: var(--ks-soft);
+  --bs-btn-active-color: var(--ks-ink);
+}
+.btn-danger {
+  --bs-btn-bg: var(--ks-danger);
+  --bs-btn-border-color: var(--ks-danger);
+  --bs-btn-hover-bg: #8c2c25;
+  --bs-btn-hover-border-color: #8c2c25;
+}
+.btn-sm { min-height: 34px; font-size: .85rem; padding: .35rem .7rem; }
+
+/* A rĂ©gi .button osztĂˇlyok ugyanazt a megjelenĂ©st kapjĂˇk. */
+.button, .link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: .5rem .95rem;
+  border: 1px solid var(--ks-ink);
+  border-radius: var(--ks-radius);
+  background: var(--ks-ink);
+  color: #fff;
+  font-size: .95rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+.button:hover, .link-button:hover { background: #111d19; color: #fff; }
+.button.secondary, .link-button.secondary {
+  background: #fff;
+  color: var(--ks-ink);
+  border-color: var(--ks-line);
+}
+.button.secondary:hover, .link-button.secondary:hover { background: var(--ks-soft); }
+.button.danger { background: var(--ks-danger); border-color: var(--ks-danger); }
+.button.small, .link-button.small { min-height: 34px; padding: .35rem .7rem; font-size: .85rem; }
+.button:disabled, .link-button:disabled { opacity: .48; cursor: default; }
+
+/* ---------- Ĺ°rlapok ---------- */
+.form-control, .form-select {
+  min-height: 42px;
+  border: 1px solid #bbc3bb;
+  border-radius: var(--ks-radius);
+  background-color: #fff;
+  color: var(--ks-ink);
+  padding: .5rem .65rem;
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--ks-gold);
+  box-shadow: 0 0 0 .2rem rgba(168, 137, 82, .22);
+}
+.form-label, .field > label, .field label {
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--ks-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.form-text, .muted { color: var(--ks-muted); }
+.field input, .field textarea, .field select {
+  border: 1px solid #bbc3bb;
+  border-radius: var(--ks-radius);
+  background: #fff;
+  color: var(--ks-ink);
+}
+.field input:focus, .field textarea:focus, .field select:focus {
+  outline: 2px solid var(--ks-gold);
+  outline-offset: 1px;
+  border-color: var(--ks-gold);
+}
+
+/* ---------- KĂˇrtyĂˇk, panelek ---------- */
+.card, .panel, .ks-card {
+  --bs-card-border-color: var(--ks-line);
+  --bs-card-border-radius: 6px;
+  --bs-card-bg: var(--ks-surface);
+  --bs-card-cap-bg: var(--ks-surface);
+  background: var(--ks-surface);
+  border: 1px solid var(--ks-line);
+  border-radius: 6px;
+}
+
+/* ---------- Ă‰rtesĂ­tĂ©sek ---------- */
+.alert, .notice {
+  border: 0;
+  border-left: 4px solid var(--ks-gold);
+  border-radius: 0 var(--ks-radius) var(--ks-radius) 0;
+  background: #fffaf0;
+  color: var(--ks-ink);
+}
+.alert-success, .notice.success { border-left-color: var(--ks-success); background: #eef8f0; color: #245335; }
+.alert-danger, .notice.error { border-left-color: var(--ks-danger); background: #fff2f0; color: #7d241e; }
+.alert-warning, .notice.warning { border-left-color: var(--ks-warning); background: #fff7e6; }
+
+/* ---------- JelvĂ©nyek ---------- */
+.badge {
+  --bs-badge-font-weight: 700;
+  --bs-badge-border-radius: 999px;
+  padding: .3em .6em;
+}
+.badge.bg-primary, .badge.text-bg-primary { background: var(--ks-gold) !important; color: #fff !important; }
+.badge.bg-secondary, .badge.text-bg-secondary { background: var(--ks-muted) !important; }
+.badge.bg-success, .badge.text-bg-success { background: var(--ks-success) !important; }
+.badge.bg-danger, .badge.text-bg-danger { background: var(--ks-danger) !important; }
+.badge.bg-warning, .badge.text-bg-warning { background: var(--ks-warning) !important; color: #fff !important; }
+
+/* ---------- FejlĂ©c / navigĂˇciĂł ---------- */
+header, .top, .market-top {
+  background: var(--ks-dark);
+  color: #fff;
+}
+header a, .top a, .market-top a { color: #e8e8e8; }
+header a:hover, .top a:hover, .market-top a:hover { color: #fff; }
+
+.navbar {
+  --bs-navbar-bg: var(--ks-dark);
+  --bs-navbar-color: #e8e8e8;
+  --bs-navbar-hover-color: #fff;
+  --bs-navbar-active-color: #fff;
+  --bs-navbar-brand-color: #fff;
+  background: var(--ks-dark);
+}
+
+.dropdown-menu {
+  --bs-dropdown-border-color: var(--ks-line);
+  --bs-dropdown-border-radius: 6px;
+  --bs-dropdown-link-hover-bg: var(--ks-soft);
+  --bs-dropdown-link-active-bg: var(--ks-ink);
+}
+
+/* ---------- TĂˇblĂˇzatok ---------- */
+.table {
+  --bs-table-border-color: var(--ks-line);
+  --bs-table-striped-bg: var(--ks-soft);
+  --bs-table-hover-bg: #f2f4ef;
+  color: var(--ks-ink);
+}
+
+/* ---------- ModĂˇlok ---------- */
+.modal-content {
+  border: 1px solid var(--ks-line);
+  border-radius: 8px;
+  box-shadow: 0 18px 60px rgba(16, 27, 22, .25);
+}
+.modal-header, .modal-footer { border-color: var(--ks-line); }
+
+/* ---------- EgyĂ©b ---------- */
+hr { border-color: var(--ks-line); opacity: 1; }
+::selection { background: rgba(168, 137, 82, .25); }
+

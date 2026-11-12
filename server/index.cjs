@@ -101,7 +101,7 @@ const frontendAssets = new Map([
   ['/assets/bootstrap.min.css', ['text/css; charset=utf-8',path.join(__dirname,'..','node_modules','bootstrap','dist','css','bootstrap.min.css')]],
   ['/assets/bootstrap.bundle.min.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','node_modules','bootstrap','dist','js','bootstrap.bundle.min.js')]],
   ['/assets/fontawesome/css/all.min.css', ['text/css; charset=utf-8',path.join(__dirname,'..','node_modules','@fortawesome','fontawesome-free','css','all.min.css')]],
-  ['/assets/ks-design.css', ['text/css; charset=utf-8',path.join(__dirname,'..','public','ks-design.css')]],
+  ['/assets/theme/ks-theme.css', ['text/css; charset=utf-8',path.join(__dirname,'..','public','theme','ks-theme.css')]],
   ['/assets/ks-shell.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','ks-shell.js')]],
   ['/assets/message-center.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','message-center.js')]],
   ['/assets/app-menu.js', ['application/javascript; charset=utf-8',path.join(__dirname,'..','public','app-menu.js')]],
@@ -131,10 +131,10 @@ for (const [url,[type,file]] of frontendAssets)
   frontendAssets.set(url,{type,content:fs.readFileSync(file)});
 function nodePage(html,page) {
   if(page==='inquiry')return html
-    .replace('<style>','<link rel="stylesheet" href="/assets/bootstrap.min.css">\n  <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css">\n  <link rel="stylesheet" href="/assets/ks-design.css">\n  <style>')
+    .replace('<style>','<link rel="stylesheet" href="/assets/bootstrap.min.css">\n  <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css">\n  <link rel="stylesheet" href="/assets/theme/ks-theme.css">\n  <style>')
     .replace('<body>','<body class="ks-app ks-page-inquiry" data-runtime="node" data-ks-page="inquiry">');
   let result=html.replace('<style>','<link rel="stylesheet" href="/assets/bootstrap.min.css">\n  <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css">\n  <style>')
-    .replace('</style>','</style>\n  <link rel="stylesheet" href="/assets/ks-design.css">')
+    .replace('</style>','</style>\n  <link rel="stylesheet" href="/assets/theme/ks-theme.css">')
     .replace('<body>','<body class="ks-app ks-page-'+page+'" data-runtime="node" data-ks-page="'+page+'">')
     .replace('</body>','<script src="/assets/bootstrap.bundle.min.js"></script>\n<script src="/assets/ks-shell.js"></script>\n</body>');
   if(['login','dashboard','marketing','technical','site'].includes(page)) {
