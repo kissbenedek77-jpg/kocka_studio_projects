@@ -241,7 +241,7 @@
     // A dashboard alsó sávja: a belső (munkaterületi) oszlop szélességében,
     // középen, a lap aljára rögzítve. Nem vesz el helyet a folyamatból, ezért
     // a fenti sticky elemeket nem mozdítja el; kinyitva felfelé lóg.
-    '.ks-msgbar{position:fixed;left:50%;transform:translateX(-50%);bottom:0;z-index:15;width:min(calc(100vw - 626px),1054px);border:1px solid #d7dad4;border-bottom:0;border-radius:10px 10px 0 0;background:#fff;box-shadow:0 -8px 22px rgba(16,27,22,.14);font:14px/1.45 Arial,sans-serif;color:#26312e}',
+    '.ks-msgbar{position:fixed;left:50%;transform:translateX(-50%);bottom:var(--chat-height,0px);z-index:15;width:min(1060px,calc(100vw - 24px));border:1px solid #d7dad4;border-bottom:0;border-radius:10px 10px 0 0;background:#fff;box-shadow:0 -8px 22px rgba(16,27,22,.14);font:14px/1.45 Arial,sans-serif;color:#26312e}',
     '.ks-msgbar[hidden]{display:none!important}',
     '.ks-msgbar-head{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:7px 12px;border:0;background:#3e3e3e;color:#fff;font:inherit;text-align:left;cursor:pointer;border-radius:9px 9px 0 0}',
     '.ks-msgbar-head:hover{background:#2f2f2f}',
@@ -272,8 +272,6 @@
     '.ks-msgbar-clear{min-height:32px;padding:5px 12px;border:0;border-radius:5px;background:transparent;color:#7d241e;font:inherit;font-size:13px;font-weight:700;cursor:pointer}',
     '.ks-msgbar-clear:hover{background:#fff2f0}',
     '.ks-msgbar-clear:focus-visible{outline:2px solid #4f8562;outline-offset:1px}',
-    '@media(max-width:1099.98px){.ks-msgbar{width:calc(100vw - 280px)}}',
-    '@media(max-width:849.98px){.ks-msgbar{width:calc(100vw - 44px)}}',
     '@media(max-width:600px){.ks-msgbar{width:calc(100vw - 24px)}}',
     // A dashboard alsó navigációja az üzenetsáv fölé kerül, hogy ne takarják
     // egymást. A felső sticky elemekhez nem nyúlunk.
@@ -800,9 +798,8 @@
       style.textContent = STYLE;
       doc.head.appendChild(style);
 
-      // A dashboardon az alsó sáv, minden más oldalon a jobb széli fül.
-      const page = doc.body.dataset ? String(doc.body.dataset.ksPage || '') : '';
-      ui = page === 'dashboard' ? mountBottombar(doc, root, store) : mountDock(doc, root, store);
+      // Minden oldalon a dashboardon bevált alsó sáv jelenik meg.
+      ui = mountBottombar(doc, root, store);
     }
 
     const api = {

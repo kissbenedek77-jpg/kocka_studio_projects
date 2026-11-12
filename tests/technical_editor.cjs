@@ -189,25 +189,25 @@ test('A chat a képernyőn látható első mezőre vonatkozik',async () => {
   assert.match(first.className,/active-input/,'Az első látható beviteli mező aktív jelölést kap.');
   assert.doesNotMatch(second.className,/active-input/);
 
-  // A célpont stabil: a görgetés nem váltogatja, mert az kiszámíthatatlan lenne.
+  // Görgetésre a látható mező lesz a cél.
   first.rect = {top:-320,height:60,bottom:-260,width:600};
   second.rect = {top:120,height:60,bottom:180,width:600};
   window.scrollHandler();
-  assert.match(first.className,/active-input/,'A görgetés nem váltogatja a célmezőt.');
-  assert.doesNotMatch(second.className,/active-input/);
+  assert.match(second.className,/active-input/,'A görgetésre a látható mező lesz a célmező.');
+  assert.doesNotMatch(first.className,/active-input/);
 
-  // Kattintással (fókusszal) viszont átkerül a célpont a másik mezőre.
+  // Kattintással (fókusszal) a mező rögzül.
   documentObj.focusinHandler({target:second});
   assert.match(second.className,/active-input/,'A kiválasztott mező lesz a célpont.');
   assert.doesNotMatch(first.className,/active-input/);
   assert.match(ids.get('chatTarget').textContent,/Tervezési program c\)/,
     'A chat a kijelölt beviteli mezőt nevezi meg.');
 
-  // Kigörgetés után is a kiválasztott mező marad a cél.
+  // Kigörgetés után is a rögzített mező marad a cél.
   first.rect = {top:200,height:40,bottom:240,width:600};
   second.rect = {top:950,height:60,bottom:1010,width:600};
   window.scrollHandler();
-  assert.match(second.className,/active-input/,'A görgetés nem veszi el a célpontot.');
+  assert.match(second.className,/active-input/,'A görgetés nem veszi el a rögzített célpontot.');
   documentObj.focusinHandler({target:second});
 
   // A mező még nincs mentve: a felület a sablon alapértékét mutatja helyőrzőként,

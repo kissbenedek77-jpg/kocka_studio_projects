@@ -99,6 +99,7 @@
     const pageLabel = String(cfg.pageLabel || '');
     const targets = new Map();
     let activeId = '';
+    let pinned = false;
     let history = [];
     let styleNode = doc.getElementById('ks-ai-composer-style');
     if (!styleNode) {
@@ -195,7 +196,8 @@
       select.disabled = targets.size === 0;
     }
 
-    function setActive(id) {
+    function setActive(id, pin) {
+      if (pin) pinned = true;
       const next = targets.get(id);
       const previous = targets.get(activeId);
       if (previous && previous !== next) removeClass(previous.input,'active-input');
@@ -234,8 +236,12 @@
       if (!target || !target.id || !target.input) return;
       targets.set(target.id, target);
       target.input.dataset.chatTarget = target.id;
-      if (!activeId) setActive(target.id);
       refreshSelect();
+      // A mező csak a render után kerül a DOM-ba, ezért a látható mező
+      // kiválasztását a következő képkockára halasztjuk.
+      if (typeof root.requestAnimationFrame === 'function')
+        root.requestAnimationFrame(() => pickVisible());
+      else pickVisible();
       setHeight();
       return target;
     }
@@ -245,6 +251,7 @@
       if (previous) removeClass(previous.input,'active-input');
       targets.clear();
       activeId = '';
+      pinned = false;
       refreshSelect();
       setHeight();
     }
@@ -266,7 +273,7 @@
     function focusTarget(id) {
       const target = targets.get(id);
       if (!target) return;
-      setActive(id);
+      setActive(id, true);
       let node = target.input.parentNode;
       while (node && node !== doc.body) {
         if (node.tagName === 'DETAILS') { node.open = true; break; }
@@ -277,7 +284,7 @@
     }
 
     function pickVisible() {
-      if (activeId) return;
+      if (pinned && activeId) return;
       const list = [...targets.values()].map(target => target.input);
       if (!list.length) { setActive(''); return; }
       const limit = (root.innerHeight || 0) - chatHeight() - 8;
@@ -401,7 +408,7 @@
     if (doc.addEventListener) doc.addEventListener('focusin', event => {
       const node = event && event.target;
       if (!node || !node.dataset || !node.dataset.chatTarget) return;
-      if (targets.has(node.dataset.chatTarget)) setActive(node.dataset.chatTarget);
+      if (targets.has(node.dataset.chatTarget)) setActive(node.dataset.chatTarget,true);
     });
     const schedule = () => {
       if (typeof root.requestAnimationFrame === 'function')

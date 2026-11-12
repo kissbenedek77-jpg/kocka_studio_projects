@@ -153,20 +153,16 @@ test('Az azonos szövegű, egymást követő üzenet nem duplikálódik', () => 
   assert.equal(items[0].count, 2);
 });
 
-test('A felület kirajzolja az üzeneteket, és a törlés frissíti a jelvényt', () => {
+test('A felület kirajzolja az üzeneteket, és a törlés frissíti a számlálót', () => {
   const doc = fakeDocument();
   const api = createBrowserApi({document: doc, sessionStorage: null});
-  const launcher = collect(doc.body, node => node.className === 'ks-msg-launcher')[0];
-  const panel = collect(doc.body, node => node.className === 'ks-msg-panel')[0];
-  assert.ok(launcher, 'a jobb oldali fül elkészül');
-  assert.ok(panel, 'a panel elkészül');
-  assert.equal(panel.hidden, true, 'a panel alapból csukva van');
+  const bar = collect(doc.body, node => node.className === 'ks-msgbar')[0];
+  assert.ok(bar, 'az alsó sáv elkészül');
+  assert.equal(bar.hidden, true, 'üzenet nélkül rejtett');
 
   api.notice('Valami hiba történt.', 'error');
-  const badge = collect(launcher, node => node.className.indexOf('ks-msg-badge') === 0)[0];
-  assert.equal(badge.textContent, '1');
-  assert.match(badge.className, /error/);
-  const row = collect(panel, node => node.className.indexOf('ks-msg-item') === 0)[0];
+  assert.equal(bar.hidden, false);
+  const row = collect(bar, node => node.className.indexOf('ks-msg-item') === 0)[0];
   assert.ok(row, 'az üzenet sora megjelenik');
   assert.match(row.className, /error/);
 
@@ -174,40 +170,35 @@ test('A felület kirajzolja az üzeneteket, és a törlés frissíti a jelvényt
   assert.ok(removeButton, 'a sor törlőgombot kap');
   removeButton.handlers.click();
   assert.equal(api.list().length, 0);
-  assert.equal(badge.textContent, '');
+  assert.equal(bar.hidden, true);
 });
 
-test('A felület minimalizálható, bezárható és újra kinyitható', () => {
+test('Az alsó sáv kinyitható és összecsukható', () => {
   const doc = fakeDocument();
   const api = createBrowserApi({document: doc, sessionStorage: null});
-  const launcher = collect(doc.body, node => node.className === 'ks-msg-launcher')[0];
-  const panel = collect(doc.body, node => node.className === 'ks-msg-panel')[0];
-
+  const bar = collect(doc.body, node => node.className === 'ks-msgbar')[0];
+  api.notice('Egy üzenet.','info');
+  const head = collect(bar, node => node.className === 'ks-msgbar-head')[0];
+  head.handlers.click();
+  assert.equal(bar.dataset.state, 'open');
+  head.handlers.click();
+  assert.equal(bar.dataset.state, 'collapsed');
   api.open();
-  assert.equal(panel.hidden, false);
-  assert.equal(launcher.hidden, true);
-
-  api.minimize();
-  assert.equal(panel.hidden, false);
-  assert.equal(panel.classList.contains('minimized'), true);
-  assert.equal(launcher.hidden, true);
-
+  assert.equal(bar.dataset.state, 'open');
   api.close();
-  assert.equal(panel.hidden, true);
-  assert.equal(launcher.hidden, false);
-
-  launcher.handlers.click();
-  assert.equal(panel.hidden, false);
+  assert.equal(bar.dataset.state, 'collapsed');
 });
 
-test('Új hiba esetén a panel magától kinyílik, figyelmeztetésnél nem', () => {
+test('Új hiba esetén a sáv láthatóvá válik, piros számlálóval', () => {
   const doc = fakeDocument();
   const api = createBrowserApi({document: doc, sessionStorage: null});
-  const panel = collect(doc.body, node => node.className === 'ks-msg-panel')[0];
+  const bar = collect(doc.body, node => node.className === 'ks-msgbar')[0];
   api.notice('Csak figyelmeztetés.', 'warning');
-  assert.equal(panel.hidden, true, 'a figyelmeztetés nem nyitja ki a panelt');
+  assert.equal(bar.hidden, false, 'a figyelmeztetés is megjeleníti a sávot');
+  const count = collect(bar, node => String(node.className || '').startsWith('ks-msgbar-count'))[0];
+  assert.match(count.className, /warning/);
   api.notice('Hiba történt.', 'error');
-  assert.equal(panel.hidden, false, 'az új hiba kinyitja a panelt');
+  assert.match(count.className, /error/);
 });
 
 test('A dashboardon alsó sáv jelenik meg a jobb széli fül helyett', () => {
