@@ -7,19 +7,10 @@
   <title>Weboldal · Kocka Stúdió</title>
 </head>
 <body>
-  <nav class="navbar navbar-dark">
-    <div class="container-fluid gap-2">
-      <a class="navbar-brand d-flex align-items-center" href="/site">
-        <img src="/assets/brand/logo2.png" alt="Kocka Stúdió" height="42">
-      </a>
-      <nav class="ks-app-menu" aria-label="Főmenü">
-        <a href="/dashboard">Dashboard</a>
-        <a href="/marketing">Marketing</a>
-        <a href="/site" aria-current="page">Weboldal</a>
-        <a href="/auth/logout">Kijelentkezés</a>
-      </nav>
-    </div>
-  </nav>
+  <header class="top ks-page-header"><div class="brand-header">
+    <img class="brand-logo" src="/assets/brand/logo2.png" alt="Kocka Stúdió">
+    <div class="brand-actions"><div class="brand-kicker">Építészeti tervezés<br>teljes spektruma</div><nav class="owner-nav ks-app-menu" aria-label="Főmenü"><a href="/dashboard">Dashboard</a><a href="/marketing">Marketing</a><a href="/site" aria-current="page">Weboldal</a><span class="owner-divider" aria-hidden="true">·</span><a class="ks-owner-logout" href="/auth/logout">Kijelentkezés</a></nav></div>
+  </div></header>
   <main class="container py-4">
     <h1 class="h3 fw-normal mb-2">Weboldal tartalma</h1>
     <p class="text-secondary mb-4">A nyilvános honlap szövegei és projektfotói. A feltöltött képekhez automatikusan készül nagy változat és thumbnail. A szövegeknél az AI segít megfogalmazni; a javaslatot felülírhatod vagy a meglévő szöveghez fűzheted.</p>

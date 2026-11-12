@@ -1541,3 +1541,15 @@ body[data-ks-page="form"] .container{
         padding-bottom:calc(100px + env(safe-area-inset-bottom, 0px)) !important;
       }
 }
+
+/* ---- Egységes fejléc minden tulajdonosi oldalon (a dashboard mintájára) ---- */
+.ks-page-header{background:var(--ks-dark);color:#fff;padding:20px max(22px,calc((100vw - 1680px)/2));display:flex;align-items:center}
+.ks-page-header .brand-header{display:flex;align-items:center;justify-content:space-between;gap:24px;width:100%}
+.ks-page-header .brand-logo{display:block;width:min(240px,48vw);height:auto;max-height:76px;object-fit:contain;object-position:left center}
+.ks-page-header .brand-actions{display:flex;align-items:center;gap:16px}
+.ks-page-header .brand-kicker{text-align:right;font-size:12px;line-height:1.5;letter-spacing:.12em;text-transform:uppercase;color:#c9d0c8}
+.ks-page-header .owner-nav{display:flex;align-items:center;justify-content:flex-end;gap:10px;white-space:nowrap}
+.ks-page-header .owner-nav a,.ks-page-header .owner-nav button{border:0;background:transparent;color:#e8e8e8;font:inherit;font-size:13px;font-weight:500;line-height:1.4;text-decoration:none;padding:2px 0;min-height:24px}
+.ks-page-header .owner-nav a:hover,.ks-page-header .owner-nav button:hover{color:#fff;text-decoration:underline}
+@media(max-width:600px){.ks-page-header{padding:14px 15px}.ks-page-header .brand-header{gap:10px}.ks-page-header .brand-logo{width:min(180px,48vw)}.ks-page-header .brand-kicker{display:none}}
+

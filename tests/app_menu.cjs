@@ -43,3 +43,16 @@ test('Mobilon hamburger gomb nyitja a menĂĽt', () => {
   assert.match(server,/'\/assets\/app-menu\.js'/);
   assert.match(server,/<script src="\/assets\/app-menu\.js"><\/script>/);
 });
+
+test('Minden tulajdonosi oldal fejléce egységes (dashboard minta)', () => {
+  for (const file of ['dashboard_v2.html','technical.html','public/marketing.html','site.html']) {
+    const html = read(file);
+    assert.match(html,/class="top ks-page-header"/,file+': nincs egységes fejléc');
+    assert.match(html,/class="brand-header"/,file+': nincs brand-header');
+    assert.match(html,/class="brand-logo"/,file+': nincs logó');
+    assert.match(html,/brand-kicker/,file+': nincs kicker');
+  }
+  const css = read('public/theme/ks-theme.css');
+  assert.match(css,/\.ks-page-header\{/);
+  assert.match(css,/\.ks-page-header \.brand-header\{/);
+});

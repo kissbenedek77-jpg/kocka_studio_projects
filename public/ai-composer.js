@@ -263,8 +263,8 @@
       // A mező csak a render után kerül a DOM-ba, ezért a látható mező
       // kiválasztását a következő képkockára halasztjuk.
       if (typeof root.requestAnimationFrame === 'function')
-        root.requestAnimationFrame(() => pickVisible());
-      else pickVisible();
+        root.requestAnimationFrame(() => { syncPosition(); pickVisible(); });
+      else { syncPosition(); pickVisible(); }
       setHeight();
       return target;
     }
@@ -433,18 +433,41 @@
       if (!node || !node.dataset || !node.dataset.chatTarget) return;
       if (targets.has(node.dataset.chatTarget)) setActive(node.dataset.chatTarget,true);
     });
+    // A sáv a tartalmi oszlop (main) pozíciójához és szélességéhez igazodik.
+    // A layout oldalanként változó, ezért minden mérésnél újraolvassuk.
+    function syncPosition() {
+      const selector = cfg.alignTo || 'main';
+      const target = doc.querySelector ? doc.querySelector(selector) : null;
+      const rect = target && target.getBoundingClientRect ? target.getBoundingClientRect() : null;
+      const width = rect ? Number(rect.width) || 0 : 0;
+      if (!host.style) return;
+      if (width > 0) {
+        host.style.left = Math.round(rect.left) + 'px';
+        host.style.width = Math.round(width) + 'px';
+        host.style.transform = 'none';
+      } else {
+        host.style.left = '';
+        host.style.width = '';
+        host.style.transform = '';
+      }
+    }
     const schedule = () => {
-      if (typeof root.requestAnimationFrame === 'function')
-        root.requestAnimationFrame(() => { pickVisible(); setHeight(); });
-      else { pickVisible(); setHeight(); }
+      const run = () => { syncPosition(); pickVisible(); setHeight(); };
+      if (typeof root.requestAnimationFrame === 'function') root.requestAnimationFrame(run);
+      else run();
     };
     if (root.addEventListener) {
       root.addEventListener('scroll', schedule, {passive: true});
       root.addEventListener('resize', () => { setHeight(); schedule(); });
     }
-    if (typeof root.ResizeObserver === 'function')
+    if (typeof root.ResizeObserver === 'function') {
       new root.ResizeObserver(() => setHeight()).observe(host);
+      const column = doc.querySelector ? doc.querySelector(cfg.alignTo || 'main') : null;
+      if (column) new root.ResizeObserver(syncPosition).observe(column);
+      if (doc.body) new root.ResizeObserver(syncPosition).observe(doc.body);
+    }
 
+    syncPosition();
     setHeight();
     pickVisible();
 
@@ -452,9 +475,9 @@
       register, clear, unregister, refresh: refreshSelect, setTarget: setActive,
       activeId: () => activeId, getTarget: id => targets.get(id),
       targets: () => [...targets.values()], focusTarget,
-      refreshSelection: () => { pickVisible(); setHeight(); },
+      refreshSelection: () => { syncPosition(); pickVisible(); setHeight(); },
       log: appendLog,
-      setRootHidden: hidden => { host.hidden = hidden; setHeight(); },
+      setRootHidden: hidden => { host.hidden = hidden; syncPosition(); setHeight(); },
       element: host
     };
   }
