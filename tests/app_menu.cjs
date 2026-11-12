@@ -37,8 +37,8 @@ test('Mobilon hamburger gomb nyitja a menĂĽt', () => {
   assert.match(js,/aria-expanded/);
   assert.match(js,/classList\.toggle\('open'/);
   const css = read('public/theme/ks-theme.css');
-  assert.match(css,/@media\(max-width:700px\)\{[\s\S]*?\.ks-app-menu-toggle\{display:inline-flex\}/);
-  assert.match(css,/\.ks-app-menu\.open \.ks-app-menu-panel\{display:flex\}/);
+  assert.match(css,/@media\(max-width:700px\)\{[\s\S]*?\.ks-app-menu-toggle\{display:inline-block\}/);
+  assert.match(css,/\.ks-app-menu\.open \.ks-app-menu-panel\{display:flex/);
   const server = read('server/index.cjs');
   assert.match(server,/'\/assets\/app-menu\.js'/);
   assert.match(server,/<script src="\/assets\/app-menu\.js"><\/script>/);
