@@ -178,7 +178,7 @@
       if(/indítása/i.test(label))return 'play';
       if(/lezárása/i.test(label))return 'check';
       return ''}
-    function button(parent,text,handler,kind=''){const node=element('button','button '+kind,text),icon=actionIcon(text);if(icon){node.className+=' fa-action fa-'+icon;if(text==='✓'||text==='▶')node.textContent=''}node.type='button';node.disabled=busy;node.addEventListener('click',handler);parent.append(node);return node}
+    function button(parent,text,handler,kind=''){const node=element('button','button '+kind,text),icon=actionIcon(text);if(icon){node.className+=' fa-action fa-'+icon;if(text==='✓'||text==='▶'){node.className+=' fa-glyph';node.textContent=''}}node.type='button';node.disabled=busy;node.addEventListener('click',handler);parent.append(node);return node}
     function link(parent,text,url,kind=''){if(!url)return button(parent,text,()=>{},kind).disabled=true;const node=element('a','link-button '+kind,text),icon=actionIcon(text);if(icon){node.className+=' fa-action fa-'+icon;if(text==='✓'||text==='▶')node.textContent=''}node.href=url;node.target='_blank';node.rel='noopener noreferrer';parent.append(node);return node}
     function section(parent,title){const root=element('div','detail');root.append(element('h3','',title));parent.append(root);return root}
     function paragraph(parent,text){parent.append(element('p','',text))}
