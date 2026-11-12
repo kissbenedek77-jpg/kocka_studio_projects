@@ -31,6 +31,7 @@
 - `marketing_*.cjs` – marketingoldal, Gemini/Cloudflare kreatívok, Facebook/Instagram közzététel.
 - `pdf_quality.cjs` – PDF/A-2b konverzió és validálás; csak sikeres validálás után kerül a fájl a Drive-ra.
 - `local_auth.cjs`, `tracking_credential.cjs` – helyi belépés és titkosított Google-hitelesítő.
+- `web_content.cjs`, `web_store.cjs`, `web_publish.cjs`, `web_ai.cjs` – a `/site` weboldal-kezelő: tartalmi modell, Railway-tároló (feltöltés + thumbnailek), publikálás a weboldal projektjébe és mezőnkénti AI-fogalmazás.
 
 ## Környezeti változók
 - Kötelező indításhoz: `BASE_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `OWNER_EMAIL`, `SESSION_SECRET` (legalább 32 karakter).
@@ -40,6 +41,7 @@
 - Helyi belépés: `LOCAL_LOGIN_USERNAME`, `LOCAL_LOGIN_PASSWORD_HASH` (hash: `node scripts/create_local_password_hash.cjs`).
 - AI és marketing: `GEMINI_API_KEY` (+ `GEMINI_TECHNICAL_MODEL`, `GEMINI_MARKETING_MODEL`), `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_AI_TOKEN`, `MARKETING_FOLDER_ID`, `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_ACCESS_TOKEN`, `INSTAGRAM_BUSINESS_ACCOUNT_ID`.
 - Egyéb: `SHEET_ID`, `TEMPLATE_ROOT_FOLDER_ID`, `SYSTEM_FOLDER_ID`, `PROJECT_DATA_TEMPLATE_ID` (van alapértékük), `CLIENT_SUBMISSION_EMAIL=1`, `LEGACY_PUBLIC_ORIGIN`.
+- Weboldal-kezelő: `SITE_DATA_DIR` (Railway Volume, pl. `/data/website`), `WEB_PUBLIC_BASE` (a nyilvános oldal címe), `WEB_PROJECT_DIR` (a weboldal projekt mappája a publikáláshoz).
 - A teljes lista a `.env.example`-ben van. A `SESSION_SECRET` cseréje érvényteleníti a korábban küldött letöltési linkeket.
 
 ## Belépés

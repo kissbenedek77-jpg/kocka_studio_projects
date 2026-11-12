@@ -39,6 +39,18 @@ test('A projektek szerkeszthetők és sorrendezhetők', () => {
   assert.match(html,/webDeleteProject/);
 });
 
+test('A szerkesztő publikál a weboldal projektjébe', () => {
+  assert.match(html,/Publikálás a weboldalba/);
+  assert.match(html,/'webPublish'/);
+  assert.match(html,/WEB_PROJECT_DIR/);
+  const server = fs.readFileSync(path.join(root,'server','index.cjs'),'utf8');
+  assert.match(server,/webPublish/);
+  const publisher = fs.readFileSync(path.join(root,'server','web_publish.cjs'),'utf8');
+  assert.match(publisher,/shared,'data'/);
+  assert.match(publisher,/shared,'js'/);
+  assert.match(publisher,/projects\.js/);
+});
+
 test('A szerver kiszolgálja és védi az oldalt', () => {
   const server = fs.readFileSync(path.join(root,'server','index.cjs'),'utf8');
   assert.match(server,/url\.pathname === '\/site'/);

@@ -25,6 +25,7 @@ const {validateStrategyInput,generateStrategy} = require('./marketing_strategy.c
 const {modelStatus,validateImageInput,generateMarketingImage} = require('./marketing_image.cjs');
 const {marketingStore} = require('./marketing_store.cjs');
 const {webStore} = require('./web_store.cjs');
+const {webPublisher} = require('./web_publish.cjs');
 const {generateText:generateWebText} = require('./web_ai.cjs');
 const {PUBLIC_BASE,PROJECT_FIELDS,exportPageTxt,exportProjectsJs} = require('./web_content.cjs');
 const {discoverTopics,validateTopic,due,nextRun,pickTopic,generatePostText,postSvg,POST_STYLES} = require('./marketing_posts.cjs');
@@ -74,6 +75,9 @@ if (config.localPasswordHash && !validHash(config.localPasswordHash))
 const loginGoogle = googleClient(config);
 const mail = sentMail(config);
 const siteStore = webStore({dataDir: process.env.SITE_DATA_DIR || ''});
+const sitePublisher = webPublisher({store:siteStore,
+  projectDir:process.env.WEB_PROJECT_DIR ||
+    path.join(__dirname,'..','..','kocka_studio_uj_honlap')});
 const owner = config.ownerEmail;
 const dashboardHtml = fs.readFileSync(path.join(__dirname, '..', 'dashboard_v2.html'), 'utf8');
 const formHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
@@ -337,7 +341,8 @@ async function rpc(name, args, session) {
   // Csak a bejelentkezett tulajdonos érheti el, mert az RPC végpont védett.
   if (name === 'dashboardLogs') return logBuffer.read(Number(args[0]) || 0, Number(args[1]) || 100);
   // MARK: Weboldal-kezelő (a nyilvános honlap tartalma és fotói)
-  if (name === 'webGetContent') return {content: await siteStore.load(), projectFields: PROJECT_FIELDS};
+  if (name === 'webGetContent') return {content: await siteStore.load(), projectFields: PROJECT_FIELDS,
+    publish: await sitePublisher.status()};
   if (name === 'webSaveField')
     return siteStore.saveField(String(args[0] || ''),String(args[1] || ''),args[2]);
   if (name === 'webSaveProject')
@@ -370,6 +375,7 @@ async function rpc(name, args, session) {
     files['shared/js/projects.js'] = exportProjectsJs(content.projects);
     return {files};
   }
+  if (name === 'webPublish') return sitePublisher.publish();
   if (name === 'dashboardListClientSubmissions') return google.listClientSubmissions();
   if (name === 'dashboardMarkClientSubmissionRead') return google.markClientSubmissionRead(uid);
   if (name === 'getDashboardProject') return google.dashboardProject(uid);
