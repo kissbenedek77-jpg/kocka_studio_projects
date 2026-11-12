@@ -11,6 +11,11 @@ belépés, ajánlatkérő) egyetlen Bootstrap 5 témát használ.
 
 A külön `ks-design.css` megszűnt; minden oldal a Bootstrapet és ezt az egy témát tölti be.
 
+Az oldalak korábbi `<style>` blokkjai is megszűntek: a szabályok
+`body[data-ks-page="dashboard"]`, `...="technical"`, `...="marketing"`,
+`...="site"`, `...="form"`, `...="inquiry"` és `...="login"` scope-pal a
+témában vannak. A HTML-ben így nem maradt beágyazott CSS.
+
 ## Betöltési sorrend
 
 A `server/index.cjs` `nodePage()` függvénye minden oldalra ebben a sorrendben

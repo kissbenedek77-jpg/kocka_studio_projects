@@ -147,10 +147,11 @@ function createContext(payload, calls) {
 }
 
 test('A chat a lap alján rögzítve jelenik meg, a látható mezőt pedig finom szín jelöli',() => {
-  assert.match(html,/#chat\{position:fixed/,'A chat a képernyő alján rögzített legyen.');
-  assert.match(html,/\.doc-field textarea\.active-input/,'Az aktív beviteli mezőnek saját kiemelése legyen.');
-  assert.match(html,/--chat-height/,'A chat magasságát a tartalom és a mentősáv kövesse.');
-  assert.match(html,/#chatToggle/,'A chat összecsukható legyen.');
+  const theme = fs.readFileSync(path.join(__dirname,'..','public','theme','ks-theme.css'),'utf8');
+  assert.match(theme,/#chat\{position:fixed/,'A chat a képernyő alján rögzített legyen.');
+  assert.match(theme,/\.doc-field textarea\.active-input/,'Az aktív beviteli mezőnek saját kiemelése legyen.');
+  assert.match(theme,/--chat-height/,'A chat magasságát a tartalom és a mentősáv kövesse.');
+  assert.match(html,/id="chatToggle"/,'A chat összecsukható legyen.');
 });
 
 test('A chat a képernyőn látható első mezőre vonatkozik',async () => {

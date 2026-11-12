@@ -225,8 +225,9 @@ test('A bejövő levél beszélgetésként, a mellékletek külön popupban jele
 });
 
 test('A levél előnézete két sorra korlátozott, lenyitva a teljes szöveg látszik',async()=>{
-  assert.match(html,/\.mail-preview\{[^}]*-webkit-line-clamp:2/);
-  assert.match(html,/\.mail-body\{max-height:none;overflow:visible\}/);
+  const theme = fs.readFileSync(path.join(__dirname,'..','public','theme','ks-theme.css'),'utf8');
+  assert.match(theme,/\.mail-preview\{[^}]*-webkit-line-clamp:2/);
+  assert.match(theme,/\.mail-body\{max-height:none;overflow:visible\}/);
   const start=script.indexOf('    let emailOpens=');
   const source=script.slice(start,script.indexOf('    async function refreshSentMailbox(',start));
   const element=(_tag,className='',value='')=>({className,textContent:value,children:[],dataset:{},hidden:false,
