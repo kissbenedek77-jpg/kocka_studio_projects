@@ -100,10 +100,13 @@
       if(!deployInfo||!railway)return;
       if(deploy&&deploy.configured){
         deployInfo.textContent='Railway deploy: beállítva';
+        deployInfo.title='Token változó: '+(deploy.tokenVar||'')+
+          (deploy.serviceId?' · szolgáltatás: '+deploy.serviceId:'');
         railway.hidden=false;railway.disabled=false;
       }else{
         deployInfo.textContent='Railway deploy: nincs beállítva'+
           (deploy&&deploy.missing&&deploy.missing.length?' ('+deploy.missing.join(', ')+')':'');
+        deployInfo.title=deployInfo.textContent;
         railway.hidden=true;
       }
     }

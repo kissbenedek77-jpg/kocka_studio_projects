@@ -127,3 +127,42 @@ test('Hálózati hiba esetén a deploy nem omlik össze', async () => {
   const deployer = railwayDeployer({token:'t',serviceId,environmentId,fetchImpl});
   await assert.rejects(deployer.deploy(),/nem érhető el: ECONNRESET/);
 });
+
+test('„Not Authorized” esetén a másik fejléccel újrapróbálja ugyanazt a tokent', async () => {
+  const seen = [];
+  const fetchImpl = async (url,options) => {
+    seen.push(options.headers);
+    if (options.headers['Project-Access-Token'])
+      return {ok:true,status:200,json:async()=>({errors:[{message:'Not Authorized'}]})};
+    return okResponse({serviceInstanceRedeploy:true});
+  };
+  const deployer = railwayDeployer({token:'fiok-token',serviceId,environmentId,fetchImpl});
+  const result = await deployer.deploy();
+  assert.equal(result.auth,'account','a fiók token fejléccel sikerült');
+  assert.equal(seen.length,2);
+  assert.equal(seen[0]['Project-Access-Token'],'fiok-token');
+  assert.equal(seen[1].Authorization,'Bearer fiok-token');
+});
+
+test('Ha egyik fejléc sem működik, útmutató hiba jön, nem 401', async () => {
+  const fetchImpl = fakeFetch(() => ({ok:true,status:200,
+    json:async()=>({errors:[{message:'Not Authorized'}]})}));
+  const deployer = railwayDeployer({token:'titkos-token',serviceId,environmentId,fetchImpl});
+  await assert.rejects(deployer.deploy(),error => {
+    assert.equal(error.status,502,'a felület ne kezelje kilépésként');
+    assert.equal(error.auth,true);
+    assert.match(error.message,/SITE_DEPLOY_TOKEN/);
+    assert.match(error.message,/SITE_DEPLOY_API_TOKEN/);
+    assert.doesNotMatch(error.message,/titkos-token/);
+    return true;
+  });
+});
+
+test('HTTP 401 esetén sem 401-et ad vissza a felületnek', async () => {
+  const fetchImpl = fakeFetch(() => ({ok:false,status:401,json:async()=>({})}));
+  const deployer = railwayDeployer({token:'t',serviceId,environmentId,fetchImpl});
+  await assert.rejects(deployer.deploy(),error => {
+    assert.equal(error.status,502);
+    return true;
+  });
+});

@@ -29,14 +29,25 @@ const TRIGGER_QUERY =
 
 const fail = (message, status = 502) => Object.assign(new Error(message), {status});
 
+// A Railway „Not Authorized” válasza leggyakrabban fejléc/token típus eltérés.
+// Ilyenkor a másik fejléccel is megpróbáljuk ugyanazt a tokent.
+const AUTH_ERROR = /not authori[sz]ed|unauthorized|forbidden|invalid token|not authenticated|no authori[sz]ation/i;
+const isAuthError = error => Boolean(error) &&
+  (error.auth === true || error.status === 401 || error.status === 403 ||
+    AUTH_ERROR.test(String(error.message || '')));
+// Jogosultsági hiba: 502-t adunk vissza, mert a 401-et a felület a munkamenet
+// lejártaként kezelné és a belépésre irányítana.
+const authFail = message => Object.assign(new Error(message), {status:502, auth:true});
+
 function railwayDeployer({
   token, tokenType, serviceId, environmentId, projectId,
   endpoint, timeout = 15000, fetchImpl
 } = {}) {
   const url = String(endpoint || DEFAULT_ENDPOINT);
   const mode = tokenType === 'account' ? 'account' : 'project';
+  const tokenVar = mode === 'account' ? 'SITE_DEPLOY_API_TOKEN' : 'SITE_DEPLOY_TOKEN';
   const missing = [];
-  if (!token) missing.push(mode === 'account' ? 'SITE_DEPLOY_API_TOKEN' : 'SITE_DEPLOY_TOKEN');
+  if (!token) missing.push(tokenVar);
   if (!serviceId) missing.push('SITE_DEPLOY_SERVICE_ID');
   if (!environmentId) missing.push('SITE_DEPLOY_ENVIRONMENT_ID');
 
@@ -46,12 +57,14 @@ function railwayDeployer({
       configured: missing.length === 0,
       missing: missing.slice(),
       auth: mode,
+      tokenVar,
       serviceId: String(serviceId || ''),
       environmentId: String(environmentId || '')
     };
   }
 
-  async function graphql(query, variables) {
+  async function graphql(query, variables, authMode) {
+    const auth = authMode === 'account' ? 'account' : 'project';
     const send = fetchImpl || globalThis.fetch;
     if (typeof send !== 'function')
       throw fail('A szerveren nincs elérhető fetch a Railway-híváshoz.');
@@ -59,7 +72,7 @@ function railwayDeployer({
     const seconds = Math.max(Number(timeout) || 0, 0);
     const timer = controller && seconds ? setTimeout(() => controller.abort(), seconds) : null;
     const headers = {'Content-Type':'application/json'};
-    if (mode === 'account') headers.Authorization = 'Bearer ' + token;
+    if (auth === 'account') headers.Authorization = 'Bearer ' + token;
     else headers['Project-Access-Token'] = token;
 
     let response;
@@ -84,46 +97,76 @@ function railwayDeployer({
 
     const messages = Array.isArray(payload && payload.errors)
       ? payload.errors.map(item => item && item.message).filter(Boolean) : [];
-    if (!response.ok)
-      throw fail('A Railway API hibát adott (HTTP ' + response.status + ').' +
-        (messages.length ? ' ' + messages.join('; ') : ''));
-    if (messages.length) throw fail('A Railway API hiba: ' + messages.join('; '));
+    if (!response.ok) {
+      const suffix = messages.length ? ' ' + messages.join('; ') : '';
+      if (response.status === 401 || response.status === 403)
+        throw authFail('A Railway API nem fogadta el a tokent (HTTP ' + response.status + ').' + suffix);
+      throw fail('A Railway API hibát adott (HTTP ' + response.status + ').' + suffix);
+    }
+    if (messages.length) {
+      const text = messages.join('; ');
+      if (AUTH_ERROR.test(text))
+        throw authFail('A Railway API nem fogadta el a tokent: ' + text);
+      throw fail('A Railway API hiba: ' + text);
+    }
     return (payload && payload.data) || {};
   }
 
   // A deploy a szolgáltatás legutóbbi telepítését indítja újra. Ha ez nem megy,
   // és van projekt-azonosító, a tartalék mutationt próbáljuk.
+  async function redeploy(authMode) {
+    const data = await graphql(REDEPLOY_QUERY,
+      {serviceId:String(serviceId), environmentId:String(environmentId)}, authMode);
+    if (data.serviceInstanceRedeploy === false)
+      throw fail('A Railway nem indította el a deployt (a válasz hamis értékű).');
+    return {ok:true, via:'serviceInstanceRedeploy', auth:authMode};
+  }
+
+  async function trigger(authMode) {
+    const data = await graphql(TRIGGER_QUERY, {input:{
+      projectId:String(projectId), environmentId:String(environmentId), serviceId:String(serviceId)
+    }}, authMode);
+    if (data.environmentTriggersDeploy === false)
+      throw fail('A Railway nem indította el a deployt (a válasz hamis értékű).');
+    return {ok:true, via:'environmentTriggersDeploy', auth:authMode};
+  }
+
+  async function attempt(authMode) {
+    try { return await redeploy(authMode); }
+    catch (error) {
+      if (!projectId) throw error;
+      try { return await trigger(authMode); }
+      catch (second) {
+        // Ha a tartalék hívás is jogosultsági hiba, az a mérvadó.
+        throw isAuthError(second) ? second : error;
+      }
+    }
+  }
+
   async function deploy() {
     const state = status();
     if (!state.configured)
       throw fail('A Railway deploy nincs beállítva. Hiányzó változó: ' +
         state.missing.join(', ') + '.', 503);
+    const finish = result => ({...result,
+      serviceId:String(serviceId), environmentId:String(environmentId)});
 
     let firstError = null;
-    try {
-      const data = await graphql(REDEPLOY_QUERY, {
-        serviceId: String(serviceId), environmentId: String(environmentId)
-      });
-      if (data.serviceInstanceRedeploy !== false)
-        return {ok:true, via:'serviceInstanceRedeploy', serviceId:String(serviceId),
-          environmentId:String(environmentId)};
-      firstError = fail('A Railway nem indította el a deployt (a válasz hamis értékű).');
-    } catch (error) {
-      firstError = error;
-    }
+    try { return finish(await attempt(state.auth)); }
+    catch (error) { firstError = error; }
+    if (!isAuthError(firstError)) throw firstError;
 
-    if (!projectId) throw firstError;
-    const data = await graphql(TRIGGER_QUERY, {
-      input: {
-        projectId: String(projectId), environmentId: String(environmentId),
-        serviceId: String(serviceId)
-      }
-    });
-    if (data.environmentTriggersDeploy === false)
-      throw fail('A Railway nem indította el a deployt: ' +
-        (firstError && firstError.message ? firstError.message : 'a kérés nem sikerült.'));
-    return {ok:true, via:'environmentTriggersDeploy', serviceId:String(serviceId),
-      environmentId:String(environmentId)};
+    // A token lehet projekt vagy fiók token; a másik fejléccel is megpróbáljuk.
+    const other = state.auth === 'account' ? 'project' : 'account';
+    try { return finish(await attempt(other)); }
+    catch (error) {
+      throw authFail('A Railway nem fogadta el a tokent (' + state.tokenVar + '). ' +
+        'Ellenőrizd, hogy valódi projekt token van-e a SITE_DEPLOY_TOKEN-ben ' +
+        '(Project-Access-Token fejléc) vagy fiók token a SITE_DEPLOY_API_TOKEN-ben ' +
+        '(Authorization: Bearer fejléc), hogy a token nem járt-e le, és hogy a ' +
+        'szolgáltatás- és környezet-azonosító a weboldal projektjéhez tartozik-e. ' +
+        (error && error.message ? error.message : ''));
+    }
   }
 
   return {status, deploy};
