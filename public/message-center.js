@@ -241,7 +241,7 @@
     // A dashboard alsó sávja: a belső (munkaterületi) oszlop szélességében,
     // középen, a lap aljára rögzítve. Nem vesz el helyet a folyamatból, ezért
     // a fenti sticky elemeket nem mozdítja el; kinyitva felfelé lóg.
-    '.ks-msgbar{position:fixed;left:50%;transform:translateX(-50%);bottom:var(--chat-height,0px);z-index:15;width:min(1060px,calc(100vw - 24px));border:1px solid var(--ks-line,#d7dad4);border-bottom:0;border-radius:10px 10px 0 0;background:#fff;box-shadow:0 -8px 22px rgba(16,27,22,.14);font:14px/1.45 Arial,sans-serif;color:var(--ks-ink,#26312e)}',
+    '.ks-msgbar{position:fixed;left:50%;transform:translateX(-50%);bottom:0;z-index:15;width:min(1060px,calc(100vw - 24px));border:1px solid var(--ks-line,#d7dad4);border-bottom:0;border-radius:10px 10px 0 0;background:#fff;box-shadow:0 -8px 22px rgba(16,27,22,.14);font:14px/1.45 Arial,sans-serif;color:var(--ks-ink,#26312e)}',
     '.ks-msgbar[hidden]{display:none!important}',
     '.ks-msgbar-head{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:7px 12px;border:0;background:var(--ks-dark,#3e3e3e);color:#fff;font:inherit;text-align:left;cursor:pointer;border-radius:9px 9px 0 0}',
     '.ks-msgbar-head:hover{background:#2f2f2f}',
@@ -257,6 +257,8 @@
     '.ks-msgbar-chevron{display:flex;flex:none;width:20px;height:20px;transition:transform .18s}',
     '.ks-msgbar[data-state=open] .ks-msgbar-chevron{transform:rotate(180deg)}',
     '.ks-msgbar-chevron svg{width:20px;height:20px}',
+    /* Kinyitva a sáv a chat fölé kerül, hogy a lenyíló lista ne takarja el. */
+    '.ks-msgbar[data-state=open]{z-index:30}',
     '.ks-msgbar-body{position:absolute;left:-1px;right:-1px;bottom:100%;display:block;max-height:0;opacity:0;overflow:auto;pointer-events:none;visibility:hidden;background:#fff;border:0 solid var(--ks-line,#d7dad4);border-radius:10px 10px 0 0;box-shadow:0 -18px 40px rgba(16,27,22,.2);transition:max-height .2s ease,opacity .15s ease}',
     '.ks-msgbar[data-state=open] .ks-msgbar-body{max-height:min(50vh,420px);opacity:1;pointer-events:auto;visibility:visible;border-width:1px 1px 0}',
     '@media(prefers-reduced-motion:reduce){.ks-msgbar-body{transition:none}}',
@@ -494,24 +496,16 @@
       if (rootStyle && rootStyle.setProperty) rootStyle.setProperty('--ks-msgbar-height', value);
     }
 
-    // A sáv a munkaterület (belső oszlop) pozíciójához igazodik: a bal széle és
-    // a szélessége is az oszlopéval egyezik. Ha nincs munkaterület (például még
-    // nincs kiválasztott projekt), a CSS középre igazító tartaléka érvényes.
+    // A sáv a tartalmi oszlop (main) pozíciójához és szélességéhez igazodik,
+    // pontosan úgy, mint az AI-chat, és a viewport alján ül; a chat felette van.
     function syncPosition() {
-      const main = doc.querySelector && doc.querySelector('.workspace-main');
-      const rect = main && main.getBoundingClientRect ? main.getBoundingClientRect() : null;
+      const target = doc.querySelector ? doc.querySelector('main') : null;
+      const rect = target && target.getBoundingClientRect ? target.getBoundingClientRect() : null;
       const width = rect ? Number(rect.width) || 0 : 0;
       if (!bar.style) return;
       if (width > 0) {
-        const viewport = Number(root.innerWidth) || 0;
-        let left = Math.max(8, Math.round(rect.left));
-        let clamped = Math.round(width);
-        if (viewport > 0) {
-          clamped = Math.min(clamped, viewport - 16);
-          left = Math.min(left, Math.max(8, viewport - clamped - 8));
-        }
-        bar.style.left = left + 'px';
-        bar.style.width = clamped + 'px';
+        bar.style.left = Math.round(rect.left) + 'px';
+        bar.style.width = Math.round(width) + 'px';
         bar.style.transform = 'none';
       } else {
         bar.style.left = '';
@@ -519,10 +513,24 @@
         bar.style.transform = '';
       }
     }
-    if (root.addEventListener !== undefined)
-      root.addEventListener('resize', syncPosition);
-    if (typeof root.ResizeObserver === 'function' && doc.body)
-      new root.ResizeObserver(syncPosition).observe(doc.body);
+    // A görgetés és az átméretezés egy képkockára összevonva mér.
+    let syncQueued = false;
+    function scheduleSync() {
+      if (syncQueued) return;
+      syncQueued = true;
+      const run = () => { syncQueued = false; syncPosition(); };
+      if (typeof root.requestAnimationFrame === 'function') root.requestAnimationFrame(run);
+      else run();
+    }
+    if (root.addEventListener !== undefined) {
+      root.addEventListener('resize', scheduleSync);
+      root.addEventListener('scroll', scheduleSync, {passive:true});
+    }
+    if (typeof root.ResizeObserver === 'function') {
+      const column = doc.querySelector ? doc.querySelector('main') : null;
+      if (column) new root.ResizeObserver(scheduleSync).observe(column);
+      if (doc.body) new root.ResizeObserver(scheduleSync).observe(doc.body);
+    }
 
     function activeTab() {
       return bar.dataset.tab === 'log' ? 'log' : 'messages';

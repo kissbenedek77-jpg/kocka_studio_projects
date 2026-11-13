@@ -161,20 +161,21 @@ function pagesFromFiles(files) {
 }
 
 // A meglévő (szerkesztett) oldalak és a fájlokból olvasott szerkezet
-// összevonása: a mezők és a sorrend a fájlból jön, a már ismert értékek
-// megmaradnak, az új kulcsok értéke a fájlból származik, a fájlból eltűnt
-// mezők pedig kikerülnek a formáról.
+// összevonása: a mezők és a sorrend mindig a fájlból jön, az új kulcsok értéke
+// a fájlból származik, a fájlból eltűnt mezők kikerülnek a formáról. A korábbi
+// értékeket csak akkor vesszük át, ha ugyanahhoz a data fájlhoz tartoznak; ha a
+// fájl neve megváltozott (pl. index.txt → fooldal.txt), a fájl tartalma nyer.
 function mergePages(current,scanned) {
-  const byId = new Map((current || []).map(page => [page.id,page]));
-  const byTitle = new Map();
-  for (const page of current || []) {
-    const key = String(page.title || '').trim().toLowerCase();
-    if (key && !byTitle.has(key)) byTitle.set(key,page);
+  const list = current || [];
+  const byId = new Map(list.map(page => [page.id,page]));
+  const byTitleFile = new Map();
+  for (const page of list) {
+    const key = String(page.title || '').trim().toLowerCase()+'\u0000'+String(page.file || '');
+    if (!byTitleFile.has(key)) byTitleFile.set(key,page);
   }
   return (scanned || []).map(page => {
-    // Ha a fájl neve megváltozott (pl. index.txt → fooldal.txt), a címe alapján
-    // is megtaláljuk a korábbi oldalt, hogy a szerkesztett értékek megmaradjanak.
-    const old = byId.get(page.id) || byTitle.get(String(page.title || '').trim().toLowerCase());
+    const old = byId.get(page.id) ||
+      byTitleFile.get(String(page.title || '').trim().toLowerCase()+'\u0000'+page.file);
     if (!old) return page;
     const values = new Map();
     for (const group of old.groups || [])

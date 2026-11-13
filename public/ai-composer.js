@@ -14,7 +14,7 @@
 
 (function (root) {
   const STYLE = `
-    #chat.ks-ai-composer{position:fixed;left:50%;transform:translateX(-50%);bottom:0;
+    #chat.ks-ai-composer{position:fixed;left:50%;transform:translateX(-50%);bottom:var(--ks-msgbar-height,0px);
       width:min(1060px,100%);margin:0;padding:0;z-index:20;display:flex;flex-direction:column;
       max-height:min(34vh,260px);border:1px solid var(--ks-line,#d7dad4);border-bottom:0;
       border-radius:10px 10px 0 0;box-shadow:0 -8px 22px rgba(16,27,22,.16);

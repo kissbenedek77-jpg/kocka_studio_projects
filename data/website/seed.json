@@ -3,7 +3,7 @@
   "updatedAt": "2026-11-12T15:58:15.960Z",
   "pages": [
     {
-      "id": "home",
+      "id": "fooldal",
       "title": "Főoldal",
       "file": "fooldal",
       "groups": [
@@ -13,8 +13,8 @@
             {
               "key": "hero",
               "label": "Hero cím",
-              "multiline": false,
-              "value": ""
+              "multiline": true,
+              "value": "ÉPÍTÉSZET ÉS BELSŐÉPÍTÉSZET KAPOSVÁRRÓL. CSALÁDI HÁZAK, NYARALÓK, SZÁLLODÁK ÉS KÖZÖSSÉGI TEREK — A TELEKVÁLASZTÁSTÓL A KULCSOK ÁTADÁSÁIG. TÖBB MINT HÚSZ ÉV TAPASZTALATA."
             },
             {
               "key": "home_intro",
@@ -25,13 +25,77 @@
           ]
         },
         {
+          "title": "Megbízók",
+          "fields": [
+            {
+              "key": "clients_intro",
+              "label": "Megbízók bevezető",
+              "multiline": true,
+              "value": "MAGÁNÉPÍTTETŐKKEL, FEJLESZTŐKKEL, SZÁLLODÁKKAL ÉS INTÉZMÉNYEKKEL DOLGOZUNK. A KIS CSALÁDI HÁZAKTÓL A NAGYOBB KÖZÖSSÉGI PROJEKTEKIG."
+            }
+          ]
+        },
+        {
+          "title": "Szolgáltatások",
+          "fields": [
+            {
+              "key": "service_intro",
+              "label": "Service intro",
+              "multiline": true,
+              "value": "AZ ELSŐ ÖTLETTŐL A KIVITELEZÉS FELÜGYELETÉIG. EGY CSAPATTAL, EGY FELELŐSSEL, KÖVETKEZETES MINŐSÉGBEN."
+            },
+            {
+              "key": "service_intro_2",
+              "label": "Service intro 2",
+              "multiline": true,
+              "value": "CSALÁDI HÁZAK, NYARALÓK, SZÁLLODÁK ÉS KÖZÖSSÉGI ÉPÜLETEK TERVEZÉSE KAPOSVÁRRÓL, AZ ORSZÁG EGÉSZ TERÜLETÉN."
+            },
+            {
+              "key": "service_button",
+              "label": "Service button",
+              "multiline": false,
+              "value": "RÉSZLETES SZOLGÁLTATÁSOK"
+            }
+          ]
+        },
+        {
           "title": "Általános",
           "fields": [
             {
-              "key": "cta",
-              "label": "Cta",
+              "key": "news_label",
+              "label": "News label",
               "multiline": false,
-              "value": ""
+              "value": "[LEGÚJABB"
+            },
+            {
+              "key": "news_index",
+              "label": "News index",
+              "multiline": false,
+              "value": "S.4]"
+            },
+            {
+              "key": "news_type",
+              "label": "News type",
+              "multiline": false,
+              "value": "ESETTANULMÁNY"
+            },
+            {
+              "key": "offer_title",
+              "label": "Offer title",
+              "multiline": false,
+              "value": "BESZÉLJÜNK"
+            },
+            {
+              "key": "offer_text",
+              "label": "Offer text",
+              "multiline": true,
+              "value": "VAN EGY TELKE, EGY RÉGI HÁZA, VAGY CSAK EGY ÖTLETE? MINDEN PROJEKT EGY BESZÉLGETÉSSEL KEZDŐDIK. ÍRJON NEKÜNK, ÉS EGYEZTESSÜNK EGY SZEMÉLYES KONZULTÁCIÓT."
+            },
+            {
+              "key": "offer_button",
+              "label": "Offer button",
+              "multiline": false,
+              "value": "BESZÉLJÜNK"
             }
           ]
         }

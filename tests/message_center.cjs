@@ -70,7 +70,7 @@ function fakeDocument(page) {
     createElement: tag => new FakeElement(tag),
     createDocumentFragment: () => new FakeElement('#fragment'),
     addEventListener() {},
-    querySelector(selector) { return selector === 'main.shell' ? main : null; }
+    querySelector(selector) { return selector === 'main.shell' || selector === 'main' ? main : null; }
   };
 }
 
@@ -267,27 +267,44 @@ test('A dashboard alsĂł sĂˇvja a szervernaplĂłt is mutatja', () => {
   assert.equal(bar.hidden, true, 'a naplĂł is tĂ¶rĂ¶lhetĹ‘');
 });
 
-test('A dashboard alsĂł sĂˇvja a kĂ¶zĂ©psĹ‘ oszlop pozĂ­ciĂłjĂˇhoz igazodik', () => {
+test('A sáv ugyanahhoz az oszlophoz igazodik, mint az AI-chat, és a viewport alján van', () => {
   const doc = fakeDocument('dashboard');
-  const workspace = new FakeElement('div');
-  workspace.getBoundingClientRect = () => ({left: 242, top: 0, width: 700, height: 100, right: 942, bottom: 100});
-  doc.querySelector = selector => selector === '.workspace-main' ? workspace : null;
+  const main = new FakeElement('main');
+  main.getBoundingClientRect = () => ({left: 242, top: 0, width: 700, height: 100, right: 942, bottom: 100});
+  doc.querySelector = selector => selector === 'main' ? main : null;
   const api = createBrowserApi({document: doc, sessionStorage: null});
   const bar = collect(doc.body, node => node.className === 'ks-msgbar')[0];
-  api.notice('Valami tĂ¶rtĂ©nt.', 'info');
-  assert.equal(bar.style.left, '242px', 'a bal szĂ©l a munkaterĂĽlet bal szĂ©lĂ©hez igazodik');
-  assert.equal(bar.style.width, '700px', 'a szĂ©lessĂ©g a munkaterĂĽlet szĂ©lessĂ©ge');
-  assert.equal(bar.style.transform, 'none', 'nincs kĂ¶zĂ©pre igazĂ­tĂˇs');
+  api.notice('Valami történt.', 'info');
+  assert.equal(bar.style.left, '242px', 'a bal szél a main oszlop bal széléhez igazodik');
+  assert.equal(bar.style.width, '700px', 'a szélesség a main oszlopéval egyezik');
+  assert.equal(bar.style.transform, 'none', 'nincs középre igazítás');
+  assert.equal(doc.documentElement.style.values['--ks-msgbar-height'], '46px',
+    'a sáv magassága a chat alsó offsetjeként megjelenik');
 
-  // Ha nincs munkaterĂĽlet (nincs kivĂˇlasztott projekt), a CSS kĂ¶zĂ©pre igazĂ­tĂł
-  // tartalĂ©ka Ă©rvĂ©nyes.
-  workspace.getBoundingClientRect = () => ({left: 0, top: 0, width: 0, height: 0});
-  api.notice('Ăšjabb ĂĽzenet.', 'info');
+  // Ha nincs mérhető oszlop, a CSS középre igazító tartaléka érvényes.
+  main.getBoundingClientRect = () => ({left: 0, top: 0, width: 0, height: 0});
+  api.notice('Újabb üzenet.', 'info');
   assert.equal(bar.style.left, '');
   assert.equal(bar.style.width, '');
   assert.equal(bar.style.transform, '');
 });
 
+test('A sáv a viewport alján ül, az AI-chat felette, és a tartalom mindkettőt elkerüli', () => {
+  const module = read('public/message-center.js');
+  assert.match(module, /\.ks-msgbar\{position:fixed;left:50%;transform:translateX\(-50%\);bottom:0;/,
+    'az értesítéssáv a viewport alján van');
+  assert.match(module, /doc\.querySelector\('main'\)/, 'ugyanaz az igazítási cél, mint a chaté');
+  const composer = read('public/ai-composer.js');
+  assert.match(composer, /#chat\.ks-ai-composer\{[^`]*bottom:var\(--ks-msgbar-height,0px\)/,
+    'a chat a sáv fölött helyezkedik el');
+  const css = read('public/theme/ks-theme.css');
+  assert.match(css, /--ks-stack-height:\s*calc\(var\(--chat-height, 0px\) \+ var\(--ks-msgbar-height, 0px\)\)/,
+    'a közös magasság a két sáv összege');
+  assert.match(css, /padding-bottom:calc\(80px \+ var\(--ks-stack-height\)\)/,
+    'a tartalom a teljes sávmagasságot elkerüli');
+  assert.match(css, /bottom:calc\(var\(--ks-stack-height\) \+ \.6rem\)/,
+    'a műszaki leírás műveletsora is a sávok fölé kerül');
+});
 test('A dashboard felsĹ‘ sticky elemeit nem bĂˇntja a sĂˇv', () => {
   const css = read('public/theme/ks-theme.css');
   assert.match(css, /\.project-select-sticky\{position:sticky;top:0;/,

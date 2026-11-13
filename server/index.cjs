@@ -96,12 +96,17 @@ const siteSources = webSources({git:siteGit,projectDir:process.env.WEB_PROJECT_D
 
 // A /site tartalma: a data fájlokból frissített szerkezet és a tárolt értékek.
 // Új fájl vagy új kulcs a következő betöltéskor automatikusan megjelenik.
-async function siteContent() {
+async function syncSiteStructure() {
   const structure = await siteSources.load();
   if (Array.isArray(structure.files) && structure.files.length) {
     const scanned = pagesFromFiles(structure.files);
     if (scanned.length) await siteStore.syncPages(scanned);
   }
+  return structure;
+}
+
+async function siteContent() {
+  const structure = await syncSiteStructure();
   return {content: await siteStore.load(), projectFields: PROJECT_FIELDS,
     publish: await sitePublisher.status(), deploy: siteDeployer.status(),
     structure: {source: structure.source, files: (structure.files || []).length,
@@ -127,6 +132,12 @@ const siteDeployer = railwayDeployer({
 // indítja a Railway deployt (webhook), ezért olyankor nem indítunk külön
 // deployt: az a korábbi commitot telepítené.
 async function publishWebsite() {
+  // A publikálás előtt a szerkezetet a data fájlokból frissítjük: a fájlban
+  // lévő mezők a mérvadók, így nem írunk vissza elavult mezőlistát.
+  const structure = await syncSiteStructure();
+  if (structure.source === 'error')
+    throw Object.assign(new Error('A data fájlok nem olvashatók, ezért a publikálás ' +
+      'biztonsági okból nem indult el: ' + (structure.error || 'ismeretlen hiba')),{status:503});
   const published = await sitePublisher.publish();
   if (published.target === 'github')
     return {...published, deploy:{...siteDeployer.status(), triggered:false, via:'github'}};

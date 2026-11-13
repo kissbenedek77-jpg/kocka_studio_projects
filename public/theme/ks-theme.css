@@ -295,6 +295,8 @@ body[data-ks-page=dashboard] .timeline-meta{margin:0 0 22px;padding:7px 12px 10p
   --ks-success: #4f8562;
   --ks-warning: #a9782a;
   --ks-radius: 4px;
+  /* Az alsó sáv és a felette lévő AI-chat együttes magassága. */
+  --ks-stack-height: calc(var(--chat-height, 0px) + var(--ks-msgbar-height, 0px));
 
   /* A korĂˇbbi oldalak sajĂˇt vĂˇltozĂłi: kĂ¶zĂ¶s Ă©rtĂ©kre ĂˇllĂ­tva. */
   --ink: var(--ks-ink);
@@ -535,18 +537,18 @@ hr { border-color: var(--ks-line); opacity: 1; }
 
 
 /* A weboldal-kezelő tartalma alatt hely az AI-sávnak (Bootstrap container). */
-body[data-ks-page=site] main{padding-bottom:calc(80px + var(--chat-height,0px))}
+body[data-ks-page=site] main{padding-bottom:calc(80px + var(--ks-stack-height))}
 
 /* ---- technical.html – a korábbi oldalspecifikus stílusblokk ---- */
 body[data-ks-page="technical"]{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#26312e;background:#eeeee9}
-body[data-ks-page="technical"]{scroll-padding-top:1.5rem;scroll-padding-bottom:calc(var(--chat-height,0px) + 1rem)}
+body[data-ks-page="technical"]{scroll-padding-top:1.5rem;scroll-padding-bottom:calc(var(--ks-stack-height) + 1rem)}
 body[data-ks-page="technical"] *{box-sizing:border-box}
 body[data-ks-page="technical"]{margin:0}
 body[data-ks-page="technical"] header{background:#3e3e3e;color:white;padding:1.25rem max(1rem,calc((100vw - 1060px)/2))}
 body[data-ks-page="technical"] header h1{font-size:1.45rem;margin:.25rem 0}
 body[data-ks-page="technical"] header p{margin:.25rem 0;color:#d9ded8}
 body[data-ks-page="technical"] header .header-row{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap}
-body[data-ks-page="technical"] main{max-width:1060px;margin:auto;padding:1.1rem;padding-bottom:calc(var(--chat-height,0px) + 1.6rem);min-width:0}
+body[data-ks-page="technical"] main{max-width:1060px;margin:auto;padding:1.1rem;padding-bottom:calc(var(--ks-stack-height) + 1.6rem);min-width:0}
 body[data-ks-page="technical"] a{color:#26312e;overflow-wrap:anywhere}
 body[data-ks-page="technical"] header a{color:white}
 body[data-ks-page="technical"] header strong{overflow-wrap:anywhere}
@@ -614,7 +616,7 @@ body[data-ks-page="technical"] .block-tools{display:flex;gap:.5rem;align-items:c
 body[data-ks-page="technical"] .doc-block:hover .block-tools, body[data-ks-page="technical"] .doc-block:focus-within .block-tools{opacity:1}
 body[data-ks-page="technical"] details.doc-extra{border:1px solid #d7dad4;border-radius:8px;padding:.6rem .8rem;margin:.6rem 0;background:#fbfcfc}
 body[data-ks-page="technical"] details.doc-extra summary{cursor:pointer;font-weight:600;color:#8f7748}
-body[data-ks-page="technical"] .actions{position:sticky;bottom:calc(var(--chat-height,0px) + .6rem);background:#eeeee9eF;padding:.8rem 0;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;z-index:2}
+body[data-ks-page="technical"] .actions{position:sticky;bottom:calc(var(--ks-stack-height) + .6rem);background:#eeeee9eF;padding:.8rem 0;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;z-index:2}
 body[data-ks-page="technical"] button{border:0;border-radius:8px;background:#26312e;color:white;padding:.8rem 1.3rem;font:inherit;font-weight:650;cursor:pointer}
 body[data-ks-page="technical"] button:disabled{opacity:.55;cursor:wait}
 body[data-ks-page="technical"] .secondary{background:#f5f7f4;color:#3e3e3e}
@@ -630,7 +632,7 @@ body[data-ks-page="technical"] .chat-log p{margin:0;padding:.7rem .9rem;border-r
 body[data-ks-page="technical"] .chat-log p.me{background:#f5f7f4;border-left:4px solid #a88952}
 body[data-ks-page="technical"] .chat-actions{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.45rem}
 body[data-ks-page="technical"] #chat[hidden]{display:none}
-body[data-ks-page="technical"] #chat{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(1060px,100%);
+body[data-ks-page="technical"] #chat{position:fixed;left:50%;transform:translateX(-50%);bottom:var(--ks-msgbar-height,0px);width:min(1060px,100%);
       margin:0;padding:0;z-index:20;display:flex;flex-direction:column;
       max-height:min(30vh,220px);border-radius:12px 12px 0 0;box-shadow:0 -6px 18px #3e3e3e1f}
 body[data-ks-page="technical"] #chat .chat-head{display:flex;align-items:center;gap:.6rem;padding:.35rem .75rem;border-bottom:1px solid #d7dad4;flex:none}
@@ -677,7 +679,7 @@ body[data-ks-page="technical"] header{padding:1rem}
 body[data-ks-page="technical"] .actions{padding:.8rem 0 max(.8rem,env(safe-area-inset-bottom))}
 }
 @media(max-width:480px){
-body[data-ks-page="technical"] main{padding:.75rem;padding-bottom:calc(var(--chat-height,0px) + 1.2rem)}
+body[data-ks-page="technical"] main{padding:.75rem;padding-bottom:calc(var(--ks-stack-height) + 1.2rem)}
 body[data-ks-page="technical"] .actions{display:grid;grid-template-columns:minmax(0,1fr);gap:.6rem}
 body[data-ks-page="technical"] .actions button{width:100%;min-height:44px}
 body[data-ks-page="technical"] .notice, body[data-ks-page="technical"] .doc-section{overflow-wrap:anywhere}

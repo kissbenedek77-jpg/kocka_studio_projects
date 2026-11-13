@@ -107,6 +107,11 @@ test('A form mezői a data fájlokból származnak, új fájl build nélkül meg
   assert.match(html,/webRefreshStructure/);
   assert.match(server,/webRefreshStructure/);
   assert.match(server,/siteSources\.clear\(\)/,'a kézi frissítés kihagyja a gyorsítótárat');
+  assert.match(server,/async function syncSiteStructure\(\)/);
+  assert.match(server,/const structure = await syncSiteStructure\(\);/,
+    'a publikálás előtt a fájlokból frissül a szerkezet');
+  assert.match(server,/biztonsági okból nem indult el/,
+    'olvashatatlan data fájl esetén a publikálás nem ír felül');
 });
 
 test('A szerver kiszolgálja és védi az oldalt', () => {  const server = fs.readFileSync(path.join(root,'server','index.cjs'),'utf8');

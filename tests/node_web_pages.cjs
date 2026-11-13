@@ -46,20 +46,32 @@ test('Az összevonás a fájl szerkezetét követi, az értékeket megtartja', (
   assert.equal(fields[1].value,'Új érték','az új kulcs a fájlból jön');
 });
 
-test('Átnevezett fájl esetén a cím alapján megmaradnak az értékek', () => {
+test('Átnevezett fájl esetén a fájl tartalma a mérvadó', () => {
   const current = [pageFromPairs('home','Főoldal','index',[
-    ['hero','Szerkesztett hero'],['cta','Szerkesztett CTA']
+    ['hero','Régi hero'],['cta','Régi CTA']
   ])];
   const scanned = pagesFromFiles([{file:'fooldal.txt',
-    text:'# oldal: Főoldal\nhero=Fájl hero\ncta=Fájl CTA\nuj=Új\n'}]);
+    text:'# oldal: Főoldal\nhero=Fájl hero\nservice_intro=Szolgáltatás\n'}]);
   const merged = mergePages(current,scanned);
   assert.equal(merged.length,1);
   assert.equal(merged[0].id,'fooldal','a fájl neve lesz az azonosító');
   assert.equal(merged[0].file,'fooldal');
+  const fields = merged[0].groups.flatMap(group => group.fields);
+  assert.deepEqual(fields.map(field => field.key),['hero','service_intro'],
+    'pontosan a fájl mezői');
+  assert.equal(fields[0].value,'Fájl hero','átnevezésnél a fájl értéke nyer');
+});
+
+test('Azonos fájl mellett a korábbi értékek megmaradnak', () => {
+  const current = [pageFromPairs('home','Főoldal','fooldal',[['hero','Szerkesztett']])];
+  const scanned = pagesFromFiles([{file:'fooldal.txt',
+    text:'# oldal: Főoldal\nhero=Fájl hero\nuj=Új\n'}]);
+  const merged = mergePages(current,scanned);
+  assert.equal(merged[0].id,'fooldal');
   const values = new Map(merged[0].groups.flatMap(group => group.fields)
     .map(field => [field.key,field.value]));
-  assert.equal(values.get('hero'),'Szerkesztett hero','a régi érték megmarad');
-  assert.equal(values.get('uj'),'Új','az új kulcs a fájlból jön');
+  assert.equal(values.get('hero'),'Szerkesztett','ugyanahhoz a fájlhoz tartozó érték marad');
+  assert.equal(values.get('uj'),'Új');
 });
 
 test('A projektek szövegei blokkos TXT-be íródnak', () => {
