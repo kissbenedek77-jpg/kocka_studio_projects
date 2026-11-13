@@ -65,8 +65,9 @@ test('Publikálás után Railway deploy indul, és kézzel is indítható', () =
   assert.match(server,/require\('\.\/railway\.cjs'\)/);
   assert.match(server,/publishWebsite\(\)/,'a webPublish deployt is indít');
   assert.match(server,/webRailwayDeploy/);
-  assert.match(server,/RAILWAY_SERVICE_ID/);
-  assert.match(server,/RAILWAY_ENVIRONMENT_ID/);
+  assert.match(server,/SITE_DEPLOY_SERVICE_ID/);
+  assert.match(server,/SITE_DEPLOY_ENVIRONMENT_ID/);
+  assert.doesNotMatch(server,/process\.env\.RAILWAY_/,'a Railway saját RAILWAY_* változóit nem olvassuk');
   const railway = fs.readFileSync(path.join(root,'server','railway.cjs'),'utf8');
   assert.match(railway,/serviceInstanceRedeploy/);
   assert.match(railway,/Project-Access-Token/);

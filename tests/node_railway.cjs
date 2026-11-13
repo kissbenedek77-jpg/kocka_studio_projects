@@ -24,7 +24,19 @@ test('Beállítás nélkül a deploy állapota hiányzó változókat jelez', ()
   const deployer = railwayDeployer({});
   const state = deployer.status();
   assert.equal(state.configured,false);
-  assert.deepEqual(state.missing,['RAILWAY_TOKEN','RAILWAY_SERVICE_ID','RAILWAY_ENVIRONMENT_ID']);
+  assert.deepEqual(state.missing,
+    ['SITE_DEPLOY_TOKEN','SITE_DEPLOY_SERVICE_ID','SITE_DEPLOY_ENVIRONMENT_ID']);
+});
+
+test('A rendszer nem olvassa be a Railway saját RAILWAY_* változóit', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const server = fs.readFileSync(path.join(__dirname,'..','server','index.cjs'),'utf8');
+  const railway = fs.readFileSync(path.join(__dirname,'..','server','railway.cjs'),'utf8');
+  assert.doesNotMatch(server,/process\.env\.RAILWAY_/);
+  assert.doesNotMatch(railway,/process\.env\.RAILWAY_/);
+  assert.match(server,/process\.env\.SITE_DEPLOY_SERVICE_ID/);
+  assert.match(server,/process\.env\.SITE_DEPLOY_ENVIRONMENT_ID/);
 });
 
 test('Projekt tokennél a Project-Access-Token fejlécet használja', async () => {
@@ -57,7 +69,7 @@ test('Beállítás nélkül a deploy érthető hibát ad, hívás nélkül', asy
   const deployer = railwayDeployer({serviceId,environmentId,fetchImpl});
   await assert.rejects(deployer.deploy(),error => {
     assert.equal(error.status,503);
-    assert.match(error.message,/RAILWAY_TOKEN/);
+    assert.match(error.message,/SITE_DEPLOY_TOKEN/);
     return true;
   });
   assert.equal(fetchImpl.calls.length,0);

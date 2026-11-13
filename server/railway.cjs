@@ -7,13 +7,15 @@
 // kell telepíteni; ezt végzi ez a modul a Railway API-val. Ha a változók nincsenek
 // beállítva, a publikálás változatlanul működik, csak deploy nem indul.
 //
-// Változók:
-//   RAILWAY_API_TOKEN       fiók/workspace token (Authorization: Bearer)
-//   RAILWAY_TOKEN           projekt token (Project-Access-Token)
-//   RAILWAY_SERVICE_ID      a weboldal szolgáltatás azonosítója
-//   RAILWAY_ENVIRONMENT_ID  a környezet azonosítója
-//   RAILWAY_PROJECT_ID      opcionális, a tartalék deploy-mutationhöz
-//   RAILWAY_API_URL         opcionális, alapérték a Railway GraphQL v2 végpont
+// Változók (a Railway saját rendszerváltozói ugyanígy kezdődnek, ezért saját
+// SITE_DEPLOY_ előtagot használunk; a RAILWAY_* értékeket szándékosan nem
+// olvassuk, mert azok a futó szolgáltatás saját azonosítói):
+//   SITE_DEPLOY_API_TOKEN       fiók/workspace token (Authorization: Bearer)
+//   SITE_DEPLOY_TOKEN           projekt token (Project-Access-Token)
+//   SITE_DEPLOY_SERVICE_ID      a weboldal szolgáltatás azonosítója
+//   SITE_DEPLOY_ENVIRONMENT_ID  a környezet azonosítója
+//   SITE_DEPLOY_PROJECT_ID      opcionális, a tartalék deploy-mutationhöz
+//   SITE_DEPLOY_API_URL         opcionális, alapérték a Railway GraphQL v2 végpont
 //
 // A token soha nem kerül naplóba vagy hibaüzenetbe.
 
@@ -34,9 +36,9 @@ function railwayDeployer({
   const url = String(endpoint || DEFAULT_ENDPOINT);
   const mode = tokenType === 'account' ? 'account' : 'project';
   const missing = [];
-  if (!token) missing.push(mode === 'account' ? 'RAILWAY_API_TOKEN' : 'RAILWAY_TOKEN');
-  if (!serviceId) missing.push('RAILWAY_SERVICE_ID');
-  if (!environmentId) missing.push('RAILWAY_ENVIRONMENT_ID');
+  if (!token) missing.push(mode === 'account' ? 'SITE_DEPLOY_API_TOKEN' : 'SITE_DEPLOY_TOKEN');
+  if (!serviceId) missing.push('SITE_DEPLOY_SERVICE_ID');
+  if (!environmentId) missing.push('SITE_DEPLOY_ENVIRONMENT_ID');
 
   // Az állapot a felületnek: be van-e állítva, és mi hiányzik. Tokent nem ad ki.
   function status() {

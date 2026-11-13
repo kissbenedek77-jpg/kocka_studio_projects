@@ -81,13 +81,16 @@ const sitePublisher = webPublisher({store:siteStore,
     path.join(__dirname,'..','..','kocka_studio_uj_honlap')});
 // A weboldal szolgáltatásának Railway deployja. Fiók/workspace tokennél
 // Authorization, projekt tokennél Project-Access-Token fejlécet használunk.
+// A nevek SITE_DEPLOY_ előtagot kaptak: a Railway a futó szolgáltatás saját
+// azonosítóit RAILWAY_SERVICE_ID / RAILWAY_ENVIRONMENT_ID néven injektálja,
+// ezeket nem szabad a weboldal beállításaként értelmezni.
 const siteDeployer = railwayDeployer({
-  token: process.env.RAILWAY_API_TOKEN || process.env.RAILWAY_TOKEN || '',
-  tokenType: process.env.RAILWAY_API_TOKEN ? 'account' : 'project',
-  serviceId: process.env.RAILWAY_SERVICE_ID || '',
-  environmentId: process.env.RAILWAY_ENVIRONMENT_ID || '',
-  projectId: process.env.RAILWAY_PROJECT_ID || '',
-  endpoint: process.env.RAILWAY_API_URL || ''
+  token: process.env.SITE_DEPLOY_API_TOKEN || process.env.SITE_DEPLOY_TOKEN || '',
+  tokenType: process.env.SITE_DEPLOY_API_TOKEN ? 'account' : 'project',
+  serviceId: process.env.SITE_DEPLOY_SERVICE_ID || '',
+  environmentId: process.env.SITE_DEPLOY_ENVIRONMENT_ID || '',
+  projectId: process.env.SITE_DEPLOY_PROJECT_ID || '',
+  endpoint: process.env.SITE_DEPLOY_API_URL || ''
 });
 // Publikálás után a weboldal deployja is elindul, ha be van állítva. A deploy
 // hibája nem buktatja el a publikálást: a fájlok már kiíródtak, ezért csak
