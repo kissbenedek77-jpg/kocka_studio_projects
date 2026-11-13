@@ -136,7 +136,36 @@ function gitPublisher({
     return {commit: commit.sha, files: entries.map(entry => entry.path)};
   }
 
-  return {status, publish};
+  // A data mappa szöveges fájljai (a weboldal tartalmi forrásai).
+  async function listDataFiles(dir = 'shared/data') {
+    const state = status();
+    if (!state.configured)
+      throw fail('A GitHub nincs beállítva. Hiányzó változó: '+state.missing.join(', ')+'.',503);
+    const folder = String(dir || 'shared/data').replace(/^\/+|\/+$/g,'');
+    const base = prefix ? prefix+'/'+folder : folder;
+    const tree = await request('GET','/repos/'+target+'/git/trees/'+refPath+'?recursive=1');
+    const entries = Array.isArray(tree.tree) ? tree.tree : [];
+    return entries
+      .filter(entry => entry && entry.type === 'blob' && entry.path &&
+        entry.path.startsWith(base+'/') && /\.txt$/i.test(entry.path))
+      .map(entry => ({path:entry.path,name:entry.path.split('/').pop()}))
+      .sort((a,b) => a.name.localeCompare(b.name,'hu'));
+  }
+
+  // Egy szöveges fájl tartalma a repóból.
+  async function readTextFile(filePath) {
+    const state = status();
+    if (!state.configured)
+      throw fail('A GitHub nincs beállítva. Hiányzó változó: '+state.missing.join(', ')+'.',503);
+    const encoded = String(filePath || '').split('/').map(encodeURIComponent).join('/');
+    const data = await request('GET','/repos/'+target+'/contents/'+encoded+
+      '?ref='+encodeURIComponent(head));
+    if (!data || data.type !== 'file' || typeof data.content !== 'string')
+      throw fail('A fájl nem olvasható a repóból: '+filePath,404);
+    return Buffer.from(data.content.replace(/\s+/g,''),'base64').toString('utf8');
+  }
+
+  return {status, publish, listDataFiles, readTextFile};
 }
 
 module.exports = {gitPublisher, DEFAULT_API};

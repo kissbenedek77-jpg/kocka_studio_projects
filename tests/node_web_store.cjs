@@ -6,6 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const sharp = require('sharp');
 const {webStore} = require('../server/web_store.cjs');
+const {pageFromPairs} = require('../server/web_content.cjs');
 
 function tempStore() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(),'kocka-web-'));
@@ -109,4 +110,47 @@ test('A média útvonal nem léphet ki a mappából', () => {
   const {store} = tempStore();
   assert.throws(()=>store.mediaFile('../../titok.txt'),/Érvénytelen/);
   assert.match(store.mediaFile('projekt/1.jpg'),/projekt[\\/]1\.jpg$/);
+});
+
+test('A syncPages a data fájlok szerkezetét követi, az értékeket megtartja', async () => {
+  const {store} = tempStore();
+  const before = await store.load();
+  const old = before.pages.find(page => page.id === 'rolunk');
+  assert.ok(old,'a seed tartalmazza a rolunk oldalt');
+  const firstKey = old.groups[0].fields[0].key;
+  await store.saveField('rolunk',firstKey,'Szerkesztett érték');
+
+  const scanned = [
+    pageFromPairs('rolunk','Rólunk','rolunk',[
+      [firstKey,'Fájlból jött érték'],
+      ['uj_mezo','Új mező a fájlból']
+    ]),
+    pageFromPairs('kapcsolat','Kapcsolat','kapcsolat',[['hero','KAPCSOLAT']])
+  ];
+  const saved = await store.syncPages(scanned);
+  assert.ok(saved,'a szerkezet változott, ezért mentődik');
+
+  const content = await store.load();
+  const page = content.pages.find(item => item.id === 'rolunk');
+  const keys = page.groups.flatMap(group => group.fields.map(field => field.key));
+  assert.deepEqual(keys,[firstKey,'uj_mezo'],'pontosan a fájl kulcsai, a fájl sorrendjében');
+  const field = page.groups[0].fields.find(item => item.key === firstKey);
+  assert.equal(field.value,'Szerkesztett érték','a szerkesztett érték megmarad');
+  const added = page.groups.flatMap(group => group.fields)
+    .find(item => item.key === 'uj_mezo');
+  assert.equal(added.value,'Új mező a fájlból','az új kulcs értéke a fájlból jön');
+  assert.ok(!content.pages.some(item => item.id === 'szolgaltatasok'),
+    'a fájlból eltűnt oldal kikerül');
+  assert.ok(content.pages.some(item => item.id === 'kapcsolat'),'az új oldal bekerül');
+});
+
+test('A syncPages másodszor már nem ír feleslegesen', async () => {
+  const {store} = tempStore();
+  const content = await store.load();
+  const page = content.pages.find(item => item.id === 'rolunk');
+  const pairs = page.groups.flatMap(group => group.fields.map(field => [field.key,field.value]));
+  const scanned = [pageFromPairs('rolunk',page.title,page.file,pairs)];
+  await store.syncPages(scanned);
+  const saved = await store.syncPages(scanned);
+  assert.equal(saved,null,'a szerkezet már egyezik, nincs felesleges írás');
 });

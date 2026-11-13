@@ -88,8 +88,24 @@ test('Publikálás után Railway deploy indul, és kézzel is indítható', () =
   assert.match(railway,/configured: missing\.length === 0/);
 });
 
-test('A szerver kiszolgálja és védi az oldalt', () => {
+test('A form mezői a data fájlokból származnak, új fájl build nélkül megjelenik', () => {
   const server = fs.readFileSync(path.join(root,'server','index.cjs'),'utf8');
+  assert.match(server,/require\('\.\/web_sources\.cjs'\)/);
+  assert.match(server,/pagesFromFiles\(structure\.files\)/);
+  assert.match(server,/siteStore\.syncPages\(scanned\)/);
+  assert.match(server,/structure: \{source: structure\.source/);
+  const sources = fs.readFileSync(path.join(root,'server','web_sources.cjs'),'utf8');
+  assert.match(sources,/listDataFiles/,'a repó fájljait listázza');
+  assert.match(sources,/cacheMs/,'rövid gyorsítótár');
+  const content = fs.readFileSync(path.join(root,'server','web_content.cjs'),'utf8');
+  assert.match(content,/function pagesFromFiles/);
+  assert.match(content,/function mergePages/);
+  assert.match(content,/function hasBlocks/);
+  assert.match(html,/id="structureInfo"/);
+  assert.match(html,/A mezők a weboldal/);
+});
+
+test('A szerver kiszolgálja és védi az oldalt', () => {  const server = fs.readFileSync(path.join(root,'server','index.cjs'),'utf8');
   assert.match(server,/url\.pathname === '\/site'/);
   assert.match(server,/webGetContent/);
   assert.match(server,/webSaveField/);

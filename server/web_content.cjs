@@ -88,8 +88,10 @@ function parseTxt(content) {
   return pairs;
 }
 
-function serializeTxt(fields) {
-  const lines = ['# Kocka Stúdió – szerkesztett tartalom',''];
+function serializeTxt(fields, title) {
+  const lines = ['# Kocka Stúdió – szerkesztett tartalom'];
+  if (title) lines.push('# oldal: '+String(title).replace(/\r?\n/g,' ').trim());
+  lines.push('');
   for (const field of fields) lines.push(`${field.key}=${String(field.value || '').replace(/\r?\n/g,' ').trim()}`);
   return lines.join('\n')+'\n';
 }
@@ -111,6 +113,74 @@ function pageFromPairs(id,title,file,pairs) {
       value:clean(value)});
   }
   return {id,title,file,groups};
+}
+
+// Az oldal címe a fájl elején álló `# oldal: Név` (vagy `# page: Név`) sorból
+// származik; ha nincs ilyen, a fájlnévből képzett cím.
+const PAGE_TITLE = /^#\s*(?:oldal|cím|cim|page|title)\s*[:=]\s*(.+)$/im;
+// Ismert fájlnevekhez szép cím, hogy az ékezetes oldalcímek megmaradjanak.
+const PAGE_TITLES = {
+  home:'Főoldal', fooldal:'Főoldal', rolunk:'Rólunk', szolgaltatasok:'Szolgáltatások',
+  kapcsolat:'Kapcsolat', naplo:'Napló', munkaink:'Munkáink', projektek:'Projektek',
+  arak:'Árak', galeria:'Galéria'
+};
+
+function pageTitleFrom(text,file) {
+  for (const line of String(text || '').split(/\r?\n/)) {
+    const value = line.trim();
+    if (!value) continue;
+    const match = value.match(PAGE_TITLE);
+    if (match) return clean(match[1],120);
+    if (!value.startsWith('#')) break;
+  }
+  const key = String(file || '').replace(/\.txt$/i,'').replace(/[-_]+/g,' ').trim().toLowerCase();
+  if (PAGE_TITLES[key]) return PAGE_TITLES[key];
+  return clean(key ? key.replace(/^./,letter => letter.toUpperCase()) : 'Oldal',120);
+}
+
+// A [blokk] szintaxist használó fájlok rekordlistát írnak le (pl. projektek),
+// nem egy oldalt, ezért nem jelennek meg oldalként a szerkesztőben.
+function hasBlocks(text) {
+  return /^\s*\[[^\]]+\]\s*$/m.test(String(text || ''));
+}
+
+// A data mappából származó fájlokból oldalak, a fájlban lévő kulcsokkal és
+// sorrendben. Ismeretlen kulcs is bekerül, így a forma a fájlt követi.
+function pagesFromFiles(files) {
+  const pages = [];
+  for (const item of files || []) {
+    const file = String(item && item.file || '').replace(/\.txt$/i,'').replace(/[^a-zA-Z0-9_-]/g,'');
+    if (!file || hasBlocks(item && item.text)) continue;
+    const pairs = parseTxt(item.text);
+    if (!pairs.length) continue;
+    const page = pageFromPairs(file,pageTitleFrom(item.text,file),file,pairs);
+    page.titleFromFile = PAGE_TITLE.test(String(item.text || ''));
+    pages.push(page);
+  }
+  return pages;
+}
+
+// A meglévő (szerkesztett) oldalak és a fájlokból olvasott szerkezet
+// összevonása: a mezők és a sorrend a fájlból jön, a már ismert értékek
+// megmaradnak, az új kulcsok értéke a fájlból származik, a fájlból eltűnt
+// mezők pedig kikerülnek a formáról.
+function mergePages(current,scanned) {
+  const byId = new Map((current || []).map(page => [page.id,page]));
+  return (scanned || []).map(page => {
+    const old = byId.get(page.id);
+    if (!old) return page;
+    const values = new Map();
+    for (const group of old.groups || [])
+      for (const field of group.fields || []) values.set(field.key,field.value);
+    const merged = {
+      ...page,
+      title: page.titleFromFile ? page.title : (old.title || page.title),
+      groups: page.groups.map(group => ({...group,fields:group.fields.map(field =>
+        values.has(field.key) ? {...field,value:values.get(field.key)} : field)}))
+    };
+    delete merged.titleFromFile;
+    return merged;
+  });
 }
 
 // A régi projects.js bejegyzéséből a szerkesztő saját projektobjektuma.
@@ -210,11 +280,34 @@ const PROJECT_FIELDS = [
 ];
 
 // Egy oldal visszaírása a régi kulcs=érték TXT formátumba (az export része).
+// A címet megjegyzésként is kiírjuk, hogy a következő beolvasáskor megmaradjon.
 function exportPageTxt(page) {
   const fields = [];
   for (const group of page.groups || [])
     for (const field of group.fields || []) fields.push(field);
-  return serializeTxt(fields);
+  return serializeTxt(fields,page.title);
+}
+
+// A projektek szövegei a weboldal által használt blokkos TXT formában
+// ([projekt-id] blokkok, kulcs=érték sorokkal).
+const PROJECT_TXT_KEYS = ['title','type','location','year','tagline','description','credits'];
+
+function exportProjectsTxt(projects) {
+  const lines = [
+    '# Kocka Stúdió – projektek szövegei',
+    '# Szerkeszthető TXT. A blokkok [projekt-id] sorral kezdődnek.',
+    '# Mezők: '+PROJECT_TXT_KEYS.join(', '),
+    ''
+  ];
+  for (const project of projects || []) {
+    lines.push('['+project.id+']');
+    for (const key of PROJECT_TXT_KEYS) {
+      const value = String(project[key] == null ? '' : project[key]).replace(/\r?\n/g,' ').trim();
+      if (value) lines.push(key+'='+value);
+    }
+    lines.push('');
+  }
+  return lines.join('\n');
 }
 
 // A projektlista visszaírása a weboldal által használt projects.js formába.
@@ -238,5 +331,6 @@ function exportProjectsJs(projects) {
 }
 
 module.exports = {PUBLIC_BASE,PROJECT_FIELDS,parseTxt,serializeTxt,pageFromPairs,
+  pageTitleFrom,hasBlocks,pagesFromFiles,mergePages,
   projectFromLegacy,buildSeed,normalizeContent,absolute,labelFor,groupFor,clean,
-  exportPageTxt,exportProjectsJs};
+  exportPageTxt,exportProjectsTxt,exportProjectsJs};

@@ -24,6 +24,15 @@ function fakeGitHub({failWith} = {}) {
     if (method === 'POST' && path.endsWith('/git/trees')) return json({sha:'new-tree'});
     if (method === 'POST' && path.endsWith('/git/commits')) return json({sha:'commit-2'});
     if (method === 'PATCH' && /\/git\/refs\/heads\//.test(path)) return json({object:{sha:'commit-2'}});
+    if (method === 'GET' && /\/git\/trees\//.test(path)) return json({tree:[
+      {path:'shared/data/rolunk.txt',type:'blob'},
+      {path:'shared/data/projektek.txt',type:'blob'},
+      {path:'shared/js/projects.js',type:'blob'},
+      {path:'shared/img/projects/a/1.jpg',type:'blob'}
+    ]});
+    if (method === 'GET' && /\/contents\//.test(path))
+      return json({type:'file',encoding:'base64',
+        content:Buffer.from('hero=RÓLUNK\nintro=Bevezető\n','utf8').toString('base64')});
     return json({message:'váratlan kérés: '+method+' '+path},404);
   };
   impl.calls = calls;
@@ -128,6 +137,26 @@ test('Hálózati hiba esetén a publikálás nem omlik össze', async () => {
   const publisher = gitPublisher({token:'t',repo:'o/r',
     fetchImpl:async()=>{throw new Error('ECONNRESET')}});
   await assert.rejects(publisher.publish(files,'x'),/nem érhető el: ECONNRESET/);
+});
+
+test('A data fájlok listázása csak a shared/data TXT-ket adja', async () => {
+  const fetchImpl = fakeGitHub();
+  const publisher = gitPublisher({token:'t',repo:'o/r',fetchImpl});
+  const files = await publisher.listDataFiles('shared/data');
+  assert.deepEqual(files,[
+    {path:'shared/data/projektek.txt',name:'projektek.txt'},
+    {path:'shared/data/rolunk.txt',name:'rolunk.txt'}
+  ]);
+  assert.match(fetchImpl.calls[0].path,/\/git\/trees\/main\?recursive=1$/);
+});
+
+test('A data fájl tartalma a repóból olvasható', async () => {
+  const fetchImpl = fakeGitHub();
+  const publisher = gitPublisher({token:'t',repo:'o/r',fetchImpl});
+  const text = await publisher.readTextFile('shared/data/rolunk.txt');
+  assert.match(text,/hero=RÓLUNK/);
+  const call = fetchImpl.calls[0];
+  assert.equal(call.path,'/repos/o/r/contents/shared/data/rolunk.txt?ref=main');
 });
 
 test('Időtúllépéskor 504-es hiba jön', async () => {

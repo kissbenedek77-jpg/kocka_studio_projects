@@ -27,9 +27,10 @@ const {marketingStore} = require('./marketing_store.cjs');
 const {webStore} = require('./web_store.cjs');
 const {webPublisher} = require('./web_publish.cjs');
 const {gitPublisher} = require('./web_git.cjs');
+const {webSources} = require('./web_sources.cjs');
 const {railwayDeployer} = require('./railway.cjs');
 const {generateText:generateWebText} = require('./web_ai.cjs');
-const {PUBLIC_BASE,PROJECT_FIELDS,exportPageTxt,exportProjectsJs} = require('./web_content.cjs');
+const {PUBLIC_BASE,PROJECT_FIELDS,exportPageTxt,exportProjectsJs,pagesFromFiles} = require('./web_content.cjs');
 const {discoverTopics,validateTopic,due,nextRun,pickTopic,generatePostText,postSvg,POST_STYLES} = require('./marketing_posts.cjs');
 const {facebookStatus,publishFacebookPhoto,deleteFacebookPhoto} = require('./marketing_facebook.cjs');
 const {instagramStatus,publishInstagramImage,deleteInstagramMedia} = require('./marketing_instagram.cjs');
@@ -89,6 +90,9 @@ const siteGit = gitPublisher({
 });
 const sitePublisher = webPublisher({store:siteStore,git:siteGit,
   projectDir:process.env.WEB_PROJECT_DIR || ''});
+// A data fájlok (oldalak szerkezete) a weboldal repójából vagy a helyi
+// projektmappából; a /site forma ezt követi, build nélkül.
+const siteSources = webSources({git:siteGit,projectDir:process.env.WEB_PROJECT_DIR || ''});
 // A weboldal szolgáltatásának Railway deployja. Fiók/workspace tokennél
 // Authorization, projekt tokennél Project-Access-Token fejlécet használunk.
 // A nevek SITE_DEPLOY_ előtagot kaptak: a Railway a futó szolgáltatás saját
@@ -397,8 +401,17 @@ async function rpc(name, args, session) {
   // Csak a bejelentkezett tulajdonos érheti el, mert az RPC végpont védett.
   if (name === 'dashboardLogs') return logBuffer.read(Number(args[0]) || 0, Number(args[1]) || 100);
   // MARK: Weboldal-kezelő (a nyilvános honlap tartalma és fotói)
-  if (name === 'webGetContent') return {content: await siteStore.load(), projectFields: PROJECT_FIELDS,
-    publish: await sitePublisher.status(), deploy: siteDeployer.status()};
+  if (name === 'webGetContent') {
+    const structure = await siteSources.load();
+    if (Array.isArray(structure.files) && structure.files.length) {
+      const scanned = pagesFromFiles(structure.files);
+      if (scanned.length) await siteStore.syncPages(scanned);
+    }
+    return {content: await siteStore.load(), projectFields: PROJECT_FIELDS,
+      publish: await sitePublisher.status(), deploy: siteDeployer.status(),
+      structure: {source: structure.source, files: (structure.files || []).length,
+        error: structure.error || '', missing: structure.missing || []}};
+  }
   if (name === 'webSaveField')
     return siteStore.saveField(String(args[0] || ''),String(args[1] || ''),args[2]);
   if (name === 'webSaveProject')

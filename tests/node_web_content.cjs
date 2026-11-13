@@ -2,7 +2,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {parseTxt,pageFromPairs,projectFromLegacy,buildSeed,normalizeContent,
-  exportPageTxt,exportProjectsJs,absolute,PUBLIC_BASE} = require('../server/web_content.cjs');
+  exportPageTxt,exportProjectsJs,exportProjectsTxt,absolute,PUBLIC_BASE,
+  pagesFromFiles,mergePages,pageTitleFrom,hasBlocks} = require('../server/web_content.cjs');
 
 test('A kulcs=érték szöveg beolvasása megjegyzéseket kihagy', () => {
   const pairs = parseTxt('# fejléc\nhero=RÓLUNK\n\nintro=Egy hosszú bevezető.\n');

@@ -13,7 +13,7 @@ const fsp = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const sharp = require('sharp');
-const {normalizeContent,clean} = require('./web_content.cjs');
+const {normalizeContent,mergePages,clean} = require('./web_content.cjs');
 
 const IMAGE_MIME = new Set(['image/jpeg','image/png','image/webp']);
 const MAX_UPLOAD = 8 * 1024 * 1024;
@@ -82,6 +82,18 @@ function webStore(options = {}) {
       for (const field of group.fields)
         if (field.key === key) { field.value = clean(value); found = true; }
     if (!found) throw fail('A mező nem található: '+key,404);
+    return save(content);
+  }
+
+  // Az oldalak szerkezetének (oldalak, mezők, sorrend) összevonása a data
+  // fájlokból olvasott állapottal. A szerkesztett értékek megmaradnak, az új
+  // kulcsok és oldalak automatikusan bekerülnek, a töröltek kikerülnek.
+  async function syncPages(pages) {
+    if (!Array.isArray(pages) || !pages.length) return null;
+    const content = await load();
+    const before = JSON.stringify(content.pages);
+    content.pages = mergePages(content.pages,pages);
+    if (JSON.stringify(content.pages) === before) return null;
     return save(content);
   }
 
@@ -205,7 +217,7 @@ function webStore(options = {}) {
     return file;
   }
 
-  return {ensure,load,save,saveField,saveProject,addProject,deleteProject,reorderProjects,
+  return {ensure,load,save,saveField,syncPages,saveProject,addProject,deleteProject,reorderProjects,
     saveImage,deleteImage,reorderImages,mediaFile,dataDir,mediaDir};
 }
 

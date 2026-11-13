@@ -14,6 +14,7 @@
   <main class="container py-4">
     <h1 class="h3 fw-normal mb-2">Weboldal tartalma</h1>
     <p class="text-secondary mb-4">A nyilvános honlap szövegei és projektfotói. A feltöltött képekhez automatikusan készül nagy változat és thumbnail. A szövegeknél az AI segít megfogalmazni; a javaslatot felülírhatod vagy a meglévő szöveghez fűzheted.</p>
+    <p id="structureInfo" class="small text-secondary mb-3"></p>
     <div id="publishBar" class="alert alert-light border d-flex flex-wrap align-items-center gap-3 mb-3" hidden>
       <span id="publishInfo" class="small text-secondary flex-grow-1"></span>
       <span id="deployInfo" class="small text-secondary"></span>
@@ -40,7 +41,7 @@
     const app=document.getElementById('app');
     const nav=document.getElementById('nav');
     const panel=document.getElementById('panel');
-    let content=null,projectFields=[],view='pages',publish=null,deploy=null;
+    let content=null,projectFields=[],view='pages',publish=null,deploy=null,structure=null;
 
     function el(tag,cls,text){const node=document.createElement(tag);if(cls)node.className=cls;
       if(text!==undefined)node.textContent=text;return node}
@@ -71,9 +72,25 @@
       projectFields=next.projectFields||projectFields;
       publish=next.publish||publish;
       deploy=next.deploy||deploy;
+      structure=next.structure||structure;
       renderNav();
       renderView();
       renderPublish();
+      renderStructure();
+    }
+
+    // A forma mezői a weboldal data fájljaiból származnak; itt jelezzük, honnan.
+    function renderStructure(){
+      const node=document.getElementById('structureInfo');
+      if(!node)return;
+      if(!structure){node.textContent='';return}
+      if(structure.source==='github'||structure.source==='local')
+        node.textContent='A mezők a weboldal '+(structure.source==='github'?'repójának':'helyi projektjének')+
+          ' data fájljaiból származnak ('+structure.files+' fájl). Új fájl vagy kulcs automatikusan megjelenik.';
+      else if(structure.source==='error')
+        node.textContent='A data fájlok most nem olvashatók: '+
+          (structure.error||'ismeretlen hiba')+'. A mentett mezők láthatók.';
+      else node.textContent='A data fájlok forrása nincs beállítva, ezért a mentett mezők láthatók.';
     }
 
     // A publikálás a weboldal git repójába írja a TXT-ket és a projects.js-t

@@ -15,7 +15,7 @@
 
 const fs = require('node:fs/promises');
 const path = require('node:path');
-const {exportPageTxt,exportProjectsJs,PUBLIC_BASE} = require('./web_content.cjs');
+const {exportPageTxt,exportProjectsJs,exportProjectsTxt,PUBLIC_BASE} = require('./web_content.cjs');
 
 const fail = (message,status=400) => Object.assign(new Error(message),{status});
 const safeId = value => String(value || '').replace(/[^A-Za-z0-9_-]/g,'-').slice(0,90);
@@ -70,6 +70,7 @@ function webPublisher({store,projectDir,git}) {
       const name = String(page.file || page.id).replace(/[^a-z0-9_-]/gi,'') || page.id;
       files.push({path:'shared/data/'+name+'.txt',text:exportPageTxt(page)});
     }
+    files.push({path:'shared/data/projektek.txt',text:exportProjectsTxt(content.projects)});
     files.push({path:'shared/js/projects.js',text:exportProjectsJs(prepared)});
     return files;
   }
@@ -145,6 +146,7 @@ function webPublisher({store,projectDir,git}) {
     }
 
     await writeFile(path.join(jsDir,'projects.js'),exportProjectsJs(prepared),files);
+    await writeFile(path.join(dataDir,'projektek.txt'),exportProjectsTxt(content.projects),files);
     return {target:'local',projectDir:root,files,images:copied};
   }
 
