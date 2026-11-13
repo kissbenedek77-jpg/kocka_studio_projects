@@ -76,6 +76,25 @@ test('GitHub hiba esetén nem omlik össze, és a hiba is cache-elődik', async 
   assert.equal(reads,1,'a hiba nem terheli újra a kvótát');
 });
 
+test('Egy olvashatatlan fájl nem akasztja meg a többit', async () => {
+  const git = {
+    status:()=>({configured:true}),
+    listDataFiles:async()=>[
+      {path:'shared/data/a.txt',name:'a.txt'},
+      {path:'shared/data/rossz.txt',name:'rossz.txt'}
+    ],
+    readTextFile:async file => {
+      if(file.endsWith('rossz.txt')) throw new Error('HTTP 500');
+      return 'hero=A';
+    }
+  };
+  const sources = webSources({git,projectDir:'',cacheMs:0});
+  const result = await sources.load();
+  assert.equal(result.source,'github');
+  assert.deepEqual(result.files.map(file => file.file),['a.txt']);
+  assert.deepEqual(result.failed,['rossz.txt']);
+});
+
 test('Beállítás nélkül nincs forrás, de nem hiba', async () => {
   const sources = webSources({git:null,projectDir:'',cacheMs:0});
   const result = await sources.load();

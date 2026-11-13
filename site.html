@@ -14,7 +14,10 @@
   <main class="container py-4">
     <h1 class="h3 fw-normal mb-2">Weboldal tartalma</h1>
     <p class="text-secondary mb-4">A nyilvános honlap szövegei és projektfotói. A feltöltött képekhez automatikusan készül nagy változat és thumbnail. A szövegeknél az AI segít megfogalmazni; a javaslatot felülírhatod vagy a meglévő szöveghez fűzheted.</p>
-    <p id="structureInfo" class="small text-secondary mb-3"></p>
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+      <p id="structureInfo" class="small text-secondary mb-0 flex-grow-1"></p>
+      <button id="refreshStructure" class="btn btn-outline-secondary btn-sm" type="button">Mezők frissítése</button>
+    </div>
     <div id="publishBar" class="alert alert-light border d-flex flex-wrap align-items-center gap-3 mb-3" hidden>
       <span id="publishInfo" class="small text-secondary flex-grow-1"></span>
       <span id="deployInfo" class="small text-secondary"></span>
@@ -84,13 +87,28 @@
       const node=document.getElementById('structureInfo');
       if(!node)return;
       if(!structure){node.textContent='';return}
-      if(structure.source==='github'||structure.source==='local')
-        node.textContent='A mezők a weboldal '+(structure.source==='github'?'repójának':'helyi projektjének')+
+      if(structure.source==='github'||structure.source==='local'){
+        let text='A mezők a weboldal '+(structure.source==='github'?'repójának':'helyi projektjének')+
           ' data fájljaiból származnak ('+structure.files+' fájl). Új fájl vagy kulcs automatikusan megjelenik.';
-      else if(structure.source==='error')
+        if(structure.failed)text+=' '+structure.failed+' fájl most nem volt olvasható.';
+        node.textContent=text;
+      }else if(structure.source==='error')
         node.textContent='A data fájlok most nem olvashatók: '+
           (structure.error||'ismeretlen hiba')+'. A mentett mezők láthatók.';
       else node.textContent='A data fájlok forrása nincs beállítva, ezért a mentett mezők láthatók.';
+    }
+
+    // Kézi frissítés: a gyorsítótár kihagyásával újraolvassa a data fájlokat,
+    // így egy új vagy átnevezett fájl azonnal megjelenik.
+    async function refreshStructure(){
+      const button=document.getElementById('refreshStructure');
+      if(button)button.disabled=true;
+      status('Mezők frissítése…');
+      try{
+        setContent(await rpc('webRefreshStructure'));
+        status('A mezők a data fájlokból frissültek.','success');
+      }catch(error){status(error.message||String(error),'error')}
+      finally{if(button)button.disabled=false}
     }
 
     // A publikálás a weboldal git repójába írja a TXT-ket és a projects.js-t
@@ -456,6 +474,7 @@
     chat.setRootHidden(false);
     document.getElementById('publishButton').addEventListener('click',doPublish);
     document.getElementById('railwayButton').addEventListener('click',doRailwayDeploy);
+    document.getElementById('refreshStructure').addEventListener('click',refreshStructure);
     load();
   </script>
 </body>

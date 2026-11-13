@@ -166,8 +166,15 @@ function pagesFromFiles(files) {
 // mezők pedig kikerülnek a formáról.
 function mergePages(current,scanned) {
   const byId = new Map((current || []).map(page => [page.id,page]));
+  const byTitle = new Map();
+  for (const page of current || []) {
+    const key = String(page.title || '').trim().toLowerCase();
+    if (key && !byTitle.has(key)) byTitle.set(key,page);
+  }
   return (scanned || []).map(page => {
-    const old = byId.get(page.id);
+    // Ha a fájl neve megváltozott (pl. index.txt → fooldal.txt), a címe alapján
+    // is megtaláljuk a korábbi oldalt, hogy a szerkesztett értékek megmaradjanak.
+    const old = byId.get(page.id) || byTitle.get(String(page.title || '').trim().toLowerCase());
     if (!old) return page;
     const values = new Map();
     for (const group of old.groups || [])

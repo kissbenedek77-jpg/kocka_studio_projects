@@ -93,6 +93,21 @@ const sitePublisher = webPublisher({store:siteStore,git:siteGit,
 // A data fájlok (oldalak szerkezete) a weboldal repójából vagy a helyi
 // projektmappából; a /site forma ezt követi, build nélkül.
 const siteSources = webSources({git:siteGit,projectDir:process.env.WEB_PROJECT_DIR || ''});
+
+// A /site tartalma: a data fájlokból frissített szerkezet és a tárolt értékek.
+// Új fájl vagy új kulcs a következő betöltéskor automatikusan megjelenik.
+async function siteContent() {
+  const structure = await siteSources.load();
+  if (Array.isArray(structure.files) && structure.files.length) {
+    const scanned = pagesFromFiles(structure.files);
+    if (scanned.length) await siteStore.syncPages(scanned);
+  }
+  return {content: await siteStore.load(), projectFields: PROJECT_FIELDS,
+    publish: await sitePublisher.status(), deploy: siteDeployer.status(),
+    structure: {source: structure.source, files: (structure.files || []).length,
+      failed: (structure.failed || []).length, error: structure.error || '',
+      missing: structure.missing || []}};
+}
 // A weboldal szolgáltatásának Railway deployja. Fiók/workspace tokennél
 // Authorization, projekt tokennél Project-Access-Token fejlécet használunk.
 // A nevek SITE_DEPLOY_ előtagot kaptak: a Railway a futó szolgáltatás saját
@@ -401,17 +416,8 @@ async function rpc(name, args, session) {
   // Csak a bejelentkezett tulajdonos érheti el, mert az RPC végpont védett.
   if (name === 'dashboardLogs') return logBuffer.read(Number(args[0]) || 0, Number(args[1]) || 100);
   // MARK: Weboldal-kezelő (a nyilvános honlap tartalma és fotói)
-  if (name === 'webGetContent') {
-    const structure = await siteSources.load();
-    if (Array.isArray(structure.files) && structure.files.length) {
-      const scanned = pagesFromFiles(structure.files);
-      if (scanned.length) await siteStore.syncPages(scanned);
-    }
-    return {content: await siteStore.load(), projectFields: PROJECT_FIELDS,
-      publish: await sitePublisher.status(), deploy: siteDeployer.status(),
-      structure: {source: structure.source, files: (structure.files || []).length,
-        error: structure.error || '', missing: structure.missing || []}};
-  }
+  if (name === 'webGetContent') return siteContent();
+  if (name === 'webRefreshStructure') { siteSources.clear(); return siteContent(); }
   if (name === 'webSaveField')
     return siteStore.saveField(String(args[0] || ''),String(args[1] || ''),args[2]);
   if (name === 'webSaveProject')

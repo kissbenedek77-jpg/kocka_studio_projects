@@ -46,6 +46,22 @@ test('Az összevonás a fájl szerkezetét követi, az értékeket megtartja', (
   assert.equal(fields[1].value,'Új érték','az új kulcs a fájlból jön');
 });
 
+test('Átnevezett fájl esetén a cím alapján megmaradnak az értékek', () => {
+  const current = [pageFromPairs('home','Főoldal','index',[
+    ['hero','Szerkesztett hero'],['cta','Szerkesztett CTA']
+  ])];
+  const scanned = pagesFromFiles([{file:'fooldal.txt',
+    text:'# oldal: Főoldal\nhero=Fájl hero\ncta=Fájl CTA\nuj=Új\n'}]);
+  const merged = mergePages(current,scanned);
+  assert.equal(merged.length,1);
+  assert.equal(merged[0].id,'fooldal','a fájl neve lesz az azonosító');
+  assert.equal(merged[0].file,'fooldal');
+  const values = new Map(merged[0].groups.flatMap(group => group.fields)
+    .map(field => [field.key,field.value]));
+  assert.equal(values.get('hero'),'Szerkesztett hero','a régi érték megmarad');
+  assert.equal(values.get('uj'),'Új','az új kulcs a fájlból jön');
+});
+
 test('A projektek szövegei blokkos TXT-be íródnak', () => {
   const txt = exportProjectsTxt([{id:'haz',title:'Ház',year:'2010',
     description:'Leírás',credits:'Kocka',category:'lako'}]);

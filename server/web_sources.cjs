@@ -31,9 +31,14 @@ function webSources({git, projectDir, cacheMs = 60000, now = Date.now} = {}) {
   async function readGitHub() {
     const entries = await git.listDataFiles('shared/data');
     const files = [];
-    for (const entry of entries)
-      files.push({file:entry.name,text:await git.readTextFile(entry.path)});
-    return {source:'github',files};
+    const failed = [];
+    // Egy olvashatatlan fájl ne akassza meg a többit: a hibás fájlt kihagyjuk,
+    // a többi oldal így is frissül.
+    for (const entry of entries) {
+      try { files.push({file:entry.name,text:await git.readTextFile(entry.path)}); }
+      catch (_) { failed.push(entry.name); }
+    }
+    return {source:'github',files,failed};
   }
 
   async function read() {

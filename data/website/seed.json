@@ -5,7 +5,7 @@
     {
       "id": "home",
       "title": "Főoldal",
-      "file": "index",
+      "file": "fooldal",
       "groups": [
         {
           "title": "Fejléc és bevezető",

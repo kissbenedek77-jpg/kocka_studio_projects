@@ -103,6 +103,10 @@ test('A form mezői a data fájlokból származnak, új fájl build nélkül meg
   assert.match(content,/function hasBlocks/);
   assert.match(html,/id="structureInfo"/);
   assert.match(html,/A mezők a weboldal/);
+  assert.match(html,/id="refreshStructure"/);
+  assert.match(html,/webRefreshStructure/);
+  assert.match(server,/webRefreshStructure/);
+  assert.match(server,/siteSources\.clear\(\)/,'a kézi frissítés kihagyja a gyorsítótárat');
 });
 
 test('A szerver kiszolgálja és védi az oldalt', () => {  const server = fs.readFileSync(path.join(root,'server','index.cjs'),'utf8');
