@@ -41,7 +41,7 @@
 - Helyi belépés: `LOCAL_LOGIN_USERNAME`, `LOCAL_LOGIN_PASSWORD_HASH` (hash: `node scripts/create_local_password_hash.cjs`).
 - AI és marketing: `GEMINI_API_KEY` (+ `GEMINI_TECHNICAL_MODEL`, `GEMINI_MARKETING_MODEL`), `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_AI_TOKEN`, `MARKETING_FOLDER_ID`, `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_ACCESS_TOKEN`, `INSTAGRAM_BUSINESS_ACCOUNT_ID`.
 - Egyéb: `SHEET_ID`, `TEMPLATE_ROOT_FOLDER_ID`, `SYSTEM_FOLDER_ID`, `PROJECT_DATA_TEMPLATE_ID` (van alapértékük), `CLIENT_SUBMISSION_EMAIL=1`, `LEGACY_PUBLIC_ORIGIN`.
-- Weboldal-kezelő: `SITE_DATA_DIR` (Railway Volume, pl. `/data/website`), `WEB_PUBLIC_BASE` (a nyilvános oldal címe), `WEB_PROJECT_DIR` (a weboldal projekt mappája a publikáláshoz).
+- Weboldal-kezelő: `SITE_DATA_DIR` (Railway Volume, pl. `/data/website`), `WEB_PUBLIC_BASE` (a nyilvános oldal címe), `SITE_GITHUB_REPO`, `SITE_GITHUB_TOKEN` (contents: write), `SITE_GITHUB_BRANCH`, opcionálisan `SITE_GITHUB_PATH`, `SITE_GITHUB_API_URL`. A publikálás a weboldal git repójába commitol; a `WEB_PROJECT_DIR` csak helyi fejlesztéshez való.
 - Weboldal-deploy a publikálás után: `SITE_DEPLOY_TOKEN` (projekt token) vagy `SITE_DEPLOY_API_TOKEN` (fiók token), `SITE_DEPLOY_SERVICE_ID`, `SITE_DEPLOY_ENVIRONMENT_ID`, opcionálisan `SITE_DEPLOY_PROJECT_ID`, `SITE_DEPLOY_API_URL`. A `RAILWAY_*` neveket a Railway a futó szolgáltatás saját azonosítóiként injektálja, ezért azokat nem használjuk.
 - A teljes lista a `.env.example`-ben van. A `SESSION_SECRET` cseréje érvényteleníti a korábban küldött letöltési linkeket.
 

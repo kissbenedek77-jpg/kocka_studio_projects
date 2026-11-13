@@ -43,16 +43,26 @@ test('A projektek szerkeszthetők és sorrendezhetők', () => {
   assert.match(html,/webDeleteProject/);
 });
 
-test('A szerkesztő publikál a weboldal projektjébe', () => {
+test('A szerkesztő a weboldal git repójába publikál', () => {
   assert.match(html,/Publikálás a weboldalba/);
   assert.match(html,/'webPublish'/);
-  assert.match(html,/WEB_PROJECT_DIR/);
+  assert.match(html,/Publikálás: GitHub/);
+  assert.doesNotMatch(html,/Állítsd be a WEB_PROJECT_DIR változót/,'élesben nincs helyi mappa');
   const server = fs.readFileSync(path.join(root,'server','index.cjs'),'utf8');
   assert.match(server,/webPublish/);
+  assert.match(server,/require\('\.\/web_git\.cjs'\)/);
+  assert.match(server,/SITE_GITHUB_TOKEN/);
+  assert.match(server,/SITE_GITHUB_REPO/);
+  const git = fs.readFileSync(path.join(root,'server','web_git.cjs'),'utf8');
+  assert.match(git,/git\/blobs/);
+  assert.match(git,/git\/trees/);
+  assert.match(git,/git\/commits/);
+  assert.match(git,/base_tree/);
   const publisher = fs.readFileSync(path.join(root,'server','web_publish.cjs'),'utf8');
   assert.match(publisher,/shared,'data'/);
   assert.match(publisher,/shared,'js'/);
   assert.match(publisher,/projects\.js/);
+  assert.match(publisher,/mediaUrl/,'a feltöltött kép abszolút URL-t kap');
 });
 
 test('Publikálás után Railway deploy indul, és kézzel is indítható', () => {

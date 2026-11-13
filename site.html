@@ -76,8 +76,9 @@
       renderPublish();
     }
 
-    // A publikálás a weboldal projektjébe írja a TXT-ket, a projects.js-t és a
-    // feltöltött képeket. A célmappa a szerveren beállított WEB_PROJECT_DIR.
+    // A publikálás a weboldal git repójába írja a TXT-ket és a projects.js-t
+    // (GitHub API), a feltöltött képek pedig a szerverről érhetők el.
+    // Fejlesztésnél, WEB_PROJECT_DIR megadásakor helyi mappába ír.
     // Publikálás után a szerver Railway deployt is indíthat; ennek állapotát itt
     // jelezzük, és kézzel is újraindítható.
     function renderPublish(){
@@ -90,11 +91,16 @@
       if(!publish){bar.hidden=true;return}
       bar.hidden=false;
       if(publish.configured){
-        info.textContent='Célmappa: '+publish.path;
+        info.textContent=publish.target==='github'
+          ?'Publikálás: GitHub – '+publish.repo+' ('+publish.branch+')'
+          :'Publikálás helyi mappába: '+publish.path;
         button.disabled=false;
+      }else if(publish.target==='local'&&publish.path){
+        info.textContent='A weboldal projekt mappa nem érhető el ('+publish.path+').';
+        button.disabled=true;
       }else{
-        info.textContent='A publikálás célmappája nem érhető el'+
-          (publish.path?' ('+publish.path+')':'')+'. Állítsd be a WEB_PROJECT_DIR változót.';
+        info.textContent='A publikálás nincs beállítva'+
+          (publish.missing&&publish.missing.length?' ('+publish.missing.join(', ')+')':'')+'.';
         button.disabled=true;
       }
       if(!deployInfo||!railway)return;
@@ -113,15 +119,23 @@
 
     async function doPublish(){
       const button=document.getElementById('publishButton');
-      if(!confirm('A szerkesztett tartalom bekerül a weboldal projektjébe (shared/data, shared/js, shared/img). Folytatod?'))return;
+      const question=publish&&publish.target==='github'
+        ?'A szerkesztett szövegek a weboldal git repójába kerülnek ('+publish.repo+', '+publish.branch+' branch). A feltöltött képek a szerverről érhetők el. Folytatod?'
+        :'A szerkesztett tartalom bekerül a weboldal projektjébe (shared/data, shared/js, shared/img). Folytatod?';
+      if(!confirm(question))return;
       button.disabled=true;status('Publikálás…');
       try{
         const result=await rpc('webPublish');
         if(result.deploy)deploy={...deploy,...result.deploy};
         renderPublish();
-        const parts=['Publikálva: '+result.files.length+' fájl, '+result.images+' feltöltött kép.'];
+        const parts=['Publikálva: '+result.files.length+' fájl'+
+          (result.images?', '+result.images+' feltöltött kép':'')+'.'];
         let kind='success';
-        if(result.deploy){
+        if(result.target==='github'){
+          if(result.commit)parts.push('Commit: '+String(result.commit).slice(0,7)+'.');
+          if(result.deploy&&result.deploy.via==='github')
+            parts.push('A Railway a commit után automatikusan telepíti a weboldalt.');
+        }else if(result.deploy){
           if(result.deploy.triggered)parts.push('A Railway deploy elindult.');
           else if(result.deploy.configured){
             kind='warning';
@@ -129,7 +143,6 @@
               '. A publikált fájlok megvannak, a deployt a Railway felületen vagy a „Railway frissítés” gombbal lehet újraindítani.');
           }else parts.push('A Railway deploy nincs beállítva.');
         }
-        if(result.deploy&&result.deploy.triggered)parts.push('A weboldal a deploy után jeleníti meg.');
         status(parts.join(' '),kind);
       }catch(error){status(error.message||String(error),'error')}
       finally{button.disabled=false}

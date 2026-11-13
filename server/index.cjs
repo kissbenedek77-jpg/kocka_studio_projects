@@ -26,6 +26,7 @@ const {modelStatus,validateImageInput,generateMarketingImage} = require('./marke
 const {marketingStore} = require('./marketing_store.cjs');
 const {webStore} = require('./web_store.cjs');
 const {webPublisher} = require('./web_publish.cjs');
+const {gitPublisher} = require('./web_git.cjs');
 const {railwayDeployer} = require('./railway.cjs');
 const {generateText:generateWebText} = require('./web_ai.cjs');
 const {PUBLIC_BASE,PROJECT_FIELDS,exportPageTxt,exportProjectsJs} = require('./web_content.cjs');
@@ -76,9 +77,18 @@ if (config.localPasswordHash && !validHash(config.localPasswordHash))
 const loginGoogle = googleClient(config);
 const mail = sentMail(config);
 const siteStore = webStore({dataDir: process.env.SITE_DATA_DIR || ''});
-const sitePublisher = webPublisher({store:siteStore,
-  projectDir:process.env.WEB_PROJECT_DIR ||
-    path.join(__dirname,'..','..','kocka_studio_uj_honlap')});
+// A weboldal tartalma a Railway-tárolóból (SITE_DATA_DIR) jön, és a weboldal
+// git repójába publikálódik. Helyi mappa csak fejlesztésnél, ha a WEB_PROJECT_DIR
+// kifejezetten be van állítva.
+const siteGit = gitPublisher({
+  token: process.env.SITE_GITHUB_TOKEN || '',
+  repo: process.env.SITE_GITHUB_REPO || '',
+  branch: process.env.SITE_GITHUB_BRANCH || 'main',
+  pathPrefix: process.env.SITE_GITHUB_PATH || '',
+  apiUrl: process.env.SITE_GITHUB_API_URL || ''
+});
+const sitePublisher = webPublisher({store:siteStore,git:siteGit,
+  projectDir:process.env.WEB_PROJECT_DIR || ''});
 // A weboldal szolgáltatásának Railway deployja. Fiók/workspace tokennél
 // Authorization, projekt tokennél Project-Access-Token fejlécet használunk.
 // A nevek SITE_DEPLOY_ előtagot kaptak: a Railway a futó szolgáltatás saját
@@ -94,9 +104,13 @@ const siteDeployer = railwayDeployer({
 });
 // Publikálás után a weboldal deployja is elindul, ha be van állítva. A deploy
 // hibája nem buktatja el a publikálást: a fájlok már kiíródtak, ezért csak
-// figyelmeztetésként kerül a válaszba.
+// figyelmeztetésként kerül a válaszba. GitHubra publikáláskor a commit maga
+// indítja a Railway deployt (webhook), ezért olyankor nem indítunk külön
+// deployt: az a korábbi commitot telepítené.
 async function publishWebsite() {
   const published = await sitePublisher.publish();
+  if (published.target === 'github')
+    return {...published, deploy:{...siteDeployer.status(), triggered:false, via:'github'}};
   const state = siteDeployer.status();
   if (!state.configured) return {...published, deploy:{...state, triggered:false}};
   try {

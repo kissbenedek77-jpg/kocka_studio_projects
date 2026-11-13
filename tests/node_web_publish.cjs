@@ -71,5 +71,35 @@ test('Hiányzó célmappa esetén a publikálás érthető hibát ad', async () 
   assert.equal(status.configured,false);
   await assert.rejects(publisher.publish(),/nem található/);
   const empty = webPublisher({store,projectDir:''});
-  await assert.rejects(empty.publish(),/WEB_PROJECT_DIR/);
+  await assert.rejects(empty.publish(),/SITE_GITHUB_REPO/);
+});
+
+test('GitHub módban a projektlista a repóba megy, a feltöltött kép abszolút URL-t kap', async () => {
+  const {projectDir,store} = setup();
+  const content = await store.load();
+  const project = content.projects[0];
+  const buffer = await sharp({create:{width:600,height:400,channels:3,background:'#c5cf00'}})
+    .jpeg().toBuffer();
+  await store.saveImage(project.id,{buffer,mime:'image/jpeg',name:'git.jpg'});
+  const sent = [];
+  const git = {
+    status:()=>({configured:true,repo:'o/r',branch:'main',path:'',missing:[]}),
+    publish:async(files,message)=>{sent.push({files,message});
+      return {commit:'abc1234',files:files.map(file=>file.path)}}
+  };
+  const publisher = webPublisher({store,projectDir,git});
+  const state = await publisher.status();
+  assert.equal(state.target,'github');
+  assert.equal(state.repo,'o/r');
+  const result = await publisher.publish();
+  assert.equal(result.target,'github');
+  assert.equal(result.images,0,'a kép nem másolódik a repóba');
+  assert.equal(result.commit,'abc1234');
+  assert.equal(sent.length,1);
+  assert.match(sent[0].message,/Weboldal tartalom/);
+  const js = sent[0].files.find(file => file.path === 'shared/js/projects.js').text;
+  const base = PUBLIC_BASE.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  assert.match(js,new RegExp(base+'/media/web/'),'a feltöltött kép a szerverről jön');
+  assert.equal(fs.existsSync(path.join(projectDir,'shared','js','projects.js')),false,
+    'helyi fájl nem íródik');
 });
